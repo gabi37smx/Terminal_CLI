@@ -1,192 +1,227 @@
-"""Lógica real de las acciones: ordenar por asignaturas, limpiar y convertir.
+"""Acciones: una clase base y una subclase por tipo. El motor no sabe nada de tipos concretos."""
 
-Todas las funciones solo trabajan dentro de la carpeta de origen que indique
-la configuración, y las de conversión/eliminación devuelven un plan para que
-la CLI pregunte antes de tocar nada.
-"""
+from __future__ import annotations
 
+import os
 import re
+import shutil
 import unicodedata
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-EXTENSION_TEMPORALES = {
-    ".tmp",
-    ".temp",
-    ".bak",
-    ".cache",
-    ".part",
-    ".swp",
-    ".download",
-    ".crdownload",
-}
-EXTENSION_IMAGENES = {".jpg", ".jpeg", ".png"}
-
-EXTENSIONES_ASIGNATURA = {
-    ".py": "programacion",
-    ".sql": "bases-datos",
-    ".db": "bases-datos",
-    ".xml": "lenguaje-marcas",
-    ".html": "lenguaje-marcas",
-    ".htm": "lenguaje-marcas",
-    ".sh": "sistemas",
-}
+from .errores import AccionNoValida
 
 
-def normalizar(texto: str) -> str:
-    """Pasa el texto a minúsculas y sin acentos para poder comparar."""
-    desacentuado = unicodedata.normalize("NFKD", texto)
-    plano = desacentuado.encode("ascii", "ignore").decode("ascii").lower()
-    return plano.replace("_", " ").replace("-", " ")
+@dataclass
+class Resultado:
+    origen: Path
+    destino: Path | None
+    estado: str  # "hecho", "simulado", "saltado" o "error"
+    nota: str = ""
 
 
-def _contiene(texto: str, palabras: list[str]) -> bool:
-    """Busca las palabras como palabras completas en el texto normalizado."""
-    texto_normalizado = normalizar(texto)
-    for palabra in palabras:
-        patron = rf"\b{re.escape(normalizar(palabra))}\b"
-        if re.search(patron, texto_normalizado):
-            return True
-    return False
+def _clave(ruta: Path) -> str:
+    """Windows no distingue mayúsculas: FOTO.JPG y foto.jpg son el mismo fichero."""
+    return os.path.normcase(str(ruta))
 
 
-def texto_pdf(ruta: Path, paginas: int = 3) -> str:
-    """Devuelve el texto de las N primeras y N últimas páginas de un PDF."""
+def destino_libre(destino: Path, reservados: set[str] | None = None) -> Path:
+    """Nunca sobrescribe: si existe (o ya lo ha reservado otro fichero de esta pasada,
+    importante en simulación), prueba 'nombre (1).ext', 'nombre (2).ext'..."""
+    if reservados is None:
+        reservados = set()
+    libre, n = destino, 1
+    while libre.exists() or _clave(libre) in reservados:
+        libre = destino.with_name(f"{destino.stem} ({n}){destino.suffix}")
+        n += 1
+    reservados.add(_clave(libre))
+    return libre
+
+
+class Accion(ABC):
+    tipo = ""
+    destructiva = False
+    _registro: dict[str, type[Accion]] = {}
+
+    def __init__(self, config: dict):
+        self.nombre = config["nombre"]
+        self.descripcion = config["descripcion"]
+        self.config = config
+        self._reservados: set[str] = set()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.tipo:
+            Accion._registro[cls.tipo] = cls  # cada subclase se apunta sola
+
+    @staticmethod
+    def desde_config(config: dict) -> Accion:
+        """Fábrica: del diccionario del JSON a la clase que toca."""
+        clase = Accion._registro.get(config["tipo"])
+        if clase is None:
+            raise AccionNoValida(config["nombre"], "tipo", "no hay ninguna clase para ese tipo")
+        return clase(config)
+
+    def ejecutar(self, ficheros: list[Path], simular: bool) -> list[Resultado]:
+        self._reservados = set()
+        resultados = []
+        for n, fichero in enumerate(ficheros, start=1):
+            try:
+                resultados.append(self.aplicar(fichero, n, simular))
+            except OSError as e:  # permiso denegado, fichero en uso (Windows)...
+                resultados.append(Resultado(fichero, None, "error", e.strerror or str(e)))
+        return resultados
+
+    @abstractmethod
+    def aplicar(self, fichero: Path, n: int, simular: bool) -> Resultado: ...
+
+    def _carpeta_destino(self, fichero: Path) -> Path:
+        destino = self.config.get("destino")
+        return Path(destino).expanduser() if destino else fichero.parent
+
+
+class Mover(Accion):
+    tipo = "mover"
+
+    def aplicar(self, fichero, n, simular):
+        carpeta = self._carpeta_destino(fichero)
+        destino = destino_libre(carpeta / fichero.name, self._reservados)
+        if not simular:
+            carpeta.mkdir(parents=True, exist_ok=True)
+            shutil.move(fichero, destino)
+        return Resultado(fichero, destino, "simulado" if simular else "hecho")
+
+
+class Copiar(Accion):
+    tipo = "copiar"
+
+    def aplicar(self, fichero, n, simular):
+        carpeta = self._carpeta_destino(fichero)
+        destino = destino_libre(carpeta / fichero.name, self._reservados)
+        if not simular:
+            carpeta.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(fichero, destino)
+        return Resultado(fichero, destino, "simulado" if simular else "hecho")
+
+
+class Renombrar(Accion):
+    tipo = "renombrar"
+
+    def aplicar(self, fichero, n, simular):
+        fecha = datetime.fromtimestamp(fichero.stat().st_mtime)
+        nuevo = self.config["plantilla"].format(
+            fecha=fecha, n=n, ext=fichero.suffix.lower(), nombre=fichero.stem
+        )
+        if nuevo == fichero.name:
+            return Resultado(fichero, None, "saltado", "ya tiene ese nombre")
+        destino = destino_libre(fichero.with_name(nuevo), self._reservados)
+        if not simular:
+            fichero.rename(destino)
+        return Resultado(fichero, destino, "simulado" if simular else "hecho")
+
+
+class Borrar(Accion):
+    tipo = "borrar"
+    destructiva = True
+
+    def aplicar(self, fichero, n, simular):
+        if not simular:
+            fichero.unlink()
+        return Resultado(fichero, None, "simulado" if simular else "hecho")
+
+
+def _normalizar(texto: str) -> str:
+    """Minúsculas, sin tildes y solo palabras sueltas: 'Programación_Tema1.pdf' -> 'programacion tema1 pdf'."""
+    sin_tildes = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
+    return " ".join(re.findall(r"[a-z0-9]+", sin_tildes.lower()))
+
+
+def _texto_pdf(ruta: Path) -> str:
+    """Texto de las 3 primeras y 3 últimas páginas (si no se puede leer, no ayuda y ya)."""
     try:
         from pypdf import PdfReader
 
-        lector = PdfReader(str(ruta))
-        total = len(lector.pages)
-        indices = list(range(min(paginas, total)))
-        indices += list(range(max(paginas, total - paginas), total))
-        trozos = []
-        for indice in dict.fromkeys(indices):
-            trozos.append(lector.pages[indice].extract_text() or "")
-        return " ".join(trozos)
-    except Exception:
+        paginas = list(PdfReader(str(ruta)).pages)
+        elegidas = paginas[:3] + paginas[-3:] if len(paginas) > 6 else paginas
+        return " ".join((p.extract_text() or "") for p in elegidas)[:20000]
+    except Exception:  # PDF roto, cifrado, etc.: simplemente no sirve para clasificar
         return ""
 
 
-def clasificar(ruta: Path, carpetas: dict[str, list[str]]) -> str | None:
-    """Devuelve el nombre de la carpeta de asignatura o None si no se reconoce.
+class Ordenar(Accion):
+    """Reparte ficheros en carpetas por asignatura usando palabras clave (palabras COMPLETAS)."""
 
-    Orden: palabras clave en el nombre, extensión conocida, contenido del PDF.
-    """
-    for carpeta, palabras in carpetas.items():
-        todas = palabras + [carpeta.replace("-", " ")]
-        if _contiene(ruta.name, todas):
-            return carpeta
+    tipo = "ordenar"
 
-    destino = EXTENSIONES_ASIGNATURA.get(ruta.suffix.lower())
-    if destino in carpetas:
-        return destino
+    def __init__(self, config: dict):
+        super().__init__(config)
+        self._claves = {
+            asignatura: [k for k in (_normalizar(c) for c in [*claves, asignatura]) if k]
+            for asignatura, claves in config["carpetas"].items()
+        }
 
-    if ruta.suffix.lower() == ".pdf":
-        contenido = texto_pdf(ruta)
-        if contenido:
-            for carpeta, palabras in carpetas.items():
-                todas = palabras + [carpeta.replace("-", " ")]
-                if _contiene(contenido, todas):
-                    return carpeta
-    return None
+    def _sumar(self, puntos: dict[str, int], texto: str, peso: int) -> None:
+        palabras = set(texto.split())
+        relleno = f" {texto} "
+        for asignatura, claves in self._claves.items():
+            for clave in claves:
+                if (f" {clave} " in relleno) if " " in clave else (clave in palabras):
+                    puntos[asignatura] += peso
 
+    def clasificar(self, fichero: Path) -> str | None:
+        puntos = dict.fromkeys(self._claves, 0)
+        self._sumar(puntos, _normalizar(fichero.stem), 2)  # el nombre pesa más
+        por_ext = {k.lower(): v for k, v in self.config.get("por_extension", {}).items()}
+        asignatura_ext = por_ext.get(fichero.suffix.lower())
+        if asignatura_ext in puntos:
+            puntos[asignatura_ext] += 1
+        if not any(puntos.values()) and fichero.suffix.lower() == ".pdf":
+            self._sumar(puntos, _normalizar(_texto_pdf(fichero)), 1)
+        mejor = max(puntos.values())
+        if mejor == 0:
+            return None
+        return next(a for a, p in puntos.items() if p == mejor)  # empate: gana la primera
 
-def planificar_ordenar(
-    origen: Path, carpetas: dict[str, list[str]]
-) -> tuple[dict[str, list[Path]], list[Path]]:
-    """Reparte los ficheros de la carpeta entre carpetas de asignatura."""
-    mover: dict[str, list[Path]] = {}
-    sin_destino: list[Path] = []
-    for entrada in sorted(origen.iterdir()):
-        if entrada.is_dir():
-            continue
-        destino = clasificar(entrada, carpetas)
-        if destino is None:
-            sin_destino.append(entrada)
-        else:
-            mover.setdefault(destino, []).append(entrada)
-    return mover, sin_destino
-
-
-def mover_ficheros(destino: Path, ficheros: list[Path]) -> int:
-    """Mueve ficheros a la carpeta de destino, creándola si no existe.
-
-    Si ya hay un fichero con el mismo nombre, le pone un número al final
-    para no sobrescribir nada. Devuelve el número de ficheros movidos.
-    """
-    destino.mkdir(parents=True, exist_ok=True)
-    movidos = 0
-    for fichero in ficheros:
-        objetivo = destino / fichero.name
-        contador = 1
-        while objetivo.exists():
-            objetivo = destino / f"{fichero.stem} ({contador}){fichero.suffix}"
-            contador += 1
-        fichero.rename(objetivo)
-        movidos += 1
-    return movidos
+    def aplicar(self, fichero, n, simular):
+        asignatura = self.clasificar(fichero)
+        if asignatura is None:
+            return Resultado(fichero, None, "saltado", "no sé de qué asignatura es")
+        carpeta = self._carpeta_destino(fichero) / asignatura
+        destino = destino_libre(carpeta / fichero.name, self._reservados)
+        if not simular:
+            carpeta.mkdir(parents=True, exist_ok=True)
+            shutil.move(fichero, destino)
+        return Resultado(fichero, destino, "simulado" if simular else "hecho")
 
 
-def planificar_limpiar(origen: Path, dias: int) -> list[Path]:
-    """Devuelve los ficheros temporales de la carpeta con más de N días."""
-    limite = datetime.now().timestamp() - dias * 86400
-    viejos = []
-    for entrada in sorted(origen.iterdir()):
-        if not entrada.is_file():
-            continue
-        if entrada.suffix.lower() not in EXTENSION_TEMPORALES:
-            continue
-        if entrada.stat().st_mtime <= limite:
-            viejos.append(entrada)
-    return viejos
+class Convertir(Accion):
+    """JPEG/PNG -> WebP con Pillow. No toca el original ni repite si el .webp ya existe."""
 
+    tipo = "convertir"
 
-def borrar_ficheros(ficheros: list[Path]) -> int:
-    """Borra los ficheros indicados. Devuelve el número de borrados."""
-    borrados = 0
-    for fichero in ficheros:
-        fichero.unlink()
-        borrados += 1
-    return borrados
+    def aplicar(self, fichero, n, simular):
+        carpeta = self._carpeta_destino(fichero)
+        destino = carpeta / f"{fichero.stem}.webp"
+        if destino.exists() or _clave(destino) in self._reservados:
+            return Resultado(fichero, destino, "saltado", "ya existe el .webp")
+        self._reservados.add(_clave(destino))
+        if simular:
+            return Resultado(fichero, destino, "simulado")
+        from PIL import Image, UnidentifiedImageError
 
-
-def planificar_convertir(origen: Path) -> tuple[list[Path], list[Path], str | None]:
-    """Busca imágenes JPEG/PNG a convertir. Devuelve (a_convertir, no_convertir, error)."""
-    try:
-        from PIL import Image  # noqa: F401
-    except ImportError:
-        return [], [], "falta la librería Pillow: ejecuta 'uv add pillow'"
-
-    a_convertir: list[Path] = []
-    no_convertir: list[Path] = []
-    for entrada in sorted(origen.iterdir()):
-        if not entrada.is_file():
-            continue
-        if entrada.suffix.lower() not in EXTENSION_IMAGENES:
-            continue
-        if entrada.with_suffix(".webp").exists():
-            no_convertir.append(entrada)
-            continue
-        a_convertir.append(entrada)
-    return a_convertir, no_convertir, None
-
-
-def convertir_imagenes(ficheros: list[Path]) -> tuple[list[Path], list[Path]]:
-    """Convierte las imágenes a WebP. Devuelve (convertidas, fallidas)."""
-    from PIL import Image
-
-    convertidas: list[Path] = []
-    fallidas: list[Path] = []
-    for fichero in ficheros:
-        salida = fichero.with_suffix(".webp")
-        contador = 1
-        while salida.exists():
-            salida = fichero.with_name(f"{fichero.stem} ({contador}).webp")
-            contador += 1
         try:
+            carpeta.mkdir(parents=True, exist_ok=True)
             with Image.open(fichero) as imagen:
-                imagen.save(salida, "WEBP")
-            convertidas.append(fichero)
+                if imagen.mode not in ("RGB", "RGBA"):
+                    transparente = imagen.mode in ("P", "LA", "PA") or "transparency" in imagen.info
+                    imagen = imagen.convert("RGBA" if transparente else "RGB")
+                imagen.save(destino, "WEBP", quality=int(self.config.get("calidad", 80)))
+        except UnidentifiedImageError:
+            self._reservados.discard(_clave(destino))
+            return Resultado(fichero, None, "saltado", "no es una imagen válida")
         except OSError:
-            fallidas.append(fichero)
-    return convertidas, fallidas
+            destino.unlink(missing_ok=True)  # no dejar un .webp a medias
+            raise
+        return Resultado(fichero, destino, "hecho")
