@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "almacen": {
+    "ruta": "~/DAM-almacen"
+  },
+  "acciones": [
+    {
+      "nombre": "ordenar",
+      "descripcion": "Ordena los ficheros por asignatura del DAM (por nombre, extensión y contenido del PDF)",
+      "tipo": "ordenar",
+      "origen": "~/pruebas-tareas/prueba-final",
+      "carpetas": {
+        "programacion": [
+          "programacion",
+          "python",
+          "poo",
+          "clase",
+          "funcion",
+          "objeto"
+        ],
+        "sistemas": [
+          "sistemas",
+          "linux",
+          "redes",
+          "hardware",
+          "so"
+        ],
+        "bases-datos": [
+          "bases de datos",
+          "sql",
+          "mysql",
+          "consulta",
+          "tabla"
+        ],
+        "lenguaje-marcas": [
+          "lenguaje de marcas",
+          "marcas",
+          "xml",
+          "html",
+          "json"
+        ],
+        "entornos": [
+          "entornos",
+          "git",
+          "ide",
+          "compilador",
+          "docker"
+        ],
+        "ipo": [
+          "ipo",
+          "empleabilidad",
+          "curriculum",
+          "entrevista"
+        ],
+        "ingles": [
+          "english",
+          "ingles",
+          "vocabulary",
+          "grammar"
+        ],
+        "proyecto": [
+          "proyecto",
+          "intermodular",
+          "multiplataforma"
+        ]
+      },
+      "por_extension": {
+        ".py": "programacion",
+        ".sql": "bases-datos",
+        ".xml": "lenguaje-marcas",
+        ".html": "lenguaje-marcas",
+        ".sh": "sistemas",
+        ".db": "bases-datos",
+        ".htm": "lenguaje-marcas"
+      },
+      "confirmar": true
+    },
+    {
+      "nombre": "limpiar-temporales",
+      "descripcion": "Borra ficheros temporales (.tmp, .bak, .part) con más de 30 días",
+      "tipo": "borrar",
+      "origen": "~/pruebas-tareas/prueba-final",
+      "filtro": {
+        "extensiones": [
+          ".tmp",
+          ".temp",
+          ".bak",
+          ".cache",
+          ".part",
+          ".swp",
+          ".download",
+          ".crdownload"
+        ],
+        "mas_antiguo_que_dias": 30
+      },
+      "confirmar": true
+    },
+    {
+      "nombre": "convertir-webp",
+      "descripcion": "Convierte las imágenes JPEG y PNG a WebP sin tocar el original",
+      "tipo": "convertir",
+      "origen": "~/pruebas-tareas/prueba-final",
+      "filtro": {
+        "extensiones": [
+          ".jpg",
+          ".jpeg",
+          ".png"
+        ]
+      },
+      "calidad": 80,
+      "confirmar": true
+    }
+  ]
+}
