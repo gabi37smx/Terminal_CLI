@@ -8,11 +8,13 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "pillow>=13.0.0",
+    "pypdf>=6.21.3",
     "typer>=0.27.3",
 ]
 
 [project.scripts]
-tareas = "tareas.cli:app"
+gabriel = "tareas.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]
