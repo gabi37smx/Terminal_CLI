@@ -1,6 +1,6 @@
-"""Permite ejecutar la herramienta con `python -m tareas`."""
+"""Permite ejecutar el paquete con: python -m tareas"""
 
 from tareas.cli import app
 
 if __name__ == "__main__":
-    app()
+    app(prog_name="dam")

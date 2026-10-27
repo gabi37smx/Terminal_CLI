@@ -1,304 +1,285 @@
-"""CLI de tareas: version, listar y comandos de configuración."""
+"""Interfaz de línea de órdenes de dam: aquí solo hay órdenes, opciones y salida por pantalla."""
 
+import functools
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.table import Table
 
-from tareas import __version__
-from tareas.config import ErrorConfig, leer_configuracion, ruta_de_configuracion
+from tareas import __version__, config, sincronizar
+from tareas.errores import ConfigError, TareasError
+from tareas.motor import Motor
+
+
+def _forzar_utf8() -> None:
+    """En Windows, si la salida se redirige, Python usa cp1252 y los símbolos (✔ →) fallan."""
+    for flujo in (sys.stdout, sys.stderr):
+        try:
+            flujo.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
+_forzar_utf8()
 
 app = typer.Typer(
-    name="gabriel",
-    help="CLI de Gabriel: automatiza tareas repetitivas con ficheros desde la terminal.",
+    help="dam: automatiza tareas con ficheros y mantiene tu almacén de apuntes sincronizado.",
     no_args_is_help=True,
+    add_completion=False,
 )
-console = Console()
+consola = Console(highlight=False)
+consola_err = Console(stderr=True, highlight=False)
+
+COLORES = {"hecho": "green", "simulado": "cyan", "saltado": "yellow", "error": "red"}
+
+
+def controlar_errores(funcion):
+    """Convierte cualquier TareasError en un mensaje en rojo y su código de salida (sin traza)."""
+
+    @functools.wraps(funcion)
+    def envoltorio(*args, **kwargs):
+        try:
+            return funcion(*args, **kwargs)
+        except TareasError as e:
+            consola_err.print(f"[red]✘ {escape(str(e))}[/red]")
+            raise typer.Exit(e.codigo_salida) from None
+
+    return envoltorio
+
+
+def confirmar(pregunta: str) -> None:
+    """Pregunta s/n (acepta s, sí, si, y, yes). Cualquier otra cosa cancela: nunca actúa por defecto."""
+    respuesta = typer.prompt(f"{pregunta} [s/N]", default="n", show_default=False)
+    if respuesta.strip().lower() not in {"s", "si", "sí", "y", "yes"}:
+        raise typer.Abort()
+
+
+def tamano_legible(n: int) -> str:
+    """Convierte bytes en texto: 532 B, 1.2 KB, 3.4 MB..."""
+    if n < 1024:
+        return f"{n} B"
+    tamano = float(n)
+    unidad = "B"
+    for unidad in ("KB", "MB", "GB", "TB"):
+        tamano /= 1024
+        if tamano < 1024:
+            break
+    return f"{tamano:.1f} {unidad}"
+
+
+@app.callback()
+def principal(
+    ctx: typer.Context,
+    config_ruta: Annotated[
+        Optional[Path],
+        typer.Option("--config", help="Ruta de acciones.json (por defecto: ./ o ~/.config/dam/)"),
+    ] = None,
+):
+    ctx.obj = config_ruta
 
 
 @app.command()
 def version() -> None:
-    """Muestra la versión de la herramienta."""
-    console.print(f"gabriel [bold]{__version__}[/bold]")
+    """Muestra la versión instalada."""
+    consola.print(f"dam {__version__}")
 
 
 @app.command()
+@controlar_errores
 def listar(
-    carpeta: Optional[str] = typer.Argument(
-        None, help="Carpeta a listar (por defecto, la actual)."
-    ),
+    carpeta: Annotated[
+        Path, typer.Argument(help="Carpeta que quieres ver (por defecto, la actual).")
+    ] = Path("."),
 ) -> None:
-    """Lista los ficheros de una carpeta con tamaño y fecha de modificación."""
-    ruta = Path(carpeta) if carpeta else Path.cwd()
-
-    if not ruta.exists():
-        console.print(f"[red]Error:[/red] la ruta no existe: {ruta}")
-        raise typer.Exit(code=2)
-    if not ruta.is_dir():
-        console.print(f"[red]Error:[/red] no es una carpeta: {ruta}")
-        raise typer.Exit(code=2)
-
-    tabla = Table(title=f"Contenido de {ruta}")
-    tabla.add_column("Nombre", style="cyan")
+    """Lista los ficheros de una carpeta en una tabla."""
+    carpeta = carpeta.expanduser()
+    if not carpeta.is_dir():
+        raise TareasError(f"«{carpeta}» no existe o no es una carpeta.")
+    elementos = sorted(carpeta.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+    if not elementos:
+        consola.print(f"La carpeta «{escape(str(carpeta))}» está vacía.")
+        return
+    tabla = Table(title=f"Contenido de {escape(str(carpeta.resolve()))}")
+    tabla.add_column("Nombre")
     tabla.add_column("Tipo")
     tabla.add_column("Tamaño", justify="right")
     tabla.add_column("Modificado")
-
-    try:
-        entradas = sorted(ruta.iterdir(), key=lambda p: (p.is_dir(), p.name.lower()))
-        for entrada in entradas:
-            if entrada.is_dir():
-                tipo, tamano = "carpeta", "-"
-            else:
-                tipo, tamano = "fichero", _tamaño_legible(entrada.stat().st_size)
-            modificado = _fecha_modificacion(entrada)
-            tabla.add_row(entrada.name, tipo, tamano, modificado)
-    except PermissionError:
-        console.print(f"[red]Error:[/red] sin permisos para leer: {ruta}")
-        raise typer.Exit(code=1)
-    except OSError as error:
-        console.print(f"[red]Error:[/red] no se pudo leer {ruta}: {error}")
-        raise typer.Exit(code=1)
-
-    if tabla.row_count == 0:
-        console.print(f"La carpeta está vacía: {ruta}")
-        return
-    console.print(tabla)
+    for ruta in elementos:
+        try:
+            datos = ruta.stat()
+        except OSError:
+            continue  # enlace roto o sin permisos
+        es_carpeta = ruta.is_dir()
+        tipo = "carpeta" if es_carpeta else (ruta.suffix.lower() or "(sin extensión)")
+        tamano = "—" if es_carpeta else tamano_legible(datos.st_size)
+        fecha = datetime.fromtimestamp(datos.st_mtime).strftime("%Y-%m-%d %H:%M")
+        tabla.add_row(escape(ruta.name), tipo, tamano, fecha)
+    consola.print(tabla)
 
 
 @app.command()
-def validar(
-    config: Optional[str] = typer.Option(
-        None, "--config", help="Ruta del tareas.toml (por defecto, se busca automáticamente)."
-    ),
-) -> None:
-    """Valida el fichero de configuración. Salida 3 si no es válida."""
-    ruta = ruta_de_configuracion(config)
-    try:
-        datos = leer_configuracion(ruta)
-    except ErrorConfig as error:
-        console.print(f"[red]Configuración inválida:[/red] {error}")
-        raise typer.Exit(code=3)
-    acciones = ", ".join(datos["acciones"])
-    console.print(f"[green]Configuración válida:[/green] {ruta}")
-    console.print(f"Acciones encontradas: {acciones}")
+@controlar_errores
+def validar(ctx: typer.Context) -> None:
+    """Valida acciones.json. Sale con 3 si no es válido."""
+    ruta = config.buscar(ctx.obj)
+    acciones = config.cargar(ruta)
+    consola.print(f"[green]✔ {len(acciones)} acciones válidas[/green] ({escape(str(ruta))})")
 
 
 @app.command()
-def acciones(
-    config: Optional[str] = typer.Option(
-        None, "--config", help="Ruta del tareas.toml (por defecto, se busca automáticamente)."
-    ),
-) -> None:
-    """Lista las acciones definidas en la configuración."""
-    ruta = ruta_de_configuracion(config)
-    try:
-        datos = leer_configuracion(ruta)
-    except ErrorConfig as error:
-        console.print(f"[red]Configuración inválida:[/red] {error}")
-        raise typer.Exit(code=3)
-
-    tabla = Table(title=f"Acciones de {ruta}")
-    tabla.add_column("Nombre", style="cyan")
-    tabla.add_column("Descripción")
+@controlar_errores
+def acciones(ctx: typer.Context) -> None:
+    """Lista las acciones definidas en acciones.json."""
+    lista = config.cargar(config.buscar(ctx.obj))
+    tabla = Table(title="Acciones disponibles")
+    tabla.add_column("Nombre", style="bold")
     tabla.add_column("Tipo")
-    tabla.add_column("Origen")
-    for nombre, accion in datos["acciones"].items():
-        tabla.add_row(
-            nombre,
-            str(accion["descripcion"]),
-            str(accion["tipo"]),
-            str(accion["origen"]),
-        )
-    console.print(tabla)
+    tabla.add_column("Descripción")
+    for a in lista:
+        tabla.add_row(escape(a["nombre"]), a["tipo"], escape(a["descripcion"]))
+    consola.print(tabla)
 
 
-@app.command()
-def ejecutar(
-    nombre: str = typer.Argument(..., help="Nombre de la acción a ejecutar."),
-    simular: bool = typer.Option(
-        False, "--simular", help="Muestra lo que haría sin tocar ningún fichero."
-    ),
-    config: Optional[str] = typer.Option(
-        None, "--config", help="Ruta del tareas.toml (por defecto, se busca automáticamente)."
-    ),
-) -> None:
-    """Ejecuta una acción de la configuración. Sin --simular pide confirmación."""
-    ruta = ruta_de_configuracion(config)
-    try:
-        datos = leer_configuracion(ruta)
-    except ErrorConfig as error:
-        console.print(f"[red]Configuración inválida:[/red] {error}")
-        raise typer.Exit(code=3)
-
-    if nombre not in datos["acciones"]:
-        console.print(
-            f"[red]Error:[/red] no existe la acción '{nombre}'. "
-            f"Disponible: {', '.join(datos['acciones'])}"
-        )
-        raise typer.Exit(code=2)
-
-    accion = datos["acciones"][nombre]
-    origen = Path(str(accion["origen"])).expanduser()
-    if not origen.exists():
-        console.print(f"[red]Error:[/red] la carpeta de origen no existe: {origen}")
-        raise typer.Exit(code=2)
-    if not origen.is_dir():
-        console.print(f"[red]Error:[/red] el origen no es una carpeta: {origen}")
-        raise typer.Exit(code=2)
-
-    console.print(f"[bold]{accion['descripcion']}[/bold]  (origen: {origen})")
-    if accion["tipo"] == "asignaturas":
-        _ejecutar_asignaturas(origen, accion, simular)
-    elif accion["tipo"] == "limpiar":
-        _ejecutar_limpiar(origen, accion, simular)
-    else:
-        _ejecutar_convertir(origen, simular)
-
-
-def _confirmar(mensaje: str) -> bool:
-    """Pregunta al usuario y devuelve si quiere continuar."""
-    try:
-        return typer.confirm(mensaje)
-    except typer.Abort:
-        console.print("Cancelado por el usuario.")
-        return False
-
-
-def _hay_pdfs(origen: Path) -> bool:
-    """Comprueba si hay algún PDF en la carpeta de origen."""
-    return any(
-        entrada.is_file() and entrada.suffix.lower() == ".pdf"
-        for entrada in origen.iterdir()
+def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
+    titulo = f"{nombre} (SIMULACIÓN: no se ha tocado nada)" if simular else nombre
+    tabla = Table(title=titulo)
+    tabla.add_column("Fichero", overflow="fold")
+    tabla.add_column("Destino", overflow="fold")
+    tabla.add_column("Estado")
+    for r in resultados:
+        destino = escape(str(r.destino)) if r.destino else "—"
+        color = COLORES.get(r.estado, "white")
+        estado = r.estado + (f" ({escape(r.nota)})" if r.nota else "")
+        tabla.add_row(escape(r.origen.name), destino, f"[{color}]{estado}[/{color}]")
+    consola.print(tabla)
+    cuenta = {e: sum(1 for r in resultados if r.estado == e) for e in COLORES}
+    consola.print(
+        f"{len(resultados)} ficheros · {cuenta['hecho']} hechos · {cuenta['simulado']} simulados · "
+        f"{cuenta['saltado']} saltados · {cuenta['error']} con error"
     )
 
 
-def _tiene_pypdf() -> bool:
-    """Comprueba si la librería pypdf está instalada."""
-    import importlib.util
-
-    return importlib.util.find_spec("pypdf") is not None
-
-
-def _ejecutar_asignaturas(origen: Path, accion: dict, simular: bool) -> None:
-    """Ordena los ficheros de la carpeta por carpetas de asignatura."""
-    from tareas.acciones import mover_ficheros, planificar_ordenar
-
-    if _hay_pdfs(origen) and not _tiene_pypdf():
-        console.print(
-            "[yellow]Aviso:[/yellow] falta pypdf, los PDF se clasificarán "
-            "solo por su nombre (uv add pypdf)."
-        )
-
-    mover, sin_destino = planificar_ordenar(origen, accion["carpetas"])
-    if not mover:
-        console.print("No hay ningún fichero que reconocer. Nada que hacer.")
+@app.command()
+@controlar_errores
+def ejecutar(
+    ctx: typer.Context,
+    nombre: Annotated[str, typer.Argument(help="Nombre de la acción (ver: dam acciones)")],
+    carpeta: Annotated[Optional[Path], typer.Argument(help="Carpeta sobre la que actuar")] = None,
+    simular: Annotated[bool, typer.Option("--simular", help="Enseña qué haría sin tocar nada")] = False,
+    si: Annotated[bool, typer.Option("--si", help="No pedir confirmación")] = False,
+) -> None:
+    """Ejecuta una acción. Pide confirmación si borra o si la acción lo exige (salvo --si)."""
+    motor = Motor(config.cargar(config.buscar(ctx.obj)))
+    accion, ficheros = motor.preparar(nombre, carpeta)
+    if not ficheros:
+        consola.print("Ningún fichero cumple el filtro: no hay nada que hacer.")
         return
-
-    total = sum(len(ficheros) for ficheros in mover.values())
-    tabla = Table(title="Ficheros que se moverían" if simular else "Ficheros a mover")
-    tabla.add_column("Destino", style="cyan")
-    tabla.add_column("Ficheros")
-    for carpeta, ficheros in mover.items():
-        for fichero in ficheros:
-            tabla.add_row(carpeta, fichero.name)
-    console.print(tabla)
-    if sin_destino:
-        console.print(
-            f"[yellow]{len(sin_destino)} sin asignatura[/yellow] "
-            f"(se quedan donde están): {', '.join(f.name for f in sin_destino)}"
-        )
+    if not simular and not si and (accion.destructiva or accion.config.get("confirmar")):
+        previsto = accion.ejecutar(ficheros, True)  # vista previa: no toca nada
+        pintar_tabla(nombre, previsto, True)
+        n = sum(1 for r in previsto if r.estado == "simulado")
+        if n == 0:
+            consola.print("No hay nada que hacer.")
+            return
+        confirmar(f"¿{'BORRAR' if accion.destructiva else 'Aplicar la acción a'} {n} fichero(s)?")
+    resultados = accion.ejecutar(ficheros, simular)
+    pintar_tabla(nombre, resultados, simular)
     if simular:
-        console.print(f"[dim]SIMULACIÓN: se moverían {total} ficheros. "
-                      "Ningún fichero ha sido tocado.[/dim]")
-        return
-    if not _confirmar(f"¿Mover {total} ficheros a sus carpetas?"):
-        return
-
-    movidos = 0
-    for carpeta, ficheros in mover.items():
-        movidos += mover_ficheros(origen / carpeta, ficheros)
-    console.print(f"[green]Hecho:[/green] movidos {movidos} ficheros a {len(mover)} carpetas.")
+        consola.print("Para hacerlo de verdad, repite la orden sin --simular.")
+    if any(r.estado == "error" for r in resultados):
+        raise typer.Exit(1)
 
 
-def _ejecutar_limpiar(origen: Path, accion: dict, simular: bool) -> None:
-    """Borra ficheros temporales antiguos tras preguntar."""
-    from tareas.acciones import borrar_ficheros, planificar_limpiar
+# ---------- almacén de apuntes (git) ----------
+OpcionAlmacen = Annotated[
+    Optional[Path],
+    typer.Option("--almacen", help="Ruta del almacén (si no, DAM_ALMACEN o «almacen» de acciones.json)"),
+]
 
-    viejos = planificar_limpiar(origen, int(accion["dias"]))
-    if not viejos:
-        console.print(f"No hay ficheros temporales con más de {accion['dias']} días.")
-        return
 
-    for fichero in viejos:
-        console.print(f"  [red]borraría[/red] {fichero.name}")
-    if simular:
-        console.print(
-            f"[dim]SIMULACIÓN: se borrarían {len(viejos)} ficheros. "
-            "Ningún fichero ha sido tocado.[/dim]"
+def _abrir_almacen(ctx: typer.Context, opcion: Optional[Path]) -> sincronizar.Almacen:
+    ruta, carpeta = opcion, "asignaturas"
+    if ruta is None and os.environ.get("DAM_ALMACEN"):
+        ruta = Path(os.environ["DAM_ALMACEN"])
+    if ruta is None:
+        try:
+            fichero = config.buscar(ctx.obj)
+        except ConfigError:
+            if ctx.obj is not None:  # el usuario pidió un --config concreto y no existe
+                raise
+            fichero = None
+        datos = config.almacen(fichero) if fichero else None
+        if datos:
+            ruta, carpeta = Path(datos["ruta"]), datos.get("asignaturas", "asignaturas")
+    if ruta is None:
+        raise ConfigError(
+            "No sé dónde está tu almacén. Añade «almacen»: {\"ruta\": \"~/DAM-almacen\"} a "
+            "acciones.json, usa --almacen RUTA o define la variable DAM_ALMACEN."
         )
+    return sincronizar.Almacen(ruta, carpeta)
+
+
+def _lista(titulo: str, color: str, cambios: list[sincronizar.Cambio], limite: int = 15) -> None:
+    if not cambios:
         return
-    if not _confirmar(f"¿Borrar {len(viejos)} ficheros? (no se pueden recuperar)"):
-        return
-    borrados = borrar_ficheros(viejos)
-    console.print(f"[green]Hecho:[/green] borrados {borrados} ficheros temporales.")
+    consola.print(f"\n[bold {color}]{titulo} ({len(cambios)})[/bold {color}]")
+    for c in cambios[:limite]:
+        consola.print(f"  [{color}]{c.estado:<10}[/{color}] {escape(c.ruta)}")
+    if len(cambios) > limite:
+        consola.print(f"  ... y {len(cambios) - limite} más")
 
 
-def _ejecutar_convertir(origen: Path, simular: bool) -> None:
-    """Convierte imágenes a WebP tras preguntar."""
-    from tareas.acciones import convertir_imagenes, planificar_convertir
-
-    a_convertir, sin_convertir, error = planificar_convertir(origen)
-    if error:
-        console.print(f"[red]Error:[/red] {error}")
-        raise typer.Exit(code=1)
-    if not a_convertir:
-        console.print("No hay imágenes JPEG/PNG nuevas por convertir.")
-        return
-
-    for fichero in a_convertir:
-        console.print(f"  convertiría {fichero.name} → {fichero.with_suffix('.webp').name}")
-    if sin_convertir:
-        console.print(
-            f"[yellow]{len(sin_convertir)} con .webp ya existente[/yellow] "
-            f"(se ignoran): {', '.join(f.name for f in sin_convertir)}"
+@app.command()
+@controlar_errores
+def status(
+    ctx: typer.Context,
+    asignatura: Annotated[Optional[str], typer.Argument(help="Limita el análisis a esa asignatura")] = None,
+    almacen: OpcionAlmacen = None,
+) -> None:
+    """El guardián: qué has cambiado aquí y qué hay nuevo en GitHub. No modifica nada."""
+    alm = _abrir_almacen(ctx, almacen)
+    s = alm.analizar(asignatura, tolerante=True)
+    alcance = f"asignatura «{asignatura}»" if asignatura else "todo el almacén"
+    consola.print(f"[bold]Almacén:[/bold] {escape(str(alm.ruta))}  ({escape(s.rama)} ↔ {escape(s.remota)}) · {alcance}")
+    if s.sin_conexion:
+        consola.print(f"[yellow]⚠ {escape(s.sin_conexion)} Muestro lo último que sé de GitHub.[/yellow]")
+    _lista("Archivos modificados (locales, no subidos)", "yellow", [c for c in s.locales if c.estado == "modificado"])
+    _lista("Archivos nuevos (locales, sin rastrear)", "green", [c for c in s.locales if c.estado == "nuevo"])
+    _lista("Archivos borrados en local", "red", [c for c in s.locales if c.estado == "borrado"])
+    if s.adelantados:
+        consola.print(f"\n[bold yellow]Commits sin subir: {s.adelantados}[/bold yellow]")
+    _lista("Archivos por descargar (cambios en GitHub que no tienes)", "cyan", s.remotos)
+    if not s.hay_local and not s.hay_remoto:
+        consola.print("\n[green]✔ Todo está actualizado.[/green]")
+    if s.hay_local and s.hay_remoto:
+        consola.print(
+            "\n[bold red]⚠️ Peligro: Tienes archivos sin subir y hay archivos nuevos en GitHub. "
+            "Haz un commit o guarda una copia antes de sincronizar.[/bold red]"
         )
-    if simular:
-        console.print(
-            f"[dim]SIMULACIÓN: se convertirían {len(a_convertir)} imágenes. "
-            "Ningún fichero ha sido tocado.[/dim]"
-        )
-        return
-    if not _confirmar(f"¿Convertir {len(a_convertir)} imágenes a WebP?"):
-        return
-    convertidas, fallidas = convertir_imagenes(a_convertir)
-    console.print(f"[green]Hecho:[/green] convertidas {len(convertidas)} imágenes.")
-    if fallidas:
-        console.print(
-            f"[yellow]No se pudieron convertir:[/yellow] "
-            f"{', '.join(f.name for f in fallidas)}"
-        )
 
 
-def _tamaño_legible(bytes_: int) -> str:
-    """Convierte un tamaño en bytes a una cadena legible (ej. 1,5 MB)."""
-    unidades = ["B", "KB", "MB", "GB", "TB"]
-    tamaño = float(bytes_)
-    for unidad in unidades:
-        if tamaño < 1024 or unidad == unidades[-1]:
-            if unidad == "B":
-                return f"{int(tamaño)} {unidad}"
-            return f"{tamaño:.1f} {unidad}"
-        tamaño /= 1024
-    return f"{bytes_} B"
-
-
-def _fecha_modificacion(ruta: Path) -> str:
-    """Devuelve la fecha de modificación como 'AAAA-MM-DD HH:MM'."""
-    try:
-        return datetime.fromtimestamp(ruta.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
-    except OSError:
-        return "-"
+@app.command()
+@controlar_errores
+def sync(
+    ctx: typer.Context,
+    asignatura: Annotated[Optional[str], typer.Argument(help="Solo esta asignatura (carpeta de asignaturas/)")] = None,
+    mensaje: Annotated[Optional[str], typer.Argument(help="Mensaje del commit")] = None,
+    integrar: Annotated[bool, typer.Option("--integrar", help="Si hay cambios en ambos lados: guarda lo tuyo y hace pull --rebase")] = False,
+    simular: Annotated[bool, typer.Option("--simular", help="Enseña qué haría sin tocar nada")] = False,
+    almacen: OpcionAlmacen = None,
+) -> None:
+    """Sincroniza el almacén con GitHub de forma segura (no pisa nada ante la duda)."""
+    informe = _abrir_almacen(ctx, almacen).sincronizar(asignatura, mensaje, integrar, simular)
+    for linea in informe.mensajes:
+        color = "yellow" if informe.estado == "pendiente" else "green"
+        consola.print(f"[{color}]{escape(linea)}[/{color}]")
+    if informe.detalle:
+        consola.print(f"\n{escape(informe.detalle)}")
+    if informe.estado == "pendiente":
+        raise typer.Exit(1)
