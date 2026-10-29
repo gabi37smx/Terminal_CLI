@@ -10,47 +10,23 @@
       "tipo": "ordenar",
       "origen": "~/pruebas-tareas/prueba-final",
       "carpetas": {
-        "programacion": [
-          "programacion",
-          "python",
-          "poo",
-          "clase",
-          "funcion",
-          "objeto"
-        ],
-        "sistemas": [
-          "sistemas",
-          "linux",
-          "redes",
-          "hardware",
-          "so"
-        ],
         "bases-datos": [
+          "base de dades",
+          "bases de dades",
           "bases de datos",
           "sql",
           "mysql",
           "consulta",
+          "taula",
           "tabla"
         ],
-        "lenguaje-marcas": [
-          "lenguaje de marcas",
-          "marcas",
-          "xml",
-          "html",
-          "json"
-        ],
         "entornos": [
+          "entorns",
           "entornos",
           "git",
           "ide",
           "compilador",
           "docker"
-        ],
-        "ipo": [
-          "ipo",
-          "empleabilidad",
-          "curriculum",
-          "entrevista"
         ],
         "ingles": [
           "english",
@@ -58,10 +34,48 @@
           "vocabulary",
           "grammar"
         ],
+        "ipo": [
+          "ipo",
+          "empleabilidad",
+          "curriculum",
+          "entrevista"
+        ],
+        "lenguaje-marcas": [
+          "llenguatge de marques",
+          "lenguaje de marcas",
+          "marques",
+          "marcas",
+          "xml",
+          "html",
+          "json"
+        ],
+        "programacion": [
+          "programacio ia",
+          "programacio",
+          "programacion",
+          "python",
+          "poo",
+          "classe",
+          "clase",
+          "funcio",
+          "funcion",
+          "objecte",
+          "objeto"
+        ],
         "proyecto": [
+          "projecte",
           "proyecto",
           "intermodular",
           "multiplataforma"
+        ],
+        "sistemas": [
+          "sistemes",
+          "sistemas",
+          "linux",
+          "xarxes",
+          "redes",
+          "hardware",
+          "so"
         ]
       },
       "por_extension": {
@@ -77,7 +91,7 @@
     },
     {
       "nombre": "limpiar-temporales",
-      "descripcion": "Borra ficheros temporales (.tmp, .bak, .part) con más de 30 días",
+      "descripcion": "Borra ficheros temporales (.tmp, .temp, .bak, .cache, .part, .swp, .download, .crdownload) con más de 30 días",
       "tipo": "borrar",
       "origen": "~/pruebas-tareas/prueba-final",
       "filtro": {

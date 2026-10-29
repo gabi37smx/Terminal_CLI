@@ -161,6 +161,19 @@ def test_nombres_con_tildes_y_espacios(pcs):
     assert (casa.ruta / "asignaturas/programacion/Práctica nº 1 (ñandú).md").exists()
 
 
+def test_documentacio_privada_no_se_sube_ni_aparece(pcs):
+    clase, casa = pcs
+    escribir(clase.ruta / "Documentacio/privat/secreto.txt", "privado")
+    escribir(clase.ruta / "asignaturas/bd/Documentacio/nota.txt", "privado")
+    escribir(clase.ruta / "asignaturas/bd/normal.md")
+    s = clase.analizar()
+    assert {c.ruta for c in s.locales} == {"asignaturas/bd/normal.md"}
+    assert clase.sincronizar(None, "sin secretos").estado == "subido"
+    archivos = git(clase.ruta, "ls-tree", "-r", "--name-only", "HEAD").splitlines()
+    assert "asignaturas/bd/normal.md" in archivos
+    assert not any("Documentacio" in a for a in archivos)
+
+
 def test_status_sin_conexion_sigue_funcionando(pcs, tmp_path):
     clase, _ = pcs
     git(clase.ruta, "remote", "set-url", "origin", str(tmp_path / "no-existe.git"))

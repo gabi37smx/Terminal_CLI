@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import socket
 import subprocess
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -16,6 +17,16 @@ from pathlib import Path
 from .errores import GitError, TareasError
 
 MAX_MB = 95  # GitHub rechaza ficheros de más de 100 MB
+CARPETAS_PRIVADAS = ("documentacio",)  # nunca se suben al almacén
+
+
+def _normalizar_nombre(texto: str) -> str:
+    sin_tildes = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
+    return sin_tildes.lower()
+
+
+def _es_privada(ruta: str) -> bool:
+    return any(_normalizar_nombre(parte) in CARPETAS_PRIVADAS for parte in Path(ruta).parts)
 
 
 @dataclass
@@ -149,6 +160,8 @@ class Almacen:
             xy, ruta = entrada[:2], entrada[3:]
             if xy[0] in "RC":
                 i += 1  # en renombrados, la siguiente entrada es el nombre antiguo
+            if _es_privada(ruta):
+                continue
             estado = "nuevo" if xy == "??" else "borrado" if "D" in xy else "modificado"
             cambios.append(Cambio(estado, ruta))
         return cambios
@@ -161,7 +174,7 @@ class Almacen:
         cambios = []
         for linea in p.stdout.splitlines():
             trozos = linea.split("\t")
-            if len(trozos) >= 2:
+            if len(trozos) >= 2 and not _es_privada(trozos[-1]):
                 cambios.append(Cambio(_estado_de_diff(trozos[0]), trozos[-1]))
         return cambios
 
@@ -202,12 +215,19 @@ class Almacen:
                 + "\n  - ".join(problemas)
             )
 
+    def _privadas_en_indice(self) -> list[str]:
+        p = self._git("diff", "--cached", "--name-only", "-z")
+        return [r for r in p.stdout.split("\0") if r and _es_privada(r)]
+
     def _guardar(self, s: Situacion, mensaje: str) -> None:
-        """git add (solo del alcance) + commit."""
+        """git add (solo del alcance) + commit, desindexando siempre las carpetas privadas."""
         if not s.locales:
             return
         self._revisar_peligrosos(s.locales)
         self._git("add", "-A", "--", s.pathspec)
+        privadas = self._privadas_en_indice()
+        if privadas:
+            self._git("reset", "-q", "--", *privadas)
         p = self._git("commit", "-m", mensaje, comprobar=False)
         if p.returncode != 0 and "nothing to commit" not in (p.stdout + p.stderr).lower():
             raise GitError(traducir_error(p.stderr + p.stdout))

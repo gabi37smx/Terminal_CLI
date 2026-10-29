@@ -85,7 +85,9 @@ la configuración se valida entera antes de mover un solo fichero.
 ## Almacén de apuntes (status y sync)
 
 Un repositorio git (mejor **privado**) con una carpeta por asignatura (`asignaturas/programacion/`...).
+Los nombres deben coincidir con las claves de `carpetas` en `acciones.json`.
 Lo clonas en cada sitio (clase, casa, USB) y `dam sync` mantiene todo igual sin perder nada.
+La carpeta `Documentacio` nunca se sube: `status` y `sync` la ignoran siempre.
 
 ```bash
 git clone https://github.com/TU_USUARIO/DAM-almacen.git ~/DAM-almacen
