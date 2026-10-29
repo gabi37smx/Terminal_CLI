@@ -205,9 +205,16 @@ class Almacen:
         for c in cambios:
             ruta = self.ruta / c.ruta
             nombre = ruta.name.lower()
-            if nombre.startswith(".env") and not nombre.endswith(".example"):
+            if c.estado == "borrado":
+                continue
+            es_env = (
+                nombre.startswith(".env")
+                or nombre.endswith(".env")
+                or ".env." in nombre
+            )
+            if es_env and not nombre.endswith(".example"):
                 problemas.append(f"{c.ruta} (parece un fichero de secretos)")
-            elif c.estado != "borrado" and ruta.is_file() and ruta.stat().st_size > MAX_MB * 1024 * 1024:
+            elif ruta.is_file() and ruta.stat().st_size > MAX_MB * 1024 * 1024:
                 problemas.append(f"{c.ruta} (pesa más de {MAX_MB} MB y GitHub lo rechazaría)")
         if problemas:
             raise TareasError(

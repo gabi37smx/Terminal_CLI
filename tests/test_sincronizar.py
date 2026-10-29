@@ -153,6 +153,29 @@ def test_no_sube_env_ni_ficheros_enormes(pcs, monkeypatch):
     assert git(clase.ruta, "log", "--oneline").count("\n") == 1  # no hubo commit
 
 
+def test_no_sube_ficheros_que_terminan_en_env(pcs):
+    clase, _ = pcs
+    escribir(clase.ruta / "asignaturas/bd/atlas-credentials.env", "CLAVE=1")
+    with pytest.raises(TareasError, match="secretos"):
+        clase.sincronizar(None, "m")
+    assert git(clase.ruta, "log", "--oneline").count("\n") == 1
+
+
+def test_permite_env_de_ejemplo(pcs):
+    clase, _ = pcs
+    escribir(clase.ruta / "asignaturas/bd/.env.example", "CLAVE=demo")
+    assert clase.sincronizar(None, "m").estado == "subido"
+
+
+def test_borrar_un_env_ya_subido_no_se_bloquea(pcs):
+    clase, _ = pcs
+    escribir(clase.ruta / "asignaturas/bd/.env", "CLAVE=1")
+    git(clase.ruta, "add", "-f", "asignaturas/bd/.env")
+    git(clase.ruta, "commit", "-m", "env por error")
+    (clase.ruta / "asignaturas/bd/.env").unlink()
+    assert clase.sincronizar(None, "quita env").estado == "subido"
+
+
 def test_nombres_con_tildes_y_espacios(pcs):
     clase, casa = pcs
     escribir(clase.ruta / "asignaturas/programacion/Práctica nº 1 (ñandú).md")
