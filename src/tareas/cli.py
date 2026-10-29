@@ -30,8 +30,9 @@ _forzar_utf8()
 
 app = typer.Typer(
     help="dam: automatiza tareas con ficheros y mantiene tu almacén de apuntes sincronizado.",
-    no_args_is_help=True,
+    no_args_is_help=False,
     add_completion=False,
+    context_settings={"help_option_names": []},
 )
 consola = Console(highlight=False)
 consola_err = Console(stderr=True, highlight=False)
@@ -73,24 +74,76 @@ def tamano_legible(n: int) -> str:
     return f"{tamano:.1f} {unidad}"
 
 
-@app.callback()
+EJEMPLOS = [
+    "dam listar",
+    'dam listar "C:\\Users\\HP\\Desktop\\DAM\\SISTEMES"',
+    "dam validar",
+    "dam acciones",
+    "dam ejecutar ordenar --simular",
+    "dam ejecutar ordenar",
+    "dam ejecutar limpiar-temporales --simular",
+    "dam ejecutar convertir-webp --simular",
+    "dam status",
+    "dam status programacion",
+    "dam sync --simular",
+    'dam sync programacion "tema 3"',
+    "dam sync --integrar",
+]
+
+
+def mostrar_ayuda() -> None:
+    """Ayuda estilo terminal: uso, comandos, opciones y ejemplos."""
+    consola.print(
+        "[bold]dam[/bold] — automatiza tareas con ficheros y mantiene tu almacén "
+        "de apuntes sincronizado.\n"
+    )
+    consola.print("[bold]Uso:[/bold]")
+    consola.print("  dam [OPCIONES] COMANDO [ARGUMENTOS]")
+    consola.print("  dam COMANDO --help\n")
+    consola.print("[bold]Comandos:[/bold]")
+    for cmd in app.registered_commands:
+        nombre = cmd.name or (cmd.callback.__name__.replace("_", "-") if cmd.callback else "?")
+        resumen = ((cmd.callback.__doc__ or "").strip().splitlines() or [""])[0]
+        consola.print(f"  [cyan]{nombre:<10}[/cyan] {escape(resumen)}")
+    consola.print("\n[bold]Opciones:[/bold]")
+    consola.print("  [cyan]-h, --help[/cyan]      Muestra esta ayuda y sale.")
+    consola.print("  [cyan]--config RUTA[/cyan]   Usa otro acciones.json (./ o ~/.config/dam/).")
+    consola.print("\n[bold]Ejemplos:[/bold]")
+    for ejemplo in EJEMPLOS:
+        consola.print(f"  {escape(ejemplo)}")
+    consola.print("\nPara más ayuda de un comando: [cyan]dam COMANDO --help[/cyan]")
+
+
+@app.callback(invoke_without_command=True)
 def principal(
     ctx: typer.Context,
     config_ruta: Annotated[
         Optional[Path],
         typer.Option("--config", help="Ruta de acciones.json (por defecto: ./ o ~/.config/dam/)"),
     ] = None,
+    ayuda: Annotated[
+        bool,
+        typer.Option("-h", "--help", help="Muestra esta ayuda y sale.", is_eager=True),
+    ] = False,
 ):
+    if ayuda or ctx.invoked_subcommand is None:
+        mostrar_ayuda()
+        raise typer.Exit()
     ctx.obj = config_ruta
 
 
-@app.command()
+def comando():
+    """Registra un subcomando con su propia ayuda -h/--help."""
+    return app.command(context_settings={"help_option_names": ["-h", "--help"]})
+
+
+@comando()
 def version() -> None:
     """Muestra la versión instalada."""
     consola.print(f"dam {__version__}")
 
 
-@app.command()
+@comando()
 @controlar_errores
 def listar(
     carpeta: Annotated[
@@ -123,7 +176,7 @@ def listar(
     consola.print(tabla)
 
 
-@app.command()
+@comando()
 @controlar_errores
 def validar(ctx: typer.Context) -> None:
     """Valida acciones.json. Sale con 3 si no es válido."""
@@ -132,7 +185,7 @@ def validar(ctx: typer.Context) -> None:
     consola.print(f"[green]✔ {len(acciones)} acciones válidas[/green] ({escape(str(ruta))})")
 
 
-@app.command()
+@comando()
 @controlar_errores
 def acciones(ctx: typer.Context) -> None:
     """Lista las acciones definidas en acciones.json."""
@@ -165,7 +218,7 @@ def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
     )
 
 
-@app.command()
+@comando()
 @controlar_errores
 def ejecutar(
     ctx: typer.Context,
@@ -235,7 +288,7 @@ def _lista(titulo: str, color: str, cambios: list[sincronizar.Cambio], limite: i
         consola.print(f"  ... y {len(cambios) - limite} más")
 
 
-@app.command()
+@comando()
 @controlar_errores
 def status(
     ctx: typer.Context,
@@ -264,7 +317,7 @@ def status(
         )
 
 
-@app.command()
+@comando()
 @controlar_errores
 def sync(
     ctx: typer.Context,
