@@ -6,7 +6,7 @@
 
 ## Contexto
 
-Mi herramienta `dam` automatiza tareas repetitivas con ficheros: ordenar apuntes por asignatura de 1º de DAM, borrar temporales viejos y convertir imágenes de cualquier formato a WebP , pensando en el proyecto del portfolio el juego via al cielo. De momento tengo tres acciones (`ordenar`, `limpiar-temporales` y `convertir-webp`), pero la idea es que la use yo en el PC de clase, en el de casa y en un USB, y que mis compañeros puedan usarla con
+Mi herramienta `dam` automatiza tareas repetitivas con ficheros: ordenar apuntes por asignatura de 1º de DAM, borrar temporales viejos y convertir imágenes JPEG y PNG a WebP, pensando en el portfolio y en mi juego «Vía al Cielo». De momento tengo tres acciones (`ordenar`, `limpiar-temporales` y `convertir-webp`), pero la idea es que la use yo en el PC de clase, en el de casa y en un USB, y que mis compañeros puedan usarla con
 sus propias asignaturas y carpetas.
 
 El problema es que cada persona tiene carpetas distintas y quiere reglas distintas. Si todo estuviera escrito dentro del código, cualquier cambio pequeño obligaría a tocar Python, volver a instalar y arriesgarse a romper lo que ya funcionaba. Además, un compañero que no programa no podría añadir una acción ni cambiar una palabra clave.
