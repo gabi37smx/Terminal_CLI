@@ -17,6 +17,7 @@ class Motor:
     @staticmethod
     def seleccionar(carpeta: Path, filtro: dict) -> list[Path]:
         """Ficheros (no subcarpetas) de `carpeta` que cumplen TODAS las condiciones del filtro."""
+        assert carpeta.is_dir(), f"seleccionar espera una carpeta existente, no «{carpeta}»"
         exts = {e.lower() for e in filtro.get("extensiones", [])}
         patron = re.compile(filtro["patron"]) if "patron" in filtro else None
         dias = filtro.get("mas_antiguo_que_dias")
