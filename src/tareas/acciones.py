@@ -14,6 +14,9 @@ from pathlib import Path
 from .errores import AccionNoValida
 
 
+ESTADOS = {"hecho", "simulado", "saltado", "error"}
+
+
 @dataclass
 class Resultado:
     origen: Path
@@ -30,6 +33,7 @@ def _clave(ruta: Path) -> str:
 def destino_libre(destino: Path, reservados: set[str] | None = None) -> Path:
     """Nunca sobrescribe: si existe (o ya lo ha reservado otro fichero de esta pasada,
     importante en simulación), prueba 'nombre (1).ext', 'nombre (2).ext'..."""
+    assert destino.name, f"destino_libre necesita un nombre de fichero, no «{destino}»"
     if reservados is None:
         reservados = set()
     libre, n = destino, 1
@@ -59,6 +63,7 @@ class Accion(ABC):
     @staticmethod
     def desde_config(config: dict) -> Accion:
         """Fábrica: del diccionario del JSON a la clase que toca."""
+        assert "tipo" in config, "config.py debería haber rechazado una acción sin tipo"
         clase = Accion._registro.get(config["tipo"])
         if clase is None:
             raise AccionNoValida(config["nombre"], "tipo", "no hay ninguna clase para ese tipo")
@@ -69,7 +74,10 @@ class Accion(ABC):
         resultados = []
         for n, fichero in enumerate(ficheros, start=1):
             try:
-                resultados.append(self.aplicar(fichero, n, simular))
+                resultado = self.aplicar(fichero, n, simular)
+                assert isinstance(resultado, Resultado) and resultado.estado in ESTADOS, resultado
+                assert not simular or resultado.estado != "hecho", "--simular nunca puede dar «hecho»"
+                resultados.append(resultado)
             except OSError as e:  # permiso denegado, fichero en uso (Windows)...
                 resultados.append(Resultado(fichero, None, "error", e.strerror or str(e)))
         return resultados

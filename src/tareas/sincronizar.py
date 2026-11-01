@@ -18,6 +18,7 @@ from .errores import GitError, TareasError
 
 MAX_MB = 95  # GitHub rechaza ficheros de más de 100 MB
 CARPETAS_PRIVADAS = ("documentacio",)  # nunca se suben al almacén
+EXTENSIONES_CLAVE = {".pem", ".key", ".p12", ".pfx", ".ppk"}  # claves privadas y certificados
 
 
 def _normalizar_nombre(texto: str) -> str:
@@ -143,7 +144,8 @@ class Almacen:
             disponibles = sorted(p.name for p in base.iterdir() if p.is_dir()) if base.is_dir() else []
             raise TareasError(
                 f"No existe la asignatura «{asignatura}» en {base}. "
-                f"Hay: {', '.join(disponibles) or 'ninguna'}"
+                f"Hay: {', '.join(disponibles) or 'ninguna'}. "
+                'Si lo que querías era poner un mensaje, usa: dam sync -m "tu mensaje"'
             )
         return f"{self.carpeta_asignaturas}/{asignatura}"
 
@@ -212,7 +214,10 @@ class Almacen:
                 or nombre.endswith(".env")
                 or ".env." in nombre
             )
-            if es_env and not nombre.endswith(".example"):
+            es_clave = ruta.suffix.lower() in EXTENSIONES_CLAVE or (
+                nombre.startswith(("id_rsa", "id_ed25519", "id_ecdsa")) and not nombre.endswith(".pub")
+            )
+            if (es_env and not nombre.endswith(".example")) or es_clave:
                 problemas.append(f"{c.ruta} (parece un fichero de secretos)")
             elif ruta.is_file() and ruta.stat().st_size > MAX_MB * 1024 * 1024:
                 problemas.append(f"{c.ruta} (pesa más de {MAX_MB} MB y GitHub lo rechazaría)")

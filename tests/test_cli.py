@@ -10,7 +10,7 @@ runner = CliRunner()
 def test_ayuda_principal_tiene_secciones_y_ejemplos():
     r = runner.invoke(app, ["--help"])
     assert r.exit_code == 0
-    for texto in ("Uso:", "Comandos:", "Opciones:", "Ejemplos:"):
+    for texto in ("Uso:", "Ficheros", "Almacén", "Opciones globales", "Códigos de salida"):
         assert texto in r.output
     assert "dam ejecutar ordenar --simular" in r.output
     assert "dam sync --integrar" in r.output

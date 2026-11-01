@@ -31,6 +31,12 @@ uv run dam --help                 # probar sin instalar
 uv tool install --editable .          # instalar el comando `dam` en todo el sistema
 ```
 
+Para instalarlo sin clonar (otra persona, otro equipo):
+
+```bash
+uv tool install git+https://github.com/gabi37smx/Terminal_CLI
+```
+
 En Windows (PowerShell) es igual. Si `dam` no se encuentra tras instalar: `uv tool update-shell` y abre otra terminal.
 
 ## Órdenes
@@ -43,12 +49,18 @@ En Windows (PowerShell) es igual. Si `dam` no se encuentra tras instalar: `uv to
 | `dam acciones` | Lista las acciones configuradas. |
 | `dam ejecutar NOMBRE [CARPETA] [--simular] [--si]` | Ejecuta una acción. `--simular` enseña qué haría sin tocar nada; borrar pide confirmación salvo `--si`. |
 | `dam status [ASIGNATURA]` | Qué has cambiado en local y qué hay nuevo en GitHub. No modifica nada. |
-| `dam sync [ASIGNATURA] [MENSAJE] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
+| `dam sync [ASIGNATURA] [MENSAJE] [-m TEXTO] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
+| `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves, tokens y contraseñas expuestas. Sale con 1 si encuentra algo. |
+| `dam instalar-hook [REPO] [--quitar] [--forzar]` | Revisa claves automáticamente en cada `git commit`. |
+| `dam test-links [FUENTE] [--sin-externos] [--timeout S]` | Busca enlaces rotos en una web (carpeta, `.html` o URL). |
+| `dam check-headers URL [--timeout S]` | Revisa las cabeceras de seguridad de una web o API. |
 
 Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto busca
 `./acciones.json` y después `~/.config/dam/acciones.json`.
 
-**Códigos de salida:** 0 bien · 1 fallo al ejecutar (carpeta inexistente, permiso denegado, sync pendiente...) · 2 error de uso (lo pone Typer) · 3 configuración inválida.
+**Códigos de salida:** 0 bien · 1 fallo al ejecutar (carpeta inexistente, permiso denegado, sync pendiente, claves, enlaces rotos o cabeceras básicas que faltan...) · 2 error de uso (lo pone Typer) · 3 configuración inválida.
+
+`dam` (o `dam -h`) muestra el manual completo con todos los comandos, opciones y ejemplos; `dam COMANDO -h` explica uno.
 
 ## Esquema de acciones.json
 
@@ -114,14 +126,32 @@ Ruta del almacén en cada equipo, por orden de prioridad: `--almacen RUTA` > var
 equipos, así que usa la variable de entorno. Si Git protesta por «dubious ownership» en un USB
 exFAT/FAT32: `git config --global --add safe.directory RUTA`.
 
+## Seguridad: claves y web
+
+Ninguna clave en el repositorio ni en su historial. `dam scan-secrets` lo comprueba:
+
+```bash
+dam scan-secrets                  # lo que se subiría a git desde esta carpeta
+dam scan-secrets --staged         # solo lo preparado con git add
+dam scan-secrets --historial      # todo el historial de git
+dam instalar-hook                 # lo ejecuta solo antes de cada git commit
+```
+
+Nunca imprime una clave entera (solo las primeras letras y la longitud). Si una clave ya llegó a GitHub, borrarla no basta: hay que cambiarla (revocarla) en el servicio. No lee binarios (PDF, imágenes, docx...). Un falso aviso se silencia con `dam:ignore` en esa línea.
+
+Para tu web: `dam test-links` encuentra enlaces, imágenes y anclas rotas (también las que solo se rompen por las mayúsculas al publicar) y `dam check-headers` revisa las cabeceras de seguridad, el CORS y las cookies. Detalles y ejemplos en [`docs/comandos.md`](docs/comandos.md).
+
 ## Pruebas
 
 ```bash
-uv run pytest        # 68 pruebas (config, acciones, motor y sync con repos temporales)
+uv run pytest        # config, acciones, motor, sync, ayuda, scan-secrets, test-links, check-headers y hook
 ```
+
+Ejecútalo desde la raíz del repositorio. Los tests de red usan un servidor local de mentira: no necesitan internet.
 
 ## Ideas futuras
 
 - Ayudarme a proponer el mensaje de commit según los cambios hechos.
-- `scan-secrets`, `audit-web`, `check-headers`... (ver `implementar2.md`).
+- Más comandos para la web del portfolio (ideas en `docs/ideas/`).
+- La capa de IA (semana 3): acciones que usen los modelos del centro, con la clave fuera del repo y un modo sin red.
 - Más acciones de limpieza y organización conforme las vaya necesitando.

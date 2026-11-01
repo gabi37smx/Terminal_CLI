@@ -87,10 +87,18 @@ dam sync
 
 ```powershell
 dam status
-dam sync "" "lo que he hecho"
+dam sync -m "lo que he hecho"
 ```
 
-El `""` vacío es para que `dam` entienda que el siguiente argumento es el mensaje y no una asignatura. Eso hace `add` + `commit` + `push` de tus cambios. Si solo había cambios en GitHub, hace `pull`.
+Con `-m` el texto es el mensaje y no se confunde con una asignatura (no uses `""` vacío: PowerShell lo elimina). Eso hace `add` + `commit` + `push` de tus cambios. Si solo había cambios en GitHub, hace `pull`.
+
+### Antes de subir el código (`Terminal_CLI`)
+
+```powershell
+git add ...
+dam scan-secrets --staged    # ¿he preparado alguna clave sin querer?
+git commit -m "..."
+```
 
 ### La regla de oro
 
@@ -105,9 +113,9 @@ El `""` vacío es para que `dam` entienda que el siguiente argumento es el mensa
 |---|---|---|
 | `dam status` | al empezar/terminar | Solo mira; funciona sin internet (muestra lo último que sabe) |
 | `dam sync` | al empezar/terminar | Baja o sube; necesita internet; si hay cambios en ambos lados, para |
-| `dam sync "mensaje"` | **mal** | Interpreta `"mensaje"` como asignatura. Para todo el almacén: `dam sync "" "mensaje"` |
+| `dam sync "mensaje"` | **mal** | Interpreta `"mensaje"` como asignatura. Para todo el almacén: `dam sync -m "mensaje"` |
 | `dam sync programacion "tema 3"` | una asignatura | Sube solo `asignaturas/programacion/` |
-| `dam sync "" "subida desde casa"` | todo el almacén | Mensaje propio sin filtrar asignatura |
+| `dam sync -m "subida desde casa"` | todo el almacén | Mensaje propio sin filtrar asignatura |
 | `dam sync --simular` | antes de subir | Enseña qué haría; no toca nada, pero necesita internet |
 | `dam sync --integrar` | cambios en ambos lados | Guarda lo tuyo, hace `pull --rebase` y sube; si hay conflicto, lo deshace |
 | `dam status --almacen RUTA` | ruta alternativa | Si no está `DAM_ALMACEN` |
@@ -132,7 +140,7 @@ Antes de integrar, si dudas, haz una copia de la carpeta o mira `dam status`.
 
 ## 7. Seguridad
 
-- `dam sync` bloquea `.env`, `.env.local`, `clave.env`, `atlas-credentials.env`, etc.; deja pasar `.env.example`.
+- `dam sync` bloquea `.env`, `.env.local`, `clave.env`, `atlas-credentials.env`, etc. (deja pasar `.env.example`) y las claves `.pem`, `.key`, `.pfx`, `id_rsa`...
 - `dam sync` también bloquea ficheros de más de 95 MB.
 - El `.gitignore` del almacén ignora MV/OVA, `node_modules`, `.venv`, credenciales, etc.
 - La carpeta `Documentacio` no se sube nunca.
@@ -148,13 +156,13 @@ dam sync
 
 # Terminar
 dam status
-dam sync "" "lo que he hecho"
+dam sync -m "lo que he hecho"
 
 # Solo una asignatura
 dam sync programacion "tema 3"
 
 # Mensaje para todo el almacén
-dam sync "" "subida desde casa"
+dam sync -m "subida desde casa"
 
 # Cambios en ambos lados
 dam sync --integrar
@@ -166,7 +174,11 @@ dam sync --simular
 dam status --almacen "$HOME\DAM-almacen"
 ```
 
-## 9. Ver también
+## 9. Ayuda dentro del programa
+
+`dam` a secas enseña el manual completo; `dam sync -h` explica un comando con sus ejemplos.
+
+## 10. Ver también
 
 - `docs/comandos.md`: referencia de todos los comandos y acciones.
 - `README.md`: qué es `dam` y cómo está montado.
