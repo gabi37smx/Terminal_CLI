@@ -5,7 +5,7 @@
 **Fecha:** 2026-11-03 (en casa, Windows)
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
-**Estado:** `origin/main` tiene 32 commits; la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). En local, `main` va **3 commits por delante** (sin push): `demo.md` completado, `Sesion1.md` fuera del repo y este punto actual.
+**Estado:** `origin/main` tiene 32 commits; la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). En local, `main` va **por delante de GitHub** (sin push; mira `git log --oneline origin/main..`): `demo.md` completado, `Sesion1.md` fuera del repo, este punto actual y 2 acciones nuevas.
 **Tests:** `uv run pytest -q` → **162 passed** (3-nov, desde la raíz).
 
 ## Qué hay hecho
@@ -33,12 +33,13 @@
 - [x] `dam test-links` y `dam check-headers` probados contra el portfolio y el backend de Render (resultados en `docs/prompts.md`).
 - [x] Backend con `helmet`: `check-headers` en Render pasa de 0 de 6 a **6 de 6**, desplegado y comprobado (`docs/demo.md`).
 - [x] `Sesion1.md` (material del profesor) fuera del repo y en `.gitignore` (3-nov). Sigue en el historial antiguo.
+- [x] 4.ª y 5.ª acción (3-nov, con Claude Code): `renombrar-capturas` (renombrar) y `copiar-entregas` (copiar). `dam validar` → 5 acciones válidas; probadas solo con `--simular` en `~/pruebas-tareas/acciones-nuevas` (3 y 3 ficheros). Ojo: `{fecha}` es la fecha de modificación del fichero, no la del nombre, y el patrón distingue mayúsculas (`captura…` en minúscula no entra).
 
 ## Qué falta (por orden)
 
 1. `git push` de los commits locales de `main`.
-2. Probar las 3 acciones de verdad (sin `--simular`) en `~/pruebas-tareas/prueba-final` y apuntar el resultado. No está confirmado que las 3 se hayan ejecutado.
-3. Añadir una 4.ª acción con `/nueva-accion`, pasar `@revisor` y `/review`, y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
+2. Probar las acciones de verdad (sin `--simular`) en `~/pruebas-tareas` y apuntar el resultado. No está confirmado que se hayan ejecutado.
+3. Pasar `@revisor` y `/review` sobre las acciones nuevas y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
 4. `dam instalar-hook` en `DAM-almacen` (en `Terminal_CLI` ya está).
 5. Pendiente del portfolio: borrar o excluir `_backup_mejoras/` (67 enlaces rotos, todos ahí).
 6. Instalar en otro equipo con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI` y seguir solo el README (sin probar todavía).
