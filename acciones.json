@@ -123,6 +123,37 @@
       },
       "calidad": 80,
       "confirmar": true
+    },
+    {
+      "nombre": "renombrar-capturas",
+      "descripcion": "Renombra las capturas de pantalla con su fecha y un número",
+      "tipo": "renombrar",
+      "origen": "~/pruebas-tareas/prueba-final",
+      "filtro": {
+        "extensiones": [
+          ".png",
+          ".jpg"
+        ],
+        "patron": "^(Captura|Screenshot)"
+      },
+      "plantilla": "captura_{fecha:%Y-%m-%d}_{n:03}{ext}",
+      "confirmar": true
+    },
+    {
+      "nombre": "copiar-entregas",
+      "descripcion": "Copia las entregas y prácticas a una carpeta de seguridad",
+      "tipo": "copiar",
+      "origen": "~/pruebas-tareas/prueba-final",
+      "destino": "~/pruebas-tareas/entregas",
+      "filtro": {
+        "extensiones": [
+          ".pdf",
+          ".docx",
+          ".zip"
+        ],
+        "patron": "(?i)entrega|practica"
+      },
+      "confirmar": true
     }
   ]
 }
