@@ -2,10 +2,11 @@
 
 > **Cambio de nombre (27/10 noche):** el comando ya NO es `gabriel` (chocaba con otra herramienta de tu terminal), ahora es **`dam`**. Variable del almacén: `DAM_ALMACEN`. Config global: `~/.config/dam/acciones.json`.
 
-**Fecha:** 2026-11-01 (en casa, Windows)
+**Fecha:** 2026-11-03 (en casa, Windows)
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
-**Estado:** en GitHub, `main` tenía 24 commits (último: 29-oct, documentación del flujo clase/casa). Todo lo de `scan-secrets` y lo posterior estaba **solo en local** hasta subir la rama `feature/seguridad-y-web` (ver «Qué falta»).
+**Estado:** `origin/main` tiene 32 commits; la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). En local, `main` va **3 commits por delante** (sin push): `demo.md` completado, `Sesion1.md` fuera del repo y este punto actual.
+**Tests:** `uv run pytest -q` → **162 passed** (3-nov, desde la raíz).
 
 ## Qué hay hecho
 
@@ -27,18 +28,21 @@
 
 ### Seguridad (rúbrica: cero claves en el repo y su historial)
 - [x] `dam scan-secrets`: `dam scan-secrets` y `dam scan-secrets --historial` salen limpios en `DAM-almacen` y en `Terminal_CLI` (comprobado el 1-nov).
-- [x] Escrito el 1-nov, **pendiente de que lo ejecutes tú en Windows**: `dam instalar-hook`, `dam test-links` y `dam check-headers`, con sus tests; aserciones en `acciones.py` y `motor.py` (script `aplicar_aserciones.py`); `docs/prompts.md`; README, `docs/comandos.md` y `AGENTS.md` actualizados.
+- [x] `dam instalar-hook`, `dam test-links` y `dam check-headers`, con sus tests; aserciones en `acciones.py` y `motor.py`; `docs/prompts.md`; README, `docs/comandos.md` y `AGENTS.md` actualizados. Subido con el PR #2 (1-nov).
+- [x] Hook de `scan-secrets --staged` activo en `Terminal_CLI`: revisó los commits del 3-nov.
+- [x] `dam test-links` y `dam check-headers` probados contra el portfolio y el backend de Render (resultados en `docs/prompts.md`).
+- [x] Backend con `helmet`: `check-headers` en Render pasa de 0 de 6 a **6 de 6**, desplegado y comprobado (`docs/demo.md`).
+- [x] `Sesion1.md` (material del profesor) fuera del repo y en `.gitignore` (3-nov). Sigue en el historial antiguo.
 
 ## Qué falta (por orden)
 
-1. Subir lo pendiente: rama `feature/seguridad-y-web`, commits pequeños, `git push -u origin feature/seguridad-y-web`, pull request y merge a `main`.
-2. `uv run pytest -q` desde la **raíz** del repo y apuntar aquí el resultado (sin contar los tests nuevos de web y hook, el último dato fue 75 pruebas el 29-oct).
-3. Probar `dam test-links` y `dam check-headers` contra mi portfolio y mi backend de Render; apuntar qué salió y qué arreglé en `docs/prompts.md`.
-4. Probar las 3 acciones de verdad (sin `--simular`) en `~/pruebas-tareas/prueba-final` y apuntar el resultado. No está confirmado que las 3 se hayan ejecutado.
-5. Añadir una 4.ª acción con `/nueva-accion`, pasar `@revisor` y `/review`, y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
-6. `dam instalar-hook` en `Terminal_CLI` y en `DAM-almacen`.
-7. Instalar en otro equipo con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI` y seguir solo el README (sin probar todavía).
-8. **Comprobación de proceso del 6 nov (semipresencial):** 3 acciones propias funcionando, ADR y commits reales.
+1. `git push` de los commits locales de `main`.
+2. Probar las 3 acciones de verdad (sin `--simular`) en `~/pruebas-tareas/prueba-final` y apuntar el resultado. No está confirmado que las 3 se hayan ejecutado.
+3. Añadir una 4.ª acción con `/nueva-accion`, pasar `@revisor` y `/review`, y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
+4. `dam instalar-hook` en `DAM-almacen` (en `Terminal_CLI` ya está).
+5. Pendiente del portfolio: borrar o excluir `_backup_mejoras/` (67 enlaces rotos, todos ahí).
+6. Instalar en otro equipo con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI` y seguir solo el README (sin probar todavía).
+7. **Comprobación de proceso del 6 nov (semipresencial):** 3 acciones propias funcionando, ADR y commits reales.
 
 Después (semanas 3 y 4): capa IA y modo sin red, 5 o más acciones propias, pruebas en GitHub Actions, release v1.0.
 
@@ -56,7 +60,6 @@ dam scan-secrets --historial
 
 ## Recordatorios
 
-- `Sesion1.md` es material del profesor y, aun así, está subido al repo público (se ve en GitHub). Decidir si se saca: `git rm --cached Sesion1.md` + una línea en `.gitignore`. Seguirá en el historial.
 - Los commits y el push los haces tú; el agente solo commitea si se lo pides expresamente. El agente no ejecuta `sync` ni `ejecutar`.
 - Probar siempre en `~/pruebas-tareas` y con `--simular` primero.
 - Si se cambia `opencode.json`, cerrar y volver a abrir OpenCode.
