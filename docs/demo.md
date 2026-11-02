@@ -57,7 +57,7 @@ Los avisos de LinkedIn (código 999) no son enlaces rotos: LinkedIn bloquea las 
 
 | | Antes (1-nov) | Después de añadir `helmet` |
 |---|---|---|
-| `check-headers` en Render | **0 de 6** | **[COMPLETAR tras desplegar]** |
+| `check-headers` en Render | **0 de 6** | **6 de 6** (1-nov, desplegado) |
 | En local (`http://localhost`) | — | 5 de 6 (HSTS solo cuenta con HTTPS) |
 
 **Qué cambié en `portfolio-backend`:**
@@ -67,6 +67,7 @@ Los avisos de LinkedIn (código 999) no son enlaces rotos: LinkedIn bloquea las 
 - Los dos `<script>` en línea de `admin.html` pasan a `public/admin-tema.js` y `public/admin.js`.
   Es lo que permite prohibir scripts en línea, la defensa principal contra XSS.
 - Comprobado en local: el panel de admin carga con sus estilos, sus fuentes y la passkey, sin errores de CSP en la consola.
+- Comprobado en Render tras desplegar: entro al admin con contraseña y funcionan el chatbot, las noticias IA y el juego del portfolio.
 
 **Lo que puede preguntar el profe:**
 - *¿Por qué `'unsafe-inline'` en `style-src`?* El `<style>` de `admin.html` va en línea. El riesgo de CSS en línea es
