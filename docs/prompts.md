@@ -2,7 +2,7 @@
 
 Cuaderno de bitácora de `dam`: qué pedí, qué comprobé yo y qué corregí.
 
-**Herramientas.** En clase uso OpenCode con los modelos del centro; en casa, además, Claude (chat). Cada entrada dice cuál usé.
+**Herramientas.** En clase uso OpenCode con los modelos del centro; en casa, además, Claude (chat) y, desde el 3-nov, Claude Code. Cada entrada dice cuál usé.
 Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con OpenCode o el resultado de una prueba): se rellena con datos reales, no se inventa.
 
 ---
@@ -72,6 +72,21 @@ Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con O
 **Prompt:** «Dejámelo todo pulido y las instrucciones claras» (adjunté `cli.py`, README, `comandos.md`, el ADR, `punto_actual.md`, la skill, `/nueva-accion`, `@revisor` y `AGENTS.md`).
 **Qué cambió:** el ADR decía «imágenes de cualquier formato» y `convertir-webp` solo convierte JPEG y PNG: corregido. README, `docs/comandos.md`, `AGENTS.md` y `punto_actual.md` puestos al día; añadidas aserciones (`assert`) a `acciones.py` y `motor.py`.
 **Qué comprobé yo:** las aserciones se aplicaron (4 en `acciones.py`, 1 en `motor.py`) y los 162 tests siguen pasando. Lo que dice el ADR sobre el JSON roto es cierto: con una copia rota de `acciones.json`, `dam validar` responde «línea 128, columna 1» y sale con código 3. El hook está instalado y revisó cada commit con `scan-secrets --staged`.
+
+## Antes del 3-nov · Cómo entró en el repo la entrega de Claude (chat)
+Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `instalar-hook`, aserciones, docs y ADR. La apliqué yo y se fusionó en `main` con el PR #2.
+
+## 2026-11-03 · Acciones `renombrar-capturas` y `copiar-entregas` (Claude Code)
+**Herramienta:** Claude Code. No se usó `/nueva-accion`.
+**Prompt:** «Añade 2 acciones propias nuevas en acciones.json siguiendo la skill acciones-json. Pruébalas con dam ejecutar --simular en ~/pruebas-tareas.»
+**Qué decidí yo:** de las 4 que propuso el agente (`renombrar-capturas`, `copiar-entregas`, `mover-instaladores`, `archivar-pesados`) elegí `renombrar-capturas` (tipo `renombrar`) y `copiar-entregas` (tipo `copiar`). Los dos tipos ya existían: solo cambió `acciones.json`.
+**Qué se comprobó (las órdenes las lanzó Claude Code en mi equipo):**
+- `dam validar`: 5 acciones válidas, código de salida 0.
+- Con `--simular` en `~/pruebas-tareas/acciones-nuevas` (10 ficheros vacíos de prueba): `renombrar-capturas` coge 3 (`Captura de pantalla….png` ×2 y `Screenshot_….jpg`) y deja fuera `foto-vacaciones.png` y `captura minuscula.png`; `copiar-entregas` coge 3 (`.pdf`, `.docx` y `.zip` con «entrega» o «practica» en el nombre) y deja fuera `entrega-notas.txt` y `apuntes tema1.pdf`.
+- No se tocó nada: siguen los 10 ficheros y la carpeta `entregas/` no se creó.
+- `uv run pytest -q`: 162 passed.
+
+**A tener en cuenta:** `{fecha}` es la fecha de modificación del fichero, no la del nombre de la captura, y el patrón distingue mayúsculas. **Pendiente:** ejecutarlas de verdad, sin `--simular`.
 
 ---
 
