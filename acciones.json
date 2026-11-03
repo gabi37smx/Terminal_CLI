@@ -156,7 +156,7 @@
       "confirmar": true
     },
     {
-      "nombre": "comprimir-zips",
+      "nombre": "mover-zips",
       "descripcion": "Mueve los .zip de la carpeta a una subcarpeta comprimidos",
       "tipo": "mover",
       "origen": "~/pruebas-tareas/prueba-final",

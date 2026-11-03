@@ -107,14 +107,19 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 
 ---
 
-## 2026-11-03 · 6.ª acción `comprimir-zips` (OpenCode)
-**Herramienta:** OpenCode · modelo DeepSeek V4.1 Flash Free.
-**Prompt con `/nueva-accion`:** «Crea la 6.ª acción con /nueva-accion. Escribe /nueva-accion y descríbela en una frase. Te propongo comprimir-zips: mover los .zip de la carpeta a una subcarpeta comprimidos. Es sencilla y no pisa a copiar-entregas. Cualquier otra idea tuya sirve igual.»
+## 2026-11-03 · 6.ª acción `mover-zips`, antes `comprimir-zips` (OpenCode)
+**Herramienta:** OpenCode · modelo DeepSeek V4.1 Flash Free (el primer mensaje, con Qwen 3.8 Flash-Next del centro, no dio respuesta).
+**Prompt:** pegué en OpenCode el plan de la 6.ª acción que me había preparado Claude. Empezaba así: «Crea la 6.ª acción con /nueva-accion. Escribe /nueva-accion y descríbela en una frase. Te propongo comprimir-zips: mover los .zip de la carpeta a una subcarpeta comprimidos. Es sencilla y no pisa a copiar-entregas. Cualquier otra idea tuya sirve igual.»
+**Cómo se usó `/nueva-accion`:** no la lancé como orden. El agente leyó `.opencode/commands/nueva-accion.md` y siguió sus pasos, pero no propuso la entrada JSON ni esperó mi visto bueno antes de editar. Lanzó él `--simular` porque el plan se lo pedía.
 **Qué se añadió:** una entrada en `acciones.json` con `tipo: "mover"`, `origen` y `destino` en `~/pruebas-tareas/prueba-final` (destino `.../comprimidos`) y filtro `extensiones: [".zip"]`. No hizo falta código nuevo: el tipo `mover` ya existía.
-**Validación y prueba:** `dam --config <ruta completa>\acciones.json validar` dio 6 acciones válidas. En `~/pruebas-tareas/prueba-final` creé `apuntes.zip`, `practica.zip`, `foto.png` y `notas.txt`; `dam --config <ruta completa>\acciones.json ejecutar comprimir-zips --simular` dio 2 simulados y 0 errores, cogió solo los dos `.zip` y no creó `comprimidos/` ni movió nada. `uv run pytest -q` dio 162 passed.
+**Validación y prueba:** `dam --config <ruta completa>\acciones.json validar` dio 6 acciones válidas. En `~/pruebas-tareas/prueba-final`, OpenCode creó `apuntes.zip`, `practica.zip`, `foto.png` y `notas.txt`; `dam --config <ruta completa>\acciones.json ejecutar comprimir-zips --simular` dio 2 simulados y 0 errores, cogió solo los dos `.zip` y no creó `comprimidos/` ni movió nada. `uv run pytest -q` dio 162 passed. Después, OpenCode borró esos 4 ficheros de prueba con `Remove-Item`.
 
-**Qué señaló `@revisor` y qué decidí:**
-- El nombre `comprimir-zips` no comprime: el tipo `mover` solo mueve y el `.zip` ya está comprimido. Decidí mantener el nombre y la subcarpeta `comprimidos` porque fue mi propuesta, pero la descripción dice «Mueve» para no engañar.
+**Prueba de verdad (3-nov, 14:08, la lancé yo en mi terminal, desde `C:\Users\HP` y sin `--config`):** creé 4 ficheros vacíos con esos mismos nombres. `dam ejecutar comprimir-zips --simular` dio 2 simulados y 0 errores. Después, `dam ejecutar comprimir-zips`, contestando `s`, dio 2 hechos y 0 con error. `apuntes.zip` y `practica.zip` están en `comprimidos/`; `foto.png` y `notas.txt` siguen en `prueba-final`.
+
+**Cambio de nombre (3-nov):** después de esa prueba, la acción pasó a llamarse `mover-zips`; las órdenes de arriba conservan el nombre con el que se lanzaron. Solo cambió `nombre` en `acciones.json`, también en la copia de `~/.config/dam/`. Lo comprobó Claude en una copia de prueba: 6 acciones válidas y `mover-zips --simular` eligió solo los `.zip`.
+
+**Qué señaló `@revisor` y qué se decidió:** las decisiones de esta lista las redactó OpenCode durante la sesión; no las tomé yo una a una. Las repasé después con Claude y las mantengo.
+- El nombre `comprimir-zips` no comprime: el tipo `mover` solo mueve y el `.zip` ya está comprimido. Primero se mantuvo el nombre, pero después decidí cambiarlo a `mover-zips`, que dice lo que hace. La subcarpeta sigue siendo `comprimidos`.
 - Documentación desfasada: `README.md` decía «Mis 3 acciones», `docs/comandos.md` «Tus 3 acciones» y `punto_actual.md` seguía con 5. Decidí actualizarlas a 6 en este mismo cambio.
 - Ningún test carga el `acciones.json` real, solo JSON sintético. Decidí no añadirlo ahora: `dam validar` valida el fichero real y el tipo `mover` ya tiene tests.
 - Las salvaguardas con `assert` de `acciones.py` desaparecen con `python -O`. No lo cambié: es código anterior y ajeno a esta acción.
@@ -123,8 +128,11 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 - Si el destino ya existe, se añade « (1)» en silencio. Decidí aceptarlo: es la garantía de no sobrescribir que ya usa `dam`.
 - Si el destino es un fichero o no hay permisos, el error sale por cada fichero. Decidí aceptarlo: es el comportamiento actual de `mover`.
 - No es recursiva: solo mira ficheros sueltos de la carpeta. Decidí dejarlo así y no usar `rglob`, que además podría reprocesar `comprimidos`.
-- Solapamiento con `copiar-entregas` y `ordenar`, que también cogen `.zip`. Decidí documentarlo: si quiero copiar primero las entregas, ejecuto `copiar-entregas` antes que `comprimir-zips`.
+- Solapamiento con `copiar-entregas` y `ordenar`, que también cogen `.zip`. Decidí documentarlo en `docs/comandos.md`: si quiero copiar primero las entregas, ejecuto `copiar-entregas` antes que `mover-zips`.
 - En Windows, mover entre volúmenes es copiar y borrar, y puede quedar una copia si falla el borrado; un `.zip` abierto da error y la acción queda a medias. Decidí aceptarlo: el `origen` y el `destino` están en el mismo volumen.
 - `os.path.normcase` solo ignora mayúsculas en Windows; en macOS/Linux no. Decidí no cambiarlo: el filtro de extensiones ya compara en minúsculas y `Path.exists()` cubre el caso normal.
 
-**Comando para probar (sin ejecutar):** `dam --config <ruta completa>\acciones.json ejecutar comprimir-zips --simular`.
+**Pregunta de `@revisor`:** si ejecuto `dam ejecutar mover-zips ~/pruebas-tareas/prueba-final/comprimidos`, ¿qué pasa con los `.zip` y por qué `destino_libre` no lo impide?
+**Mi respuesta:** `motor.preparar` usa esa carpeta como origen y selecciona sus `.zip`. `Mover.aplicar` calcula el destino `comprimidos/x.zip`, que es el propio fichero. Como ya existe, `destino_libre` devuelve `x (1).zip` y `shutil.move` lo renombra dentro de la misma carpeta. `destino_libre` solo evita sobrescribir: no comprueba si origen y destino son el mismo sitio. En una copia de prueba, `--simular` sí enseñó los nombres nuevos (`apuntes (2).zip`, por ejemplo), pero no avisa de que no tiene sentido mover esos ficheros.
+
+**Comando de prueba:** `dam ejecutar mover-zips --simular`. Ya no hace falta `--config`: OpenCode copió `acciones.json` a `~/.config/dam/` y `dam validar` funciona desde `C:\Users\HP`. Si cambio el del repo, hay que volver a copiarlo.

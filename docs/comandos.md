@@ -39,9 +39,11 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `convertir-webp` | convertir | JPEG/PNG a WebP sin tocar el original |
 | `renombrar-capturas` | renombrar | Renombra capturas con fecha y número |
 | `copiar-entregas` | copiar | Copia entregas y prácticas a una carpeta de seguridad |
-| `comprimir-zips` | mover | Mueve los `.zip` a la subcarpeta `comprimidos` |
+| `mover-zips` | mover | Mueve los `.zip` a la subcarpeta `comprimidos` |
 
 Sin `CARPETA`, usan el `origen` de `acciones.json` (ahora `~/pruebas-tareas/prueba-final`).
+
+`mover-zips` no comprime: solo mueve los `.zip`. Con otra `CARPETA`, los lleva igualmente a `prueba-final/comprimidos`, y no hay que ejecutarla sobre `comprimidos`, porque renombraría los ficheros. Si quieres guardar antes las entregas, ejecuta `copiar-entregas` primero: después ya no verá los `.zip` que se hayan movido.
 
 ```powershell
 # Ordenar (primero simular)

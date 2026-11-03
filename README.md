@@ -91,10 +91,13 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 páginas de los PDF), `limpiar-temporales` (borra `.tmp/.bak/.part` de más de 30 días, con
 confirmación), `convertir-webp` (JPEG/PNG a WebP sin tocar el original), `renombrar-capturas`
 (capturas con fecha y número), `copiar-entregas` (copia entregas y prácticas a una carpeta de
-seguridad) y `comprimir-zips` (mueve los `.zip` a la subcarpeta `comprimidos`).
+seguridad) y `mover-zips` (mueve los `.zip` a la subcarpeta `comprimidos`).
 
 Garantías: nunca sobrescribe (añade « (1)»), `--simular` no toca el disco ni crea carpetas y
 la configuración se valida entera antes de mover un solo fichero.
+
+Ojo con `mover` y `copiar`: si pasas una `CARPETA`, los ficheros se cogen de ahí, pero van al `destino`
+fijo de `acciones.json`, aunque esté fuera de esa carpeta. Mira la tabla de `--simular` antes.
 
 ## Almacén de apuntes (status y sync)
 
