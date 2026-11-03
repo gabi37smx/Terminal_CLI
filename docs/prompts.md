@@ -9,10 +9,10 @@ Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con O
 
 ## Sesión 1 · Primera orden: `listar` (OpenCode) — [COMPLETAR]
 **Herramienta:** OpenCode 1.18.35 · modelo centro/qwen3.8-flash-next
-**Prompt del plan (agente plan):** [COMPLETAR: pega tal cual el que enviaste]
-**Qué corregí del plan:** [COMPLETAR: p. ej. escapar nombres con corchetes, saltar ficheros ilegibles]
-**Diffs que rechacé o deshice (/undo) y por qué:** [COMPLETAR]
-**Funcionaba a la primera:** [COMPLETAR sí/no y qué fallo expliqué]
+**Prompt del plan (agente plan):** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
+**Qué corregí del plan:** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
+**Diffs que rechacé o deshice (/undo) y por qué:** no consta ninguno. Solo hubo un bloqueo: el agente intentó hacer `git push` y la regla `"git push *": "deny"` de `opencode.json` lo impidió; el push lo hice yo.
+**Funcionaba a la primera:** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
 **Qué aprendí:** `typer.Exit(code=1)` termina con código 1 sin traza; el error va a stderr.
 
 ---
@@ -33,17 +33,19 @@ Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con O
 **Qué se construyó:** `errores.py` (TareasError, ConfigError, AccionNoValida), `config.py` (valida antes de tocar nada), `acciones.py` + `motor.py` (clase base con fábrica y una subclase por tipo), `cli.py` y `sincronizar.py` (`status` y `sync`).
 **Qué comprobé yo:** `uv run pytest` en mi Windows: 67/68. El fallo era del test, no del programa (leía el mensaje del commit en cp1252 y mostraba `aÃ±ade`): se corrigió leyendo en UTF-8. Probé las tres acciones en `~/pruebas-tareas` con `--simular` y con la confirmación s/N, y `status`/`sync` con un «GitHub» falso local (clase y casa).
 **Qué descubrí al probar:** `dam sync "" "mensaje"` falla en PowerShell 5 (elimina el texto vacío y «mensaje» se toma por asignatura). Se añadió `-m`.
-**Diffs rechazados:** [COMPLETAR si rechazaste algo]
+**Diffs rechazados:** no consta ninguno.
 
 ## 2026-10-27 · Cambio de nombre del comando a `dam`
 **Prompt:** «Ya tenía asignado `gabriel` en el terminal para otros procesos de CLI; cámbialo a `dam`.»
 **Qué hice yo:** reinstalar con `uv tool install --editable .` y comprobar `dam --help` desde otra carpeta.
 
-## 2026-10-29 · Mis ediciones en el repo — [COMPLETAR herramienta usada en cada punto]
-- **ADR-0001:** el borrador era del asistente; lo reescribí con mis razones (el portfolio, el PC de clase/casa/USB, por qué JSON y no TOML).
-- **`docs/comandos.md` y `docs/flujo-trabajo.md`:** mi guía de uso diario del almacén.
-- **`sincronizar.py`:** la carpeta `Documentacio` nunca se sube y la detección de `.env` es más amplia.
-- **`cli.py`:** ayuda propia (`mostrar_ayuda`, `-h`).
+## 2026-10-29 · Cambios pedidos a OpenCode
+**Herramienta:** OpenCode · modelo DeepSeek V4.1 Flash Free (en todos los puntos).
+- **ADR-0001:** lo redactó el agente porque se lo pedí («razónalo tú para defenderlo y redacta ese documento»), y lo revisé después.
+- **`docs/comandos.md` y `docs/flujo-trabajo.md`:** mi guía de uso diario del almacén; los pedí a OpenCode.
+- **`sincronizar.py`:** la carpeta `Documentacio` nunca se sube, el guardián de `.env` y la normalización de nombres de asignatura. Lo hizo OpenCode a petición mía.
+- **`cli.py`:** la ayuda estilo Linux de `dam --help` (`mostrar_ayuda`, `-h`). La hizo OpenCode a petición mía.
+- **Commits:** los hizo OpenCode por petición explícita, 12 commits en la rama `feature/acciones-json`; luego la fusión a `main` y el push.
 
 ## 2026-10-31 · Ayuda completa (Claude)
 **Prompt:** «Quiero un `--help` más completo, con todos los comandos y opciones, bien explicados y con ejemplos.»
@@ -74,7 +76,11 @@ Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con O
 ---
 
 ## Sesión 2 · Skill, `/nueva-accion` y `@revisor` (OpenCode) — [COMPLETAR]
-**Prompt de la validación (plan y build):** [COMPLETAR]
-**Prompt de `/nueva-accion` para mi 2.ª y 3.ª acción:** [COMPLETAR]
-**Qué señaló `@revisor` (y `/review`) y qué decidí (arreglar, apuntar o descartar):** [COMPLETAR]
-**Qué aprendí:** [COMPLETAR]
+**Herramienta:** OpenCode · modelo DeepSeek V4.1 Flash Free
+**Prompt de la validación (plan y build):** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
+**`/nueva-accion`:** no se usó. La skill `acciones-json` se cargó en la sesión del 28/10.
+**Comandos y cambios pedidos a OpenCode:** el sistema de sincronización con el repo de asignaturas (`sync` y `status`, `DAM-almacen`), nombres de asignaturas en valenciano en `acciones.json` y excluir la carpeta privada del almacén.
+**`@revisor` y `/review`:** no consta que se usaran.
+**Revisión del agente build:** al preguntar si la CLI funcionaba en Windows, Linux y Mac, hizo una revisión multiplataforma del código (`shell=True`, rutas, codificaciones).
+**Revisión en el chat de Claude:** al comparar el repo con los requisitos del profe, faltaban `test-links`, `check-headers`, el hook pre-commit y las aserciones.
+**Qué aprendí:** que se puede tener una CLI personalizada con los comandos que quieras; que, aunque usemos IA, las cosas cuestan y necesitan su tiempo para funcionar bien; y que aún me falta mucho por aprender.
