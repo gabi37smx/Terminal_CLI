@@ -5,7 +5,7 @@
 **Fecha:** 2026-11-03 (en casa, Windows)
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
-**Estado:** `origin/main` tiene 32 commits; la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). En local, `main` va **por delante de GitHub** (sin push; mira `git log --oneline origin/main..`): `demo.md` completado, `Sesion1.md` fuera del repo, este punto actual y 2 acciones nuevas.
+**Estado:** `main` tiene 40 commits; la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). Lo del 3-nov se subió en dos tandas: primero `demo.md` completado, `Sesion1.md` fuera del repo, este punto actual y 2 acciones nuevas; después, los `[COMPLETAR]` de `docs/prompts.md` y esta línea. Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
 **Tests:** `uv run pytest -q` → **162 passed** (3-nov, desde la raíz).
 
 ## Qué hay hecho
@@ -37,7 +37,7 @@
 
 ## Qué falta (por orden)
 
-1. `git push` de los commits locales de `main`.
+1. Antes de cerrar, `git log --oneline origin/main..`: si sale algún commit, `git push`.
 2. Probar las acciones de verdad (sin `--simular`) en `~/pruebas-tareas` y apuntar el resultado. No está confirmado que se hayan ejecutado.
 3. Pasar `@revisor` y `/review` sobre las acciones nuevas y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
 4. `dam instalar-hook` en `DAM-almacen` (en `Terminal_CLI` ya está).
