@@ -21,6 +21,26 @@ mis apuntes de 1º DAM sincronizados entre el PC de clase, el de casa y el USB.
 
 ## Instalación
 
+### Lo rápido: un script que lo hace todo
+
+Solo necesitas git. Clona el repositorio y ejecuta el instalador de tu sistema:
+
+```bash
+git clone https://github.com/gabi37smx/Terminal_CLI.git
+cd Terminal_CLI
+bash instalar.sh          # Linux y macOS
+```
+
+En Windows: doble clic en `instalar.cmd` (o `powershell -ExecutionPolicy Bypass -File instalar.ps1`).
+
+El script instala uv si no está (y uv baja Python 3.12), instala el comando `dam`, copia
+`acciones.json` a `~/.config/dam/`, te pide nombre y correo para git si faltan y clona tu
+`DAM-almacen` en `~/DAM-almacen`. Se puede repetir sin miedo: lo que ya está hecho se salta.
+Al terminar, abre una terminal nueva. Si git te pide contraseña al clonar o al hacer `sync`, pega un
+**token de GitHub**, porque la contraseña normal no vale.
+
+### A mano
+
 Necesitas [uv](https://docs.astral.sh/uv/) y git.
 
 ```bash
