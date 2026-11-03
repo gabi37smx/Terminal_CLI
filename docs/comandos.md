@@ -30,13 +30,16 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `dam check-headers URL [--timeout S]` | Cabeceras de seguridad de tu web o API | `uv run dam check-headers https://tu-web.com` |
 | `dam sync [ASIGNATURA] [-m MENSAJE] [--integrar] [--simular]` | Sincroniza con GitHub | `uv run dam sync programacion -m "tema 3"` |
 
-## 2. Tus 3 acciones
+## 2. Tus 6 acciones
 
 | Nombre | Tipo | Qué hace |
 |---|---|---|
 | `ordenar` | ordenar | Reparte apuntes por asignatura |
 | `limpiar-temporales` | borrar | Borra temporales de más de 30 días |
 | `convertir-webp` | convertir | JPEG/PNG a WebP sin tocar el original |
+| `renombrar-capturas` | renombrar | Renombra capturas con fecha y número |
+| `copiar-entregas` | copiar | Copia entregas y prácticas a una carpeta de seguridad |
+| `comprimir-zips` | mover | Mueve los `.zip` a la subcarpeta `comprimidos` |
 
 Sin `CARPETA`, usan el `origen` de `acciones.json` (ahora `~/pruebas-tareas/prueba-final`).
 

@@ -87,9 +87,11 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 | `calidad` | no (convertir) | 1-100, por defecto 80. |
 | `confirmar` | no | `true` = pide confirmación antes de actuar (salvo `--si`). |
 
-**Mis 3 acciones:** `ordenar` (reparte apuntes por asignatura, mirando nombre, extensión y las
+**Mis 6 acciones:** `ordenar` (reparte apuntes por asignatura, mirando nombre, extensión y las
 páginas de los PDF), `limpiar-temporales` (borra `.tmp/.bak/.part` de más de 30 días, con
-confirmación) y `convertir-webp` (JPEG/PNG a WebP sin tocar el original).
+confirmación), `convertir-webp` (JPEG/PNG a WebP sin tocar el original), `renombrar-capturas`
+(capturas con fecha y número), `copiar-entregas` (copia entregas y prácticas a una carpeta de
+seguridad) y `comprimir-zips` (mueve los `.zip` a la subcarpeta `comprimidos`).
 
 Garantías: nunca sobrescribe (añade « (1)»), `--simular` no toca el disco ni crea carpetas y
 la configuración se valida entera antes de mover un solo fichero.

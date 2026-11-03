@@ -104,3 +104,27 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 **Revisión del agente build:** al preguntar si la CLI funcionaba en Windows, Linux y Mac, hizo una revisión multiplataforma del código (`shell=True`, rutas, codificaciones).
 **Revisión en el chat de Claude:** al comparar el repo con los requisitos del profe, faltaban `test-links`, `check-headers`, el hook pre-commit y las aserciones.
 **Qué aprendí:** que se puede tener una CLI personalizada con los comandos que quieras; que, aunque usemos IA, las cosas cuestan y necesitan su tiempo para funcionar bien; y que aún me falta mucho por aprender.
+
+---
+
+## 2026-11-03 · 6.ª acción `comprimir-zips` (OpenCode)
+**Herramienta:** OpenCode · modelo DeepSeek V4.1 Flash Free.
+**Prompt con `/nueva-accion`:** «Crea la 6.ª acción con /nueva-accion. Escribe /nueva-accion y descríbela en una frase. Te propongo comprimir-zips: mover los .zip de la carpeta a una subcarpeta comprimidos. Es sencilla y no pisa a copiar-entregas. Cualquier otra idea tuya sirve igual.»
+**Qué se añadió:** una entrada en `acciones.json` con `tipo: "mover"`, `origen` y `destino` en `~/pruebas-tareas/prueba-final` (destino `.../comprimidos`) y filtro `extensiones: [".zip"]`. No hizo falta código nuevo: el tipo `mover` ya existía.
+**Validación y prueba:** `dam --config <ruta completa>\acciones.json validar` dio 6 acciones válidas. En `~/pruebas-tareas/prueba-final` creé `apuntes.zip`, `practica.zip`, `foto.png` y `notas.txt`; `dam --config <ruta completa>\acciones.json ejecutar comprimir-zips --simular` dio 2 simulados y 0 errores, cogió solo los dos `.zip` y no creó `comprimidos/` ni movió nada. `uv run pytest -q` dio 162 passed.
+
+**Qué señaló `@revisor` y qué decidí:**
+- El nombre `comprimir-zips` no comprime: el tipo `mover` solo mueve y el `.zip` ya está comprimido. Decidí mantener el nombre y la subcarpeta `comprimidos` porque fue mi propuesta, pero la descripción dice «Mueve» para no engañar.
+- Documentación desfasada: `README.md` decía «Mis 3 acciones», `docs/comandos.md` «Tus 3 acciones» y `punto_actual.md` seguía con 5. Decidí actualizarlas a 6 en este mismo cambio.
+- Ningún test carga el `acciones.json` real, solo JSON sintético. Decidí no añadirlo ahora: `dam validar` valida el fichero real y el tipo `mover` ya tiene tests.
+- Las salvaguardas con `assert` de `acciones.py` desaparecen con `python -O`. No lo cambié: es código anterior y ajeno a esta acción.
+- Si se pasa una `CARPETA` distinta del `origen`, el `destino` no cambia y los `.zip` acaban en `prueba-final/comprimidos`. Decidí usar siempre la acción sin `CARPETA`, con su `origen`, que es el caso previsto.
+- Si se pasa como `CARPETA` la propia `comprimidos`, `destino_libre` renombraría en cadena (`x (1).zip`, `x (1) (1).zip`...). Decidí no tocar código y no ejecutarla nunca sobre `comprimidos`.
+- Si el destino ya existe, se añade « (1)» en silencio. Decidí aceptarlo: es la garantía de no sobrescribir que ya usa `dam`.
+- Si el destino es un fichero o no hay permisos, el error sale por cada fichero. Decidí aceptarlo: es el comportamiento actual de `mover`.
+- No es recursiva: solo mira ficheros sueltos de la carpeta. Decidí dejarlo así y no usar `rglob`, que además podría reprocesar `comprimidos`.
+- Solapamiento con `copiar-entregas` y `ordenar`, que también cogen `.zip`. Decidí documentarlo: si quiero copiar primero las entregas, ejecuto `copiar-entregas` antes que `comprimir-zips`.
+- En Windows, mover entre volúmenes es copiar y borrar, y puede quedar una copia si falla el borrado; un `.zip` abierto da error y la acción queda a medias. Decidí aceptarlo: el `origen` y el `destino` están en el mismo volumen.
+- `os.path.normcase` solo ignora mayúsculas en Windows; en macOS/Linux no. Decidí no cambiarlo: el filtro de extensiones ya compara en minúsculas y `Path.exists()` cubre el caso normal.
+
+**Comando para probar (sin ejecutar):** `dam --config <ruta completa>\acciones.json ejecutar comprimir-zips --simular`.
