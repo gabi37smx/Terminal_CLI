@@ -80,7 +80,7 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 
 **Códigos de salida:** 0 bien · 1 fallo al ejecutar (carpeta inexistente, permiso denegado, sync pendiente, claves, enlaces rotos o cabeceras básicas que faltan...) · 2 error de uso (lo pone Typer) · 3 configuración inválida.
 
-`dam` (o `dam -h`) muestra el manual completo con todos los comandos, opciones y ejemplos; `dam COMANDO -h` explica uno.
+`dam` (o `dam -h` o `dam help`) muestra el manual completo con todos los comandos, opciones y ejemplos; `dam COMANDO -h` (o `dam help COMANDO`) explica uno.
 
 ## Esquema de acciones.json
 

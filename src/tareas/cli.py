@@ -113,6 +113,10 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
     "version": [
         ("dam version", "Muestra la versión instalada"),
     ],
+    "help": [
+        ("dam help", "El manual completo (lo mismo que dam --help)"),
+        ("dam help sync", "La ayuda detallada de un comando (lo mismo que dam sync --help)"),
+    ],
     "listar": [
         ("dam listar", "Lista la carpeta actual"),
         ("dam listar ~/DAM-almacen", "Lista una carpeta (~ también vale en Windows)"),
@@ -150,7 +154,7 @@ GRUPOS = [
     ("Almacén de apuntes (git): clase, casa y USB", ["status", "sync"]),
     ("Seguridad: claves expuestas", ["scan-secrets", "instalar-hook"]),
     ("Tu web (portfolio): enlaces y cabeceras", ["test-links", "check-headers"]),
-    ("Otros", ["version"]),
+    ("Otros", ["version", "help"]),
 ]
 
 
@@ -159,18 +163,23 @@ def _resumen(cmd: Any) -> str:
     return " ".join(((cmd.help or "").strip().split("\n\n") or [""])[0].split())
 
 
+def _nombre_arg(a: Any) -> str:
+    """Cómo se escribe un argumento en la ayuda: su metavar si lo tiene (COMANDO), si no su nombre."""
+    return a.metavar or a.name.upper()
+
+
 def _pintar_comando(nombre: str, cmd: Any) -> None:
     args = [p for p in cmd.params if p.param_type_name == "argument"]
     opts = [p for p in cmd.params if p.param_type_name == "option"]
     uso = " ".join(
         [nombre]
-        + [a.name.upper() if a.required else f"[{a.name.upper()}]" for a in args]
+        + [_nombre_arg(a) if a.required else f"[{_nombre_arg(a)}]" for a in args]
         + (["[OPCIONES]"] if opts else [])
     )
     consola.print(f"\n  [bold cyan]dam {escape(uso)}[/bold cyan]")
     consola.print(f"      {escape(_resumen(cmd))}")
     for a in args:
-        consola.print(f"      [green]{escape(a.name.upper()):<22}[/green] {escape(a.help or '')}")
+        consola.print(f"      [green]{escape(_nombre_arg(a)):<22}[/green] {escape(a.help or '')}")
     for o in opts:
         nombres = ", ".join(o.opts) + ("" if o.is_flag else f" {o.metavar or o.name.upper()}")
         consola.print(f"      [green]{escape(nombres):<22}[/green] {escape(o.help or '')}")
@@ -247,20 +256,51 @@ def principal(
     ctx.obj = config_ruta
 
 
-def comando(funcion):
-    """Registra un subcomando con su ayuda -h/--help y sus ejemplos al final."""
-    ejemplos = EJEMPLOS.get(funcion.__name__.replace("_", "-"), [])
-    epilog = None
-    if ejemplos:
-        lineas = [f"$ {escape(c)}  [dim]— {escape(e)}[/dim]" for c, e in ejemplos]
-        epilog = "[bold]Ejemplos:[/bold]\n\n" + "\n\n".join(lineas)
-    return app.command(epilog=epilog, context_settings={"help_option_names": ["-h", "--help"]})(funcion)
+def comando(funcion=None, *, nombre: Optional[str] = None):
+    """Registra un subcomando con su ayuda -h/--help y sus ejemplos al final.
+
+    Uso normal: @comando (el nombre sale de la función: scan_secrets -> scan-secrets).
+    Si el nombre choca con Python (help ya existe), se da a mano: @comando(nombre="help").
+    """
+
+    def registrar(f):
+        nombre_cmd = nombre or f.__name__.replace("_", "-")
+        ejemplos = EJEMPLOS.get(nombre_cmd, [])
+        epilog = None
+        if ejemplos:
+            lineas = [f"$ {escape(c)}  [dim]— {escape(e)}[/dim]" for c, e in ejemplos]
+            epilog = "[bold]Ejemplos:[/bold]\n\n" + "\n\n".join(lineas)
+        return app.command(
+            nombre_cmd, epilog=epilog, context_settings={"help_option_names": ["-h", "--help"]}
+        )(f)
+
+    return registrar(funcion) if funcion is not None else registrar
 
 
 @comando
 def version() -> None:
     """Muestra la versión instalada."""
     consola.print(f"dam {__version__}")
+
+
+@comando(nombre="help")
+def ayuda(
+    ctx: typer.Context,
+    nombre: Annotated[
+        Optional[str],
+        typer.Argument(metavar="COMANDO", help="Comando del que quieres la ayuda (sin él, el manual completo)."),
+    ] = None,
+) -> None:
+    """Muestra la ayuda: sin nada, el manual completo; con un COMANDO, la de ese comando."""
+    if nombre is None:
+        mostrar_ayuda()
+        return
+    comandos = typer.main.get_command(app).commands
+    if nombre not in comandos:
+        consola.print(f"[red]No existe el comando «{escape(nombre)}».[/red] Mira la lista con: dam help")
+        raise typer.Exit(2)  # 2 = uso incorrecto, como el resto de errores de uso
+    # Pide a ese comando su propia ayuda, igual que si escribieras «dam NOMBRE --help»
+    comandos[nombre].make_context(nombre, ["--help"], parent=ctx.parent)
 
 
 @comando
