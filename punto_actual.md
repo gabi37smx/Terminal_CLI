@@ -5,7 +5,7 @@
 **Fecha:** 2026-11-03 (en casa, Windows)
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
-**Estado:** `main` tiene 40 commits; la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). Lo del 3-nov se subió en dos tandas: primero `demo.md` completado, `Sesion1.md` fuera del repo, este punto actual y 2 acciones nuevas; después, los `[COMPLETAR]` de `docs/prompts.md` y esta línea. Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
+**Estado:** `main` tenía 40 commits tras el push del 3-nov; la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). Lo del 3-nov se subió en dos tandas: primero `demo.md` completado, `Sesion1.md` fuera del repo, este punto actual y 2 acciones nuevas; después, los `[COMPLETAR]` de `docs/prompts.md` y esta línea. Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
 **Tests:** `uv run pytest -q` → **162 passed** (3-nov, desde la raíz).
 
 ## Qué hay hecho
@@ -33,12 +33,12 @@
 - [x] `dam test-links` y `dam check-headers` probados contra el portfolio y el backend de Render (resultados en `docs/prompts.md`).
 - [x] Backend con `helmet`: `check-headers` en Render pasa de 0 de 6 a **6 de 6**, desplegado y comprobado (`docs/demo.md`).
 - [x] `Sesion1.md` (material del profesor) fuera del repo y en `.gitignore` (3-nov). Sigue en el historial antiguo.
-- [x] 4.ª y 5.ª acción (3-nov, con Claude Code): `renombrar-capturas` (renombrar) y `copiar-entregas` (copiar). `dam validar` → 5 acciones válidas; probadas solo con `--simular` en `~/pruebas-tareas/acciones-nuevas` (3 y 3 ficheros). Ojo: `{fecha}` es la fecha de modificación del fichero, no la del nombre, y el patrón distingue mayúsculas (`captura…` en minúscula no entra).
+- [x] 4.ª y 5.ª acción (3-nov, con Claude Code): `renombrar-capturas` (renombrar) y `copiar-entregas` (copiar). `dam validar` → 5 acciones válidas; probadas en `~/pruebas-tareas/acciones-nuevas`, primero con `--simular` y después **de verdad** (3-nov, lo lancé yo con `dam --config <ruta>\acciones.json ejecutar …`): 3 hechos y 0 con error en cada una. Las capturas quedaron como `captura_2026-11-03_001.png`, `_002.png` y `_003.jpg`, y las 3 entregas se copiaron a `~/pruebas-tareas/entregas` sin tocar los originales. Ojo: `{fecha}` es la fecha de modificación del fichero, no la del nombre, y el patrón distingue mayúsculas (`captura…` en minúscula no entra).
 
 ## Qué falta (por orden)
 
 1. Antes de cerrar, `git log --oneline origin/main..`: si sale algún commit, `git push`.
-2. Probar las acciones de verdad (sin `--simular`) en `~/pruebas-tareas` y apuntar el resultado. No está confirmado que se hayan ejecutado.
+2. Probar de verdad (sin `--simular`) en `~/pruebas-tareas` las 3 acciones antiguas (`ordenar`, `limpiar-temporales`, `convertir-webp`) y apuntar el resultado. No está confirmado que se hayan ejecutado. (`renombrar-capturas` y `copiar-entregas` ya están probadas de verdad.)
 3. Pasar `@revisor` y `/review` sobre las acciones nuevas y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
 4. `dam instalar-hook` en `DAM-almacen` (en `Terminal_CLI` ya está).
 5. Pendiente del portfolio: borrar o excluir `_backup_mejoras/` (67 enlaces rotos, todos ahí).
