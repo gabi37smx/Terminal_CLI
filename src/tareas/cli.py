@@ -41,7 +41,7 @@ rich_utils.REQUIRED_LONG_STRING = "[obligatorio]"
 app = typer.Typer(
     help="dam: automatiza tareas con ficheros y mantiene tu almacén de apuntes sincronizado.",
     no_args_is_help=False,
-    add_completion=False,
+    add_completion=True,  # --install-completion / --show-completion y el TAB (ver completar_*)
     rich_markup_mode="rich",
     context_settings={"help_option_names": []},
 )
@@ -158,6 +158,14 @@ GRUPOS = [
 ]
 
 
+# Typer añade estas dos opciones en inglés: aquí van en español
+AYUDA_GLOBAL = {
+    "install_completion": "Activa el TAB en tu terminal. Mejor con instalar.sh / instalar.ps1 "
+    "(en Windows esta opción cambia la política de PowerShell a Unrestricted).",
+    "show_completion": "Enseña el script de autocompletado, por si lo quieres poner a mano.",
+}
+
+
 def _resumen(cmd: Any) -> str:
     """Primer párrafo de la ayuda de un comando, en una línea."""
     return " ".join(((cmd.help or "").strip().split("\n\n") or [""])[0].split())
@@ -218,7 +226,7 @@ def mostrar_ayuda() -> None:
     consola.print("\n[bold underline]Opciones globales[/bold underline] (van ANTES del comando)")
     for o in [p for p in grupo.params if p.param_type_name == "option"]:
         nombres = ", ".join(o.opts) + ("" if o.is_flag else f" {o.metavar or o.name.upper()}")
-        consola.print(f"  [green]{escape(nombres):<22}[/green] {escape(o.help or '')}")
+        consola.print(f"  [green]{escape(nombres):<22}[/green] {escape(AYUDA_GLOBAL.get(o.name, o.help or ''))}")
 
     consola.print("\n[bold underline]Dónde busca cada cosa[/bold underline]")
     consola.print("  acciones.json   --config RUTA  >  ./acciones.json  >  ~/.config/dam/acciones.json")
@@ -374,6 +382,47 @@ def acciones(ctx: typer.Context) -> None:
     consola.print(tabla)
 
 
+# ---------- Autocompletado con TAB ----------
+# Al pulsar TAB la terminal ejecuta dam por debajo y enseña lo que devuelven estas funciones.
+# Nunca deben fallar ni escribir nada: si algo va mal, simplemente no sugieren nada.
+
+
+def _config_al_completar(ctx: typer.Context) -> Optional[Path]:
+    """El --config escrito en la línea (al completar no se ejecuta principal(), que es quien lo guarda).
+
+    Al completar, Typer deja los valores como texto sin convertir: por eso el Path().
+    """
+    valor = ctx.find_root().params.get("config_ruta")
+    return Path(valor) if valor else None
+
+
+def completar_acciones(ctx: typer.Context, incomplete: str) -> list[tuple[str, str]]:
+    """TAB en «dam ejecutar NOMBRE»: los nombres de acciones.json, con su descripción."""
+    try:
+        lista = config.cargar(config.buscar(_config_al_completar(ctx)))
+    except (TareasError, OSError):
+        return []
+    return [(a["nombre"], a["descripcion"]) for a in lista if a["nombre"].startswith(incomplete)]
+
+
+def completar_asignaturas(ctx: typer.Context, incomplete: str) -> list[str]:
+    """TAB en «dam status/sync ASIGNATURA»: las carpetas que hay dentro de asignaturas/ del almacén."""
+    ctx.obj = _config_al_completar(ctx)
+    opcion = ctx.params.get("almacen")
+    try:
+        alm = _abrir_almacen(ctx, Path(opcion) if opcion else None)
+        carpetas = [p for p in (alm.ruta / alm.carpeta_asignaturas).iterdir() if p.is_dir()]
+    except (TareasError, OSError):
+        return []
+    return sorted(
+        p.name
+        for p in carpetas
+        if p.name.startswith(incomplete)
+        and not p.name.startswith(".")
+        and p.name.lower() not in sincronizar.CARPETAS_PRIVADAS
+    )
+
+
 def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
     titulo = f"{nombre} (SIMULACIÓN: no se ha tocado nada)" if simular else nombre
     tabla = Table(title=titulo)
@@ -397,7 +446,7 @@ def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
 @controlar_errores
 def ejecutar(
     ctx: typer.Context,
-    nombre: Annotated[str, typer.Argument(metavar="NOMBRE", help="Nombre de la acción (ver: dam acciones)")],
+    nombre: Annotated[str, typer.Argument(metavar="NOMBRE", help="Nombre de la acción (ver: dam acciones)", autocompletion=completar_acciones)],
     carpeta: Annotated[Optional[Path], typer.Argument(metavar="CARPETA", help="Carpeta sobre la que actuar (por defecto, el origen de la acción).")] = None,
     simular: Annotated[bool, typer.Option("--simular", help="Enseña qué haría sin tocar nada.")] = False,
     si: Annotated[bool, typer.Option("--si", help="No pregunta antes de actuar (solo si estás seguro).")] = False,
@@ -478,7 +527,7 @@ def _lista(titulo: str, color: str, cambios: list[sincronizar.Cambio], limite: i
 @controlar_errores
 def status(
     ctx: typer.Context,
-    asignatura: Annotated[Optional[str], typer.Argument(metavar="ASIGNATURA", help="Solo mira esa asignatura (carpeta dentro de asignaturas/).")] = None,
+    asignatura: Annotated[Optional[str], typer.Argument(metavar="ASIGNATURA", help="Solo mira esa asignatura (carpeta dentro de asignaturas/).", autocompletion=completar_asignaturas)] = None,
     almacen: OpcionAlmacen = None,
 ) -> None:
     """El guardián: qué has cambiado aquí y qué hay nuevo en GitHub. No modifica nada.
@@ -514,7 +563,7 @@ def status(
 @controlar_errores
 def sync(
     ctx: typer.Context,
-    asignatura: Annotated[Optional[str], typer.Argument(metavar="ASIGNATURA", help="Solo esa asignatura (carpeta dentro de asignaturas/). Sin ella, todo el almacén.")] = None,
+    asignatura: Annotated[Optional[str], typer.Argument(metavar="ASIGNATURA", help="Solo esa asignatura (carpeta dentro de asignaturas/). Sin ella, todo el almacén.", autocompletion=completar_asignaturas)] = None,
     mensaje: Annotated[Optional[str], typer.Argument(metavar="MENSAJE", help="Mensaje del commit (con ASIGNATURA). Para el resto usa -m.")] = None,
     mensaje_opcion: Annotated[Optional[str], typer.Option("-m", "--mensaje", metavar="TEXTO", help="Mensaje del commit; sirve con o sin ASIGNATURA.")] = None,
     integrar: Annotated[bool, typer.Option("--integrar", help="Si hay cambios en los dos lados: guarda lo tuyo, hace pull --rebase y sube.")] = False,

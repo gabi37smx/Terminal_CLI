@@ -58,6 +58,40 @@ if (Test-Path $Config) {
     Ok "Copiado acciones.json a $Config (así dam funciona desde cualquier carpeta)"
 }
 
+# 4b. Autocompletado con TAB -----------------------------------------------
+# No uso «dam --install-completion»: cambiaría la política de PowerShell a Unrestricted
+# y añadiría el script al perfil cada vez que lo ejecutaras.
+Paso "Activo el autocompletado con TAB"
+$Politica = Get-ExecutionPolicy
+if ($Politica -eq 'Restricted' -or $Politica -eq 'AllSigned') {
+    Aviso "PowerShell no deja cargar scripts (política $Politica), así que el TAB no funcionaría."
+    Aviso "Si lo quieres, ejecuta una vez:  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"
+    Aviso "y vuelve a lanzar este instalador. (RemoteSigned deja ejecutar tus scripts, no los descargados.)"
+} else {
+    $ScriptTab = Join-Path $HOME ".config\dam\completado.ps1"
+    # Con esta variable, dam no ejecuta nada: solo escribe el script de autocompletado
+    $env:_DAM_COMPLETE = "source_powershell"
+    $Texto = & (Join-Path $CarpetaBin "dam.exe")
+    Remove-Item Env:_DAM_COMPLETE
+    if ($LASTEXITCODE -ne 0 -or -not $Texto) {
+        Aviso "No he podido generar el autocompletado."
+    } else {
+        Set-Content -Path $ScriptTab -Value ($Texto -join "`r`n") -Encoding UTF8
+        $Linea = ". `"$ScriptTab`"  # autocompletado de dam (lo añadió instalar.ps1)"
+        # Perfil de Windows PowerShell y, si lo tienes, el de PowerShell 7 (pwsh)
+        $Perfiles = @($PROFILE.CurrentUserAllHosts)
+        if (Tiene pwsh) { $Perfiles += (pwsh -NoProfile -Command '$PROFILE.CurrentUserAllHosts') }
+        foreach ($Perfil in ($Perfiles | Select-Object -Unique)) {
+            if (-not (Test-Path $Perfil)) { New-Item -ItemType File -Force $Perfil | Out-Null }
+            if (-not (Select-String -Path $Perfil -SimpleMatch $ScriptTab -Quiet)) {
+                Add-Content -Path $Perfil -Value "`r`n$Linea" -Encoding UTF8
+            }
+            Ok "TAB activado en $Perfil"
+        }
+        Ok "En una terminal nueva prueba: dam ej<TAB>"
+    }
+}
+
 # 5. git: identidad --------------------------------------------------------
 # (Las credenciales las guarda el «Git Credential Manager» que trae Git para Windows.)
 Paso "Preparo git para los commits de dam sync"

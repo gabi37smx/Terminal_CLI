@@ -62,6 +62,38 @@ else
     ok "Copiado acciones.json a $CONFIG (así dam funciona desde cualquier carpeta)"
 fi
 
+# 4b. Autocompletado con TAB -----------------------------------------------
+# No uso «dam --install-completion»: miraría la terminal de ESTE script (bash), y en macOS la
+# tuya es zsh. Así se mira la tuya ($SHELL) y se puede repetir sin duplicar nada.
+paso "Activo el autocompletado con TAB"
+case "$(basename "${SHELL:-}")" in
+    bash) TERMINAL=bash; RC="$HOME/.bashrc" ;;
+    zsh)  TERMINAL=zsh;  RC="$HOME/.zshrc" ;;
+    *)    TERMINAL="" ;;
+esac
+if [ -z "$TERMINAL" ]; then
+    aviso "Tu terminal (${SHELL:-desconocida}) no es bash ni zsh: actívalo a mano con  dam --install-completion"
+else
+    SCRIPT_TAB="$HOME/.config/dam/completado.$TERMINAL"
+    mkdir -p "$(dirname "$SCRIPT_TAB")"
+    # Con esta variable, dam no ejecuta nada: solo escribe el script de autocompletado
+    if _DAM_COMPLETE="source_$TERMINAL" "$CARPETA_BIN/dam" > "$SCRIPT_TAB"; then
+        if ! grep -qF "$SCRIPT_TAB" "$RC" 2>/dev/null; then
+            {
+                echo ""
+                echo "# Autocompletado de dam (lo añadió instalar.sh)"
+                if [ "$TERMINAL" = zsh ] && ! grep -q compinit "$RC" 2>/dev/null; then
+                    echo "autoload -Uz compinit && compinit"
+                fi
+                echo "[ -f \"$SCRIPT_TAB\" ] && source \"$SCRIPT_TAB\""
+            } >> "$RC"
+        fi
+        ok "TAB activado para $TERMINAL (en $RC). En una terminal nueva prueba: dam ej<TAB>"
+    else
+        aviso "No he podido generar el autocompletado. Puedes probar a mano: dam --install-completion"
+    fi
+fi
+
 # 5. git: identidad y credenciales -----------------------------------------
 paso "Preparo git para los commits de dam sync"
 if [ -z "$(git config --global user.name || true)" ]; then

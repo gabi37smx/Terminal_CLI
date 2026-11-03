@@ -59,6 +59,22 @@ uv tool install git+https://github.com/gabi37smx/Terminal_CLI
 
 En Windows (PowerShell) es igual. Si `dam` no se encuentra tras instalar: `uv tool update-shell` y abre otra terminal.
 
+### Autocompletado con TAB
+
+El instalador lo deja activado en bash, zsh y PowerShell. En una terminal nueva:
+
+```bash
+dam ej<TAB>             # → dam ejecutar
+dam ejecutar co<TAB>    # → convertir-webp, copiar-entregas (las acciones de tu acciones.json)
+dam sync pr<TAB>        # → programacion, proyecto (las carpetas de asignaturas/ del almacén)
+```
+
+El script se guarda en `~/.config/dam/completado.*` y se carga con una sola línea en tu
+`~/.bashrc`, `~/.zshrc` o perfil de PowerShell. Repetir el instalador no la duplica.
+En Windows necesita que PowerShell pueda cargar scripts: si el instalador avisa, ejecuta una vez
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. No uses `dam --install-completion` en
+Windows: cambia la política a `Unrestricted` y repite el script en el perfil cada vez.
+
 ## Órdenes
 
 | Orden | Qué hace |
