@@ -5,7 +5,7 @@
 **Fecha:** 2026-11-03 (en casa, Windows)
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
-**Estado:** en GitHub hay 42 commits; falta subir `054b63f` y la documentación completada el 3-nov; la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). Lo del 3-nov se subió en dos tandas: primero `demo.md` completado, `Sesion1.md` fuera del repo, este punto actual y 2 acciones nuevas; después, los `[COMPLETAR]` de `docs/prompts.md` y esta línea. Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
+**Estado:** `main` está al día con GitHub tras el push del 3-nov (hasta `3a4ecd2`); la rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). Lo del 3-nov se subió en dos tandas: primero `demo.md` completado, `Sesion1.md` fuera del repo, este punto actual y 2 acciones nuevas; después, los `[COMPLETAR]` de `docs/prompts.md` y esta línea. Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
 **Tests:** `uv run pytest -q` → **162 passed** (3-nov, desde la raíz).
 
 ## Qué hay hecho
