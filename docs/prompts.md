@@ -136,3 +136,39 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 **Mi respuesta:** `motor.preparar` usa esa carpeta como origen y selecciona sus `.zip`. `Mover.aplicar` calcula el destino `comprimidos/x.zip`, que es el propio fichero. Como ya existe, `destino_libre` devuelve `x (1).zip` y `shutil.move` lo renombra dentro de la misma carpeta. `destino_libre` solo evita sobrescribir: no comprueba si origen y destino son el mismo sitio. En una copia de prueba, `--simular` sí enseñó los nombres nuevos (`apuntes (2).zip`, por ejemplo), pero no avisa de que no tiene sentido mover esos ficheros.
 
 **Comando de prueba:** `dam ejecutar mover-zips --simular`. Ya no hace falta `--config`: OpenCode copió `acciones.json` a `~/.config/dam/` y `dam validar` funciona desde `C:\Users\HP`. Si cambio el del repo, hay que volver a copiarlo.
+
+---
+
+## 2026-11-03 · Por qué no funcionaba en el PC de clase, instalador, `dam help` y TAB (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows), con una prueba mía en Ubuntu 24.04 (WSL).
+
+**Prompt 1:** «Revisa el proyecto y mira por qué, si he clonado el repositorio en el PC de clase con Linux, no funcionaban en la terminal los comandos, y no he podido subir los archivos al repo de DAM-almacen. No funcionaba nada, ni `dam` ni `--help`. Tiene que funcionar en Linux, aquí en Windows y en Mac.»
+**Qué pasó en clase:** [COMPLETAR] (los mensajes de error exactos que salieron en el PC de clase).
+**Qué encontró:** el código no tenía la culpa. En un clon limpio, `uv sync` + `uv run dam --help` funcionan y pasan los 162 tests. En mi Windows tengo preparadas cosas que no están en el repo: `dam` instalado con `uv tool install` (`~/.local/bin`), `~/.config/dam/acciones.json`, la variable `DAM_ALMACEN` y `~/DAM-almacen`. Al clonar en otro equipo no hay nada de eso: `dam: command not found`, y `dam sync` no sabe dónde está el almacén. Para subir a GitHub hace falta un token, no la contraseña.
+**Por qué el otro día sí funcionaba:** sin confirmar. Lo más probable es que fuera otro PC u otro usuario, o que el PC se restaure al reiniciar, y con eso se pierde la carpeta personal. Lo compruebo mañana con `which uv dam` y `ls ~/.config/dam ~/DAM-almacen`. Resultado: [COMPLETAR].
+
+**Prompt 2:** «¿No puedes hacer un script o un ejecutable que, al clonar el repo en el PC que sea, lo ejecute y ya instale lo que tenga que instalar y configure lo que tenga que configurar?»
+**Qué se construyó:** `instalar.sh` (Linux/macOS), `instalar.ps1` (Windows, en UTF-8 con BOM para que PowerShell 5 lea las tildes) e `instalar.cmd` (doble clic). Comprueban git, instalan uv si falta, hacen `uv sync`, instalan `dam`, copian `acciones.json` a `~/.config/dam/` (si ya existe, no lo tocan), piden nombre y correo de git si faltan, clonan `DAM-almacen` y terminan con `dam validar`. Se pueden repetir sin romper nada. `.gitattributes` fija LF para `.sh` y CRLF para `.ps1`/`.cmd`. El commit y el push de esto los hice yo (`40ff2e5`).
+**Qué comprobó Claude Code:** los dos instaladores en un entorno aislado de mi Windows (HOME y carpetas de uv temporales), dos veces seguidas cada uno. Las dos veces terminaron con código 0, y la segunda saltó lo que ya estaba hecho.
+**Un fallo durante la prueba:** en la primera prueba de `instalar.sh` se ejecutó de verdad `uv tool update-shell` y añadió una carpeta temporal a mi PATH de usuario de Windows. En Git Bash la ruta se escribió como `C:/...` y los dos puntos la partieron. Claude Code lo vio, quitó esa entrada y comprobó que el resto del PATH seguía igual. Repitió la prueba con la ruta en formato `/c/...`.
+
+**Prueba de verdad en Ubuntu 24.04 (WSL, 3-nov, la lancé yo):** `git clone` desde GitHub y `bash instalar.sh`.
+- Descargó uv 0.13.7 y usó el Python 3.12.3 de Ubuntu.
+- Instaló `dam`, copió `acciones.json` a `/home/gabi/.config/dam/`, configuró git (nombre, correo y token 8 horas en memoria).
+- `dam validar` → 6 acciones válidas, y `dam --help` funciona desde la terminal.
+- **Falló** clonar `DAM-almacen`: «Invalid username or token. Password authentication is not supported». Lo que puse en *Password* no era un token válido. Pendiente: crear el token y repetir.
+- `dam help` no existía («No such command 'help'»).
+
+**Prompt 3:** «Añade `dam help` también.» → `dam help` muestra el manual completo y `dam help COMANDO` la ayuda de ese comando; si el comando no existe, sale con 2. Como `help` es una palabra de Python, el decorador `comando` acepta ahora `nombre=`. 3 tests nuevos → 167 passed. También se marcó `instalar.sh` como ejecutable. Commit y push los hizo Claude Code porque se lo pedí (`7e62593`).
+
+**Prompt 4:** «Haz lo del autocompletado con tabulador» (con la explicación de otra conversación pegada).
+**Qué se construyó:** autocompletado de comandos, de nombres de acciones (`dam ejecutar co<TAB>` → `convertir-webp`, `copiar-entregas`) y de asignaturas del almacén (`dam sync pr<TAB>` → `programacion`, `proyecto`; no ofrece `documentacio`). Si `acciones.json` está roto o no hay almacén, no sugiere nada y no da error. Los dos instaladores lo activan con una sola línea en `.bashrc`, `.zshrc` o el perfil de PowerShell, sin duplicarla. 6 tests nuevos (`tests/test_completado.py`) → **173 passed**. Commit y push los hizo Claude Code porque se lo pedí (`1f34747`).
+**Qué se descubrió al revisar Typer:** `dam --install-completion` en PowerShell cambia en silencio la política de ejecución a `Unrestricted` y añade el script al perfil cada vez que se ejecuta. Además, desde `bash instalar.sh` detectaría bash aunque en macOS la terminal sea zsh. Por eso los instaladores no lo usan: miran `$SHELL` y, en Windows, si la política no deja cargar scripts, avisan sin cambiarla.
+**Un error que salió en la prueba:** con `--config` escrito en la línea, el TAB daba una traza (`'str' object has no attribute 'expanduser'`): al completar, Typer deja los valores como texto. Se arregló convirtiéndolo con `Path()`, y hay un test para ese caso.
+**Qué comprobó Claude Code:** un TAB real en Git Bash y en PowerShell (`TabExpansion2`) cargando el `.bashrc` y el perfil de prueba. Las sugerencias son correctas, y en PowerShell salen con descripción. Mi perfil real de PowerShell no se tocó. **Falta probarlo en Linux de verdad.**
+**Prueba en el PC de clase (4-nov):** [COMPLETAR] (clonar, `bash instalar.sh`, token, `dam help`, `dam ej<TAB>`, `dam status`).
+
+**A tener en cuenta:**
+- Lo que hace funcionar `dam` en un equipo no viaja con `git clone`: hay que instalarlo en cada sitio (para eso está el instalador).
+- En git, GitHub pide un token en lugar de la contraseña.
+- No ejecutar `uv sync` desde WSL sobre la carpeta de Windows (`/mnt/c/...`): cambiaría el `.venv`.
