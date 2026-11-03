@@ -86,7 +86,12 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 - No se tocó nada: siguen los 10 ficheros y la carpeta `entregas/` no se creó.
 - `uv run pytest -q`: 162 passed.
 
-**A tener en cuenta:** `{fecha}` es la fecha de modificación del fichero, no la del nombre de la captura, y el patrón distingue mayúsculas. **Pendiente:** ejecutarlas de verdad, sin `--simular`.
+**A tener en cuenta:** `{fecha}` es la fecha de modificación del fichero, no la del nombre de la captura, y el patrón distingue mayúsculas.
+
+**Prueba de verdad (3-nov, la lancé yo en mi terminal):** `dam --config <ruta>\acciones.json validar` → 5 acciones válidas. Después, cada acción primero con `--simular` y luego sin él, contestando `s`:
+- `renombrar-capturas`: 3 hechos, 0 con error. Quedan `captura_2026-11-03_001.png`, `_002.png` y `_003.jpg`; `foto-vacaciones.png` y `captura minuscula.png`, sin tocar.
+- `copiar-entregas`: 3 hechos, 0 con error. Las 3 copias están en `~/pruebas-tareas/entregas` y los originales siguen en `acciones-nuevas` (10 ficheros).
+- Hay que pasar `--config`: fuera del repo, `dam` busca `~/.config/dam/acciones.json`, y ese fichero no existe.
 
 ---
 
