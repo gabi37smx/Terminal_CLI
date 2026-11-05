@@ -21,8 +21,11 @@ def test_ayuda_general_lista_todo(args):
     assert r.exit_code == 0
     for nombre in COMANDOS:
         assert f"dam {nombre}" in r.output
-    for texto in ("--config", "DAM_ALMACEN", "Códigos de salida", "--integrar", "-m, --mensaje", "--simular"):
+    for texto in ("dam help COMANDO", "--config"):
         assert texto in r.output
+    # La ayuda general es corta: las opciones y los ejemplos van en dam help COMANDO
+    assert "--integrar" not in r.output
+    assert len(r.output.splitlines()) < 40
     assert "Traceback" not in r.output
 
 

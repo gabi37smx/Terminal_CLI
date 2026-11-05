@@ -62,7 +62,14 @@ if (Test-Path $Config) {
 # No uso «dam --install-completion»: cambiaría la política de PowerShell a Unrestricted
 # y añadiría el script al perfil cada vez que lo ejecutaras.
 Paso "Activo el autocompletado con TAB"
-$Politica = Get-ExecutionPolicy
+# La política de una terminal NORMAL: este script corre con -ExecutionPolicy Bypass (ámbito
+# Process), así que Get-ExecutionPolicy a secas diría siempre «Bypass». Miro el resto de ámbitos
+# en el orden en que manda Windows; si ninguno está definido, Windows usa Restricted.
+$Politica = 'Restricted'
+foreach ($Ambito in 'MachinePolicy', 'UserPolicy', 'CurrentUser', 'LocalMachine') {
+    $p = Get-ExecutionPolicy -Scope $Ambito
+    if ($p -ne 'Undefined') { $Politica = $p; break }
+}
 if ($Politica -eq 'Restricted' -or $Politica -eq 'AllSigned') {
     Aviso "PowerShell no deja cargar scripts (política $Politica), así que el TAB no funcionaría."
     Aviso "Si lo quieres, ejecuta una vez:  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"

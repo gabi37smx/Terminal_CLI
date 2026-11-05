@@ -114,7 +114,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam version", "Muestra la versión instalada"),
     ],
     "help": [
-        ("dam help", "El manual completo (lo mismo que dam --help)"),
+        ("dam help", "La lista de comandos (lo mismo que dam --help)"),
         ("dam help sync", "La ayuda detallada de un comando (lo mismo que dam sync --help)"),
     ],
     "listar": [
@@ -158,57 +158,24 @@ GRUPOS = [
 ]
 
 
-# Typer añade estas dos opciones en inglés: aquí van en español
-AYUDA_GLOBAL = {
-    "install_completion": "Activa el TAB en tu terminal. Mejor con instalar.sh / instalar.ps1 "
-    "(en Windows esta opción cambia la política de PowerShell a Unrestricted).",
-    "show_completion": "Enseña el script de autocompletado, por si lo quieres poner a mano.",
-}
-
-
 def _resumen(cmd: Any) -> str:
     """Primer párrafo de la ayuda de un comando, en una línea."""
     return " ".join(((cmd.help or "").strip().split("\n\n") or [""])[0].split())
 
 
-def _nombre_arg(a: Any) -> str:
-    """Cómo se escribe un argumento en la ayuda: su metavar si lo tiene (COMANDO), si no su nombre."""
-    return a.metavar or a.name.upper()
-
-
 def _pintar_comando(nombre: str, cmd: Any) -> None:
-    args = [p for p in cmd.params if p.param_type_name == "argument"]
-    opts = [p for p in cmd.params if p.param_type_name == "option"]
-    uso = " ".join(
-        [nombre]
-        + [_nombre_arg(a) if a.required else f"[{_nombre_arg(a)}]" for a in args]
-        + (["[OPCIONES]"] if opts else [])
-    )
-    consola.print(f"\n  [bold cyan]dam {escape(uso)}[/bold cyan]")
-    consola.print(f"      {escape(_resumen(cmd))}")
-    for a in args:
-        consola.print(f"      [green]{escape(_nombre_arg(a)):<22}[/green] {escape(a.help or '')}")
-    for o in opts:
-        nombres = ", ".join(o.opts) + ("" if o.is_flag else f" {o.metavar or o.name.upper()}")
-        consola.print(f"      [green]{escape(nombres):<22}[/green] {escape(o.help or '')}")
-    for ejemplo, explicacion in EJEMPLOS.get(nombre, []):
-        if 6 + len(ejemplo) + len(explicacion) + 6 <= consola.width:
-            consola.print(f"      [dim]$[/dim] {escape(ejemplo)}  [dim]# {escape(explicacion)}[/dim]")
-        else:
-            consola.print(f"      [dim]$[/dim] {escape(ejemplo)}")
-            consola.print(f"          [dim]# {escape(explicacion)}[/dim]")
+    """Una sola línea: el comando y su descripción corta."""
+    consola.print(f"  [bold cyan]{escape('dam ' + nombre):<18}[/bold cyan] {escape(_resumen(cmd))}")
 
 
 def mostrar_ayuda() -> None:
-    """Ayuda general: todos los comandos con sus argumentos, opciones y ejemplos."""
-    grupo = typer.main.get_command(app)
-    comandos = grupo.commands
+    """Ayuda general corta: cada comando con una descripción de una línea."""
+    comandos = typer.main.get_command(app).commands
     consola.print(
         "[bold]dam[/bold] — automatiza tareas con ficheros y mantiene tu almacén "
         "de apuntes sincronizado."
     )
-    consola.print("\n[bold]Uso:[/bold]  dam [OPCIONES] COMANDO [ARGUMENTOS]")
-    consola.print("       dam COMANDO --help     (ayuda detallada de un comando)")
+    consola.print("\n[bold]Uso:[/bold]  dam COMANDO [ARGUMENTOS] [OPCIONES]")
 
     mostrados: set[str] = set()
     for titulo, nombres in GRUPOS:
@@ -223,23 +190,10 @@ def mostrar_ayuda() -> None:
         for nombre in resto:
             _pintar_comando(nombre, comandos[nombre])
 
-    consola.print("\n[bold underline]Opciones globales[/bold underline] (van ANTES del comando)")
-    for o in [p for p in grupo.params if p.param_type_name == "option"]:
-        nombres = ", ".join(o.opts) + ("" if o.is_flag else f" {o.metavar or o.name.upper()}")
-        consola.print(f"  [green]{escape(nombres):<22}[/green] {escape(AYUDA_GLOBAL.get(o.name, o.help or ''))}")
-
-    consola.print("\n[bold underline]Dónde busca cada cosa[/bold underline]")
-    consola.print("  acciones.json   --config RUTA  >  ./acciones.json  >  ~/.config/dam/acciones.json")
-    consola.print("  Almacén         --almacen RUTA  >  variable DAM_ALMACEN  >  «almacen» de acciones.json")
-    consola.print("                  (Windows: setx DAM_ALMACEN \"%USERPROFILE%\\DAM-almacen\")")
-
-    consola.print("\n[bold underline]Códigos de salida[/bold underline]")
-    consola.print("  0 todo bien · 1 falló al ejecutar (o sync parado: hay cambios en los dos lados)")
-    consola.print("  2 uso incorrecto del comando · 3 acciones.json inválido")
-
-    consola.print("\n[bold underline]Reglas de seguridad[/bold underline]")
-    consola.print("  Prueba siempre primero con --simular. dam nunca sobrescribe (añade « (1)»), no sube")
-    consola.print("  .env ni claves, ni ficheros de más de 95 MB, y ante la duda no toca nada.")
+    consola.print("\nOpciones y ejemplos de un comando:  [bold]dam help COMANDO[/bold]")
+    consola.print("Usar otro acciones.json:            [bold]dam --config RUTA COMANDO[/bold]")
+    consola.print("Activa el TAB en tu terminal:       [bold]dam --install-completion[/bold]  (mejor con instalar.sh / instalar.ps1)")
+    consola.print("Ver el script del TAB:              [bold]dam --show-completion[/bold]")
 
 
 @app.callback(invoke_without_command=True)
@@ -296,10 +250,10 @@ def ayuda(
     ctx: typer.Context,
     nombre: Annotated[
         Optional[str],
-        typer.Argument(metavar="COMANDO", help="Comando del que quieres la ayuda (sin él, el manual completo)."),
+        typer.Argument(metavar="COMANDO", help="Comando del que quieres la ayuda (sin él, la lista de comandos)."),
     ] = None,
 ) -> None:
-    """Muestra la ayuda: sin nada, el manual completo; con un COMANDO, la de ese comando."""
+    """Muestra la lista de comandos, o la ayuda detallada de uno."""
     if nombre is None:
         mostrar_ayuda()
         return
@@ -352,9 +306,9 @@ def listar(
 @comando
 @controlar_errores
 def validar(ctx: typer.Context) -> None:
-    """Valida acciones.json. Sale con 3 si no es válido.
+    """Comprueba que acciones.json está bien escrito.
 
-    Comprueba el fichero entero ANTES de tocar ningún fichero tuyo: JSON bien escrito, campos obligatorios, tipos de acción, filtros, expresiones regulares y plantillas.
+    Sale con 3 si no es válido. Comprueba el fichero entero ANTES de tocar ningún fichero tuyo: JSON bien escrito, campos obligatorios, tipos de acción, filtros, expresiones regulares y plantillas.
 
     Si algo falla, el mensaje dice qué acción y qué campo.
     """
@@ -530,9 +484,9 @@ def status(
     asignatura: Annotated[Optional[str], typer.Argument(metavar="ASIGNATURA", help="Solo mira esa asignatura (carpeta dentro de asignaturas/).", autocompletion=completar_asignaturas)] = None,
     almacen: OpcionAlmacen = None,
 ) -> None:
-    """El guardián: qué has cambiado aquí y qué hay nuevo en GitHub. No modifica nada.
+    """Muestra qué has cambiado y qué hay nuevo en GitHub.
 
-    Lista los archivos modificados, nuevos y borrados en local, los commits sin subir y los archivos que hay por descargar.
+    No modifica nada. Lista los archivos modificados, nuevos y borrados en local, los commits sin subir y los archivos que hay por descargar.
 
     Si tienes cambios sin subir Y hay cambios nuevos en GitHub, te avisa del peligro. Sin internet funciona igual, con lo último que sabe de GitHub.
 
