@@ -172,3 +172,54 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 - Lo que hace funcionar `dam` en un equipo no viaja con `git clone`: hay que instalarlo en cada sitio (para eso está el instalador).
 - En git, GitHub pide un token en lugar de la contraseña.
 - No ejecutar `uv sync` desde WSL sobre la carpeta de Windows (`/mnt/c/...`): cambiaría el `.venv`.
+
+---
+
+## 2026-11-05 y 06 · `doctor`, `pendientes`, `entregar` y el TAB atascado (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows). Todas las pruebas sobre proyectos reales las lancé yo en mi terminal; Claude Code solo probó en `tmp_path`, en `~/pruebas-tareas` y, en modo lectura, en la documentación de Electrician.
+
+**Prompt 1:** «Aparte de los comandos que tenemos, ¿cuáles crees que nos servirían para los proyectos que tenemos entre manos (la web portfolio, el de Electrician y este de CLI), o cuáles pondrías que son prácticos y el profesor valoraría?»
+**Qué propuso:** seis comandos, por orden de utilidad: `entregar`, `doctor`, `pendientes`, `revisar-web`, `informe` y `despertar`. Desaconsejó tres ideas de `docs/ideas/`: `deploy` (`git add .` + push sin revisar), `backup-db` (necesitaría la contraseña de MongoDB Atlas) y `ask`/`pomodoro`/`game-version` (poco valor para la nota). Avisó de ficheros con claves en texto plano en mi escritorio; están fuera de los repos y no se sincronizan.
+**Qué decidí yo:** hacer los tres primeros, en ese orden.
+
+**Prompt 2:** «Empieza por `dam entregar`.»
+**Qué se construyó:** `entregar.py`. Elige los ficheros como `scan-secrets` (respeta `.gitignore`) y quita siempre `.env`, claves privadas, `.git`, `.venv`, `node_modules`, `__pycache__` y la basura del sistema. Pasa `scan-secrets` solo sobre lo que va dentro: con un secreto seguro, no crea el zip. Nunca sobrescribe (añade ` (1)`). Para reutilizar código, tres funciones de `escanear.py` pasaron a ser públicas.
+**Mi prueba (5-nov):** `dam entregar` sobre Electrician → «Creado … Electrician_2026-11-05.zip (47 ficheros · 342,2 KB sin comprimir · 143,3 KB el zip)».
+**Qué se corrigió después:** en la línea «Se queda fuera» no salía `.env`, porque `.gitignore` ya lo había quitado antes. Ahora `.env` y las claves salen siempre en esa lista, aunque los ignore `.gitignore`. Claude Code comprobó con git que en mi zip no entraron ni `.env` ni `.claude/`.
+
+**Prompt 3:** «La he probado y parece que funciona bien. Si lo ves bien, vamos al 2, `dam doctor`.»
+**Qué se construyó:** `doctor.py`, con 7 comprobaciones básicas (si falla alguna, sale con 1) y 4 recomendadas (solo avisan). Del `.env` solo lee los nombres de las variables, y hay tests que comprueban que ningún valor sale por pantalla.
+**Un fallo que cazó el propio proyecto:** el test que revisa que el repo no tenga claves detectó una línea de `test_doctor.py` que parecía una contraseña. Se montó por trozos, como dice `AGENTS.md`.
+**Mis pruebas (5-nov):**
+- Electrician: **11 de 11**.
+- `portfolio-backend`: 8 de 11. A `.env.example` le faltan `GITHUB_TOKEN`, `GNEWS_API_KEY` y `Gemini_API_Key`; sin tests ni CI.
+- `DAM-almacen`: 6 de 9. Falta README y hay un `.zip` de más de 50 MB en `lenguaje-marcas`. Los avisos de «tests» y «web estática» no tienen sentido en un almacén de apuntes: `doctor` está pensado para proyectos de código.
+- `1 PROJECTE` y `PROJECTE TERMINAL CLI` son las carpetas de fuera, no los proyectos: por eso fallan git y README. Aun así, enseñaron claves en texto plano en carpetas que no están en ningún repo.
+
+**Prompt 4:** «Analiza, dime por qué no hace nada con el repo de CLI, ni en el backend.» (con `dam doctor "…\portfolio-backend\"` y `dam doctor "…\PROJECTE TERMINAL CLI"` sin ninguna salida).
+**Qué encontró (lo reprodujo en mi PowerShell):** dos problemas que coincidieron.
+1. **El TAB atascaba `dam`:** al pulsar TAB en una ruta, `dam` no tiene sugerencias y devuelve una línea vacía. El script de Typer para PowerShell intenta crear una sugerencia vacía, PowerShell da error («el valor del argumento "completionText" es NULL») y el script se corta antes de borrar las variables `_DAM_COMPLETE`. Desde ese momento, cada `dam` de esa ventana cree que está sugiriendo: imprime una línea en blanco y sale con 0.
+2. **La `\` final:** en `"C:\…\portfolio-backend\"`, Windows lee `\"` como unas comillas literales y a `dam` le llega una ruta acabada en `"`, que no existe. El TAB de PowerShell 5.1 añade esa `\`.
+
+**Prompt 5:** «Sí, haz los tres arreglos.»
+- El script del TAB de PowerShell lo genera ahora `dam` con un `try/finally` que borra siempre las variables, y se salta las sugerencias vacías. Se sustituye la plantilla de Typer, así que lo heredan `instalar.ps1`, `--install-completion` y `--show-completion`. Un test avisa si una versión nueva de Typer lo cambia.
+- Si una ruta trae una `"` metida, `dam` explica el problema, da la orden corregida y sale con 2.
+- `doctor` escribe «la misma variable» en singular y, en una carpeta de fuera, dice qué repos tiene dentro.
+
+**Qué comprobó Claude Code en un PowerShell real:** regeneró mi `~/.config/dam/completado.ps1` igual que el instalador y simuló el TAB con `TabExpansion2` en un PowerShell sin perfil. Un TAB en una ruta → PowerShell la completa y las variables quedan vacías. `dam doc<TAB>` → `doctor`. Después, `dam version` responde normal.
+**Mi prueba (5-nov, antes de los arreglos):** en una ventana nueva y sin la `\` final, `dam doctor` sobre `portfolio-backend` y `PROJECTE TERMINAL CLI` ya funcionaban. Eso confirmó las dos causas.
+
+**Prompt 6:** «Vamos con el 3, `dam pendientes`.»
+**Qué se construyó:** `pendientes.py`. Antes de diseñarlo, Claude Code miró cómo usamos las etiquetas en Electrician (solo lectura). Cuenta `[Verificado]`, `[Hipótesis]` y `[Pendiente]` por fichero, también con texto detrás (`[Verificado, entrevista 4, 29/10/2026]`). Separa los `[Verificado]` sin fecha en su línea, porque nuestra leyenda dice «con fuente y fecha». Resume la tabla de `docs/pendientes.md` por estado y por persona; una fila de «Gabi y Javi» cuenta para los dos. `--quien` compara nombres enteros sin acentos («Mari» no encuentra a Mar) y añade lo de «Todos». No cuenta leyendas, enlaces `[Pendiente](x.md)`, `docs/historico/` ni líneas con `dam:ignore`.
+**Qué se corrigió al probarlo con Electrician:** la fila 53, sin estado, salía como «otro» (ahora «sin estado»); «Gabi y Javi» y «Javi y Gabi» contaban como personas distintas. Al revisar mi salida antes del commit, dos líneas «Etiquetas: [Verificado]…, [Pendiente]» de `despliegue.md` y `voz-pruebas.md` contaban como pendientes: ahora cualquier línea que empiece por «Etiquetas…:» es leyenda.
+**Resultado en Electrician (6-nov):** 27 `.md`; 39 verificados (15 sin fecha, 7 de ellos en el README), 10 hipótesis y 33 pendientes. Registro: 52 filas, 33 abiertas (27 *Pendiente* y 6 *En curso*); por persona, Sergio 12 · Gabi 9 · Javi 9 · Mar 7 · Todos 3.
+
+**Prompt 7:** «Si lo ves correcto, haz el commit y el push al repo con los tres comandos nuevos y los arreglos.»
+**Qué hizo Claude Code:** como estaba en `main`, creó la rama `feature/doctor-entregar-pendientes`, hizo un commit con los 13 ficheros (`0893964`) y la subió. El hook revisó el commit: «✔ Sin claves a la vista». `uv run pytest -q` → **249 passed**.
+**Pull request y fusión a `main`:** PR #3, fusionado por mí el 6-nov (`2f59e1d`). No cambió `pyproject.toml`, `uv.lock` ni los instaladores: en un equipo donde `dam` ya esté instalado basta con `git pull`.
+
+**Qué aprendí:**
+- Un script que cambia variables de entorno tiene que dejarlas como estaban pase lo que pase: para eso está `try/finally`.
+- En Windows, `\"` dentro de un argumento son unas comillas literales: una ruta nunca debe acabar en `\` antes de cerrar las comillas.
+- Una herramienta que revisa mis proyectos me da datos concretos (variables que faltan en `.env.example`, verificados sin fecha) en vez de impresiones.
+- [COMPLETAR] (lo que yo quiera añadir)

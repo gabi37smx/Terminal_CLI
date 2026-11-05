@@ -2,11 +2,11 @@
 
 > **Cambio de nombre (27/10 noche):** el comando ya NO es `gabriel` (chocaba con otra herramienta de tu terminal), ahora es **`dam`**. Variable del almacén: `DAM_ALMACEN`. Config global: `~/.config/dam/acciones.json`.
 
-**Fecha:** 2026-11-03 (en casa, Windows)
+**Fecha:** 2026-11-06 (en casa, Windows)
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
-**Estado:** `main` subido a GitHub hasta `1f34747` (3-nov, tarde): instalador (`40ff2e5`, lo subí yo), `dam help` (`7e62593`) y autocompletado con TAB (`1f34747`), estos dos los subió Claude Code porque se lo pedí. La rama `feature/seguridad-y-web` ya entró con el PR #2 (1-nov). Esta actualización de `punto_actual.md` y `docs/prompts.md` también la subió Claude Code a petición mía. Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
-**Tests:** `uv run pytest -q` → **173 passed** (3-nov, desde la raíz).
+**Estado:** `main` en GitHub hasta `2f59e1d` (6-nov): los tres comandos nuevos (`doctor`, `pendientes` y `entregar`) y los arreglos del TAB entraron con el **PR #3** (rama `feature/doctor-entregar-pendientes`, commit `0893964`, subida por Claude Code porque se lo pedí; la fusión la hice yo). Antes: instalador (`40ff2e5`), `dam help` (`7e62593`) y TAB (`1f34747`), del 3-nov; la rama `feature/seguridad-y-web` entró con el PR #2 (1-nov). Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
+**Tests:** `uv run pytest -q` → **249 passed** (6-nov, desde la raíz).
 
 ## Qué hay hecho
 
@@ -45,21 +45,38 @@
 - [x] `dam help` y `dam help COMANDO` (igual que `--help`); `dam help noexiste` sale con 2.
 - [x] **Autocompletado con TAB:** comandos, nombres de acciones (`dam ejecutar co<TAB>`) y asignaturas del almacén (`dam sync pr<TAB>`). Lo activan los instaladores en bash, zsh y PowerShell. Probado con un TAB real en Git Bash y PowerShell (entorno aislado); **falta probarlo en Linux de verdad**.
 
+### Comandos para mis proyectos (5 y 6-nov, Claude Code)
+Grupo nuevo en la ayuda: «Tus proyectos: revisar y entregar». Los tres solo leen, salvo `entregar`, que crea el zip. Detalle en `docs/prompts.md`.
+- [x] **`dam entregar CARPETA [--destino] [--nombre] [--simular]`** (`entregar.py`): un `.zip` limpio, sin `.env`, claves, `.git`, `.venv`, `node_modules` ni `__pycache__`, y respetando `.gitignore`. Si `scan-secrets` encuentra un secreto dentro, no lo crea. Probado por mí en Electrician: 47 ficheros, 342,2 KB → zip de 143,3 KB, y `.env` y `.claude/` se quedaron fuera.
+- [x] **`dam doctor CARPETA`** (`doctor.py`): 7 comprobaciones básicas (git, `.gitignore`, `.env` ignorado y sin subir, `.env.example` al día, README, secretos) y 4 recomendadas (tests, dependencias, CI, ficheros de más de 50 MB). Del `.env` solo lee los nombres. Probado por mí: Electrician **11 de 11**; `portfolio-backend` 8 de 11; `DAM-almacen` 6 de 9.
+- [x] **`dam pendientes CARPETA [--quien NOMBRE] [--resumen]`** (`pendientes.py`): cuenta `[Verificado]`, `[Hipótesis]` y `[Pendiente]` en los `.md` (y los verificados sin fecha) y resume `docs/pendientes.md` por persona. Electrician: 39 verificados (15 sin fecha), 10 hipótesis y 33 pendientes; registro de 52 filas con 33 abiertas (Sergio 12 · Gabi 9 · Javi 9 · Mar 7 · Todos 3).
+- [x] **Arreglo del TAB en PowerShell:** un TAB en una ruta dejaba `dam` atascado (solo imprimía líneas en blanco) hasta cerrar la ventana. El script del TAB ahora borra siempre sus variables. Mi `~/.config/dam/completado.ps1` ya está regenerado.
+- [x] **Aviso de la `\` final:** `dam doctor "C:\carpeta\"` ya no dice «no existe»: explica que la `\` se come las comillas y da la orden corregida.
+
 ## Qué falta (por orden)
 
-1. Antes de cerrar, `git log --oneline origin/main..`: si sale algún commit, `git push`.
-2. **Crear el token de GitHub** (Settings → Developer settings → Fine-grained tokens; solo `DAM-almacen`, permiso *Contents: Read and write*). No guardarlo en ningún fichero.
-3. **Mañana (4-nov) en el PC de clase (Linux):**
-   - Antes de borrar nada, `which uv dam` y `ls ~/.config/dam ~/DAM-almacen`, para confirmar por qué falló (si no sale nada, la carpeta personal estaba vacía: otro PC, otro usuario o se restaura al reiniciar).
-   - Borrar y clonar otra vez, `bash instalar.sh` con el token a mano, abrir otra terminal y probar `dam help`, `dam ej<TAB>`, `dam status` y `dam sync --simular`.
-   - Apuntar el resultado en `docs/prompts.md` (los **[COMPLETAR]** de la entrada del 3-nov).
-4. En Ubuntu (WSL): `git pull` en `~/Terminal_CLI` y `bash instalar.sh` otra vez para tener el TAB y clonar `DAM-almacen` con el token. En Windows: `instalar.cmd` otra vez para el TAB.
-5. Probar de verdad (sin `--simular`) en `~/pruebas-tareas` las 3 acciones antiguas (`ordenar`, `limpiar-temporales`, `convertir-webp`) y apuntar el resultado. No está confirmado que se hayan ejecutado. (`renombrar-capturas` y `copiar-entregas` ya están probadas de verdad.)
-6. Pasar `@revisor` sobre `renombrar-capturas` y `copiar-entregas` (en `mover-zips` ya está), pasar `/review` y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
-7. `dam instalar-hook` en `DAM-almacen` (en `Terminal_CLI` ya está).
-8. Pendiente del portfolio: borrar o excluir `_backup_mejoras/` (67 enlaces rotos, todos ahí).
-9. Instalar sin clonar con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI` siguiendo solo el README (sin probar todavía; con clon + `instalar.sh` ya está probado en WSL).
-10. **Comprobación de proceso del 6 nov (semipresencial):** 3 acciones propias funcionando, ADR y commits reales.
+1. **⚠ AL LLEGAR A CLASE (Linux), lo primero:**
+   - `which dam`. Si sale una ruta, `dam` sigue instalado: `cd ~/Terminal_CLI && git pull` y listo. No hace falta reinstalar: está en modo editable y el PR #3 no cambió dependencias ni instaladores.
+   - Si no sale nada (el PC se restauró u otro usuario): `git clone https://github.com/gabi37smx/Terminal_CLI.git`, `cd Terminal_CLI`, `bash instalar.sh` (con el token a mano) y abrir otra terminal.
+   - Comprobar: `dam help` (deben salir `doctor`, `pendientes` y `entregar`), `dam doc<TAB>`, `dam status` y `dam sync --simular`.
+   - Apuntar qué pasó en `docs/prompts.md` (los **[COMPLETAR]** de la entrada del 3-nov): así se sabe por fin si el PC de clase guarda la carpeta personal.
+2. **En otros equipos Windows:** después del `pull`, `instalar.cmd` otra vez para tener el TAB arreglado. En Linux/WSL no hace falta (el fallo era solo de PowerShell).
+3. **Lo que han encontrado los comandos nuevos:**
+   - `portfolio-backend`: añadir a `.env.example`, con el valor vacío, `GITHUB_TOKEN`, `GNEWS_API_KEY` y `Gemini_API_Key` (lo hago yo; el agente no toca ficheros `.env*`).
+   - Electrician: poner fecha y fuente a los 15 `[Verificado]` sin fecha (7 en el README) y un estado a la fila 53 de `docs/pendientes.md`. Avisar al equipo de `dam pendientes --quien NOMBRE`.
+   - `DAM-almacen`: añadir un README corto y sacar de git el `.zip` de más de 50 MB de `lenguaje-marcas`.
+   - `Terminal_CLI`: añadir GitHub Actions que pase `uv run pytest` en cada push (lo único que le falta según `doctor`).
+4. **Crear el token de GitHub** (Settings → Developer settings → Fine-grained tokens; solo `DAM-almacen`, permiso *Contents: Read and write*). No guardarlo en ningún fichero.
+5. (El PC de clase está ahora en el punto 1.)
+6. En Ubuntu (WSL): `git pull` en `~/Terminal_CLI` y `bash instalar.sh` otra vez para tener el TAB y clonar `DAM-almacen` con el token.
+7. Probar de verdad (sin `--simular`) en `~/pruebas-tareas` las 3 acciones antiguas (`ordenar`, `limpiar-temporales`, `convertir-webp`) y apuntar el resultado. (`renombrar-capturas`, `copiar-entregas` y `mover-zips` ya están probadas de verdad.)
+8. Pasar `@revisor` sobre `renombrar-capturas` y `copiar-entregas` (en `mover-zips` ya está), pasar `/review` y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
+9. `dam instalar-hook` en `DAM-almacen` (en `Terminal_CLI` ya está).
+10. Pendiente del portfolio: borrar o excluir `_backup_mejoras/` (67 enlaces rotos, todos ahí).
+11. Instalar sin clonar con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI` siguiendo solo el README (sin probar todavía).
+12. **Comprobación de proceso del 6 nov (semipresencial):** 3 acciones propias funcionando, ADR y commits reales.
+
+Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes pesadas y `alt` en el portfolio), `informe` (juntar `scan-secrets`, `doctor`, `test-links` y `check-headers` en un `.md` con fecha) y `despertar` (despertar el backend de Render antes de una demo).
 
 Después (semanas 3 y 4): capa IA y modo sin red (las 5 o más acciones propias ya están: hay 6), pruebas en GitHub Actions, release v1.0.
 
@@ -84,6 +101,8 @@ En otro equipo (clase, WSL, Mac): `git clone https://github.com/gabi37smx/Termin
 - Si se cambia `opencode.json`, cerrar y volver a abrir OpenCode.
 - GitHub no acepta la contraseña en git: en *Password* va el token. En Linux, el instalador hace que git lo recuerde 8 horas solo en memoria.
 - No usar `dam --install-completion` en Windows: cambia la política de PowerShell a `Unrestricted` y duplica el script en el perfil. El TAB lo activa el instalador.
+- En PowerShell, nada de `\` justo antes de las comillas de cierre: `"C:\carpeta"`, no `"C:\carpeta\"`. El TAB de PowerShell la añade; `dam` ahora avisa.
+- Si `dam` solo imprime una línea en blanco en PowerShell, es el script del TAB antiguo: `instalar.cmd` otra vez y abrir otra ventana.
 - Al ejecutar `uv sync` desde WSL, nunca sobre la carpeta de Windows (`/mnt/c/...`): cambiaría el `.venv` de Windows por uno de Linux.
 - Nada de claves en el repo ni en su historial (mínimo eliminatorio). Un repo del almacén con apuntes: privado.
-- Lo que no sé explicar, no lo entrego: antes del 6 nov, repasar `config.py`, `acciones.py`, `motor.py` y los tres módulos nuevos (`escanear.py`, `web.py`, `hook.py`) hasta poder explicar cada aserción.
+- Lo que no sé explicar, no lo entrego: repasar `config.py`, `acciones.py`, `motor.py`, `escanear.py`, `web.py` y `hook.py` hasta poder explicar cada aserción, y también los tres del 5 y 6-nov (`doctor.py`, `pendientes.py` y `entregar.py`) y el arreglo del TAB en `cli.py` (por qué el `try/finally`).
