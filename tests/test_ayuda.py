@@ -67,3 +67,36 @@ def test_dam_help_de_un_comando_que_no_existe_sale_con_2():
     r = run.invoke(app, ["help", "no-existe"])
     assert r.exit_code == 2
     assert "No existe el comando" in r.output
+
+
+# ---------- una \ antes de las comillas de cierre (Windows) ----------
+from tareas.cli import ruta_con_comillas_metidas  # noqa: E402
+
+
+@pytest.mark.parametrize("argumentos, esperado", [
+    (["doctor", r'C:\Users\HP\PROJECTE TERMINAL CLI"'], r'dam doctor "C:\Users\HP\PROJECTE TERMINAL CLI"'),
+    # lo que va detrás se pega a la ruta: se separa otra vez
+    (["entregar", r'C:\mi proyecto" --simular'], r'dam entregar "C:\mi proyecto" --simular'),
+    (["listar", r'.\carpeta"'], r'dam listar ".\carpeta"'),
+])
+def test_detecta_la_ruta_con_comillas_metidas(argumentos, esperado):
+    assert ruta_con_comillas_metidas(argumentos) == esperado
+
+
+@pytest.mark.parametrize("argumentos", [
+    ["doctor", r"C:\Users\HP\proyecto"],
+    ["sync", "-m", 'arreglo del "menú"'],  # un mensaje con comillas no es una ruta
+    [],
+])
+def test_no_molesta_con_argumentos_normales(argumentos):
+    assert ruta_con_comillas_metidas(argumentos) is None
+
+
+def test_dam_explica_la_barra_final_y_sale_con_2(monkeypatch, capsys):
+    monkeypatch.setattr("sys.argv", ["dam", "doctor", r'C:\Users\HP\mi proyecto"'])
+    with pytest.raises(SystemExit) as salida:
+        app()
+    assert salida.value.code == 2
+    texto = " ".join(capsys.readouterr().err.split())  # Rich puede partir la línea
+    assert "comillas metidas" in texto
+    assert r'dam doctor "C:\Users\HP\mi proyecto"' in texto
