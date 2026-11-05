@@ -71,3 +71,28 @@ def test_el_manual_explica_las_opciones_de_autocompletado_en_espanol():
     r = run.invoke(app, ["--help"])
     assert "--install-completion" in r.output and "Activa el TAB" in r.output
     assert "--show-completion" in r.output
+
+
+# ---------- PowerShell: el script del TAB no debe dejar dam «atascado» ----------
+def script_powershell() -> str:
+    """Lo mismo que hace instalar.ps1: _DAM_COMPLETE=source_powershell y dam escribe el script."""
+    r = run.invoke(app, [], env={"_DAM_COMPLETE": "source_powershell"}, prog_name="dam")
+    assert r.exit_code == 0, r.output
+    return r.output
+
+
+def test_el_script_de_powershell_borra_siempre_las_variables():
+    script = script_powershell()
+    assert "Register-ArgumentCompleter -Native -CommandName dam" in script
+    # try/finally: aunque algo falle, las variables se borran (si no, dam solo imprime líneas en blanco)
+    assert script.index("try {") < script.index("finally {")
+    assert "Remove-Item Env:_DAM_COMPLETE" in script.split("finally {")[1]
+    # una sugerencia vacía (TAB en una ruta) hacía fallar a PowerShell: ahora se salta
+    assert "IsNullOrWhiteSpace($command)" in script
+
+
+def test_show_completion_usa_el_mismo_script():
+    from typer._completion_shared import get_completion_script
+
+    script = get_completion_script(prog_name="dam", complete_var="_DAM_COMPLETE", shell="pwsh")
+    assert "finally {" in script and "%(" not in script

@@ -88,6 +88,9 @@ Windows: cambia la política a `Unrestricted` y repite el script en el perfil ca
 | `dam sync [ASIGNATURA] [MENSAJE] [-m TEXTO] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
 | `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves, tokens y contraseñas expuestas. Sale con 1 si encuentra algo. |
 | `dam instalar-hook [REPO] [--quitar] [--forzar]` | Revisa claves automáticamente en cada `git commit`. |
+| `dam doctor [CARPETA]` | Revisa que un proyecto esté sano: git, `.env` ignorado, `.env.example` al día, README, secretos, tests y CI. |
+| `dam pendientes [CARPETA] [--quien NOMBRE] [--resumen]` | Cuenta las etiquetas `[Verificado]`, `[Hipótesis]` y `[Pendiente]` de la documentación y resume el registro `pendientes.md` por persona. |
+| `dam entregar [CARPETA] [--destino D] [--nombre N] [--simular]` | Empaqueta un proyecto en un `.zip` limpio (sin `.env`, claves ni `node_modules`); no lo crea si hay un secreto dentro. |
 | `dam test-links [FUENTE] [--sin-externos] [--timeout S]` | Busca enlaces rotos en una web (carpeta, `.html` o URL). |
 | `dam check-headers URL [--timeout S]` | Revisa las cabeceras de seguridad de una web o API. |
 
@@ -180,12 +183,14 @@ dam instalar-hook                 # lo ejecuta solo antes de cada git commit
 
 Nunca imprime una clave entera (solo las primeras letras y la longitud). Si una clave ya llegó a GitHub, borrarla no basta: hay que cambiarla (revocarla) en el servicio. No lee binarios (PDF, imágenes, docx...). Un falso aviso se silencia con `dam:ignore` en esa línea.
 
+Antes de subir o entregar un proyecto: `dam doctor CARPETA` revisa que esté sano y dice qué arreglar. Para entregarlo: `dam entregar CARPETA --simular` enseña qué entra en el zip y qué se queda fuera; sin `--simular` lo crea, pero solo si `scan-secrets` no encuentra nada seguro dentro.
+
 Para tu web: `dam test-links` encuentra enlaces, imágenes y anclas rotas (también las que solo se rompen por las mayúsculas al publicar) y `dam check-headers` revisa las cabeceras de seguridad, el CORS y las cookies. Detalles y ejemplos en [`docs/comandos.md`](docs/comandos.md).
 
 ## Pruebas
 
 ```bash
-uv run pytest        # config, acciones, motor, sync, ayuda, scan-secrets, test-links, check-headers y hook
+uv run pytest        # config, acciones, motor, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes y entregar
 ```
 
 Ejecútalo desde la raíz del repositorio. Los tests de red usan un servidor local de mentira: no necesitan internet.

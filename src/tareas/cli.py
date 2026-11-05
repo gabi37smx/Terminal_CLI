@@ -2,6 +2,7 @@
 
 import functools
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -13,9 +14,12 @@ from rich.markup import escape
 from rich.table import Table
 
 from tareas import __version__, config, escanear, hook, sincronizar, web
+from tareas import doctor as doctor_mod  # «doctor», «entregar» y «pendientes» ya son nombres de comandos
+from tareas import entregar as entregar_mod
+from tareas import pendientes as pendientes_mod
 from tareas.errores import ConfigError, TareasError
 from tareas.motor import Motor
-from typer import rich_utils
+from typer import _completion_classes, _completion_shared, rich_utils
 
 
 def _forzar_utf8() -> None:
@@ -38,7 +42,43 @@ rich_utils.ABORTED_TEXT = "Cancelado."
 rich_utils.DEFAULT_STRING = "[por defecto: {}]"
 rich_utils.REQUIRED_LONG_STRING = "[obligatorio]"
 
-app = typer.Typer(
+_PARECE_RUTA = re.compile(r"^([A-Za-z]:[\\/]|\.{1,2}[\\/]|~[\\/]|\\\\)")
+
+
+def _citar(argumento: str) -> str:
+    return f'"{argumento}"' if " " in argumento else argumento
+
+
+def ruta_con_comillas_metidas(argumentos: list[str]) -> Optional[str]:
+    """Si una ruta trae una " dentro, devuelve la orden corregida (si no, None).
+
+    En Windows, "C:\\carpeta\\" llega como C:\\carpeta" : la \\ final se «come» las comillas de cierre
+    (y lo que venga detrás se pega a la ruta). El TAB de PowerShell 5.1 añade esa \\ final.
+    """
+    for i, argumento in enumerate(argumentos):
+        if '"' in argumento and _PARECE_RUTA.match(argumento):
+            ruta, _, resto = argumento.partition('"')
+            ruta = ruta.rstrip("\\/") or ruta
+            partes = [_citar(a) for a in argumentos[:i]] + [f'"{ruta}"']
+            partes += resto.split() + [_citar(a) for a in argumentos[i + 1:]]
+            return "dam " + " ".join(partes)
+    return None
+
+
+class Dam(typer.Typer):
+    """El Typer de siempre, pero antes de nada revisa los argumentos tal y como llegan de la terminal."""
+
+    def __call__(self, *args, **kwargs):
+        corregida = ruta_con_comillas_metidas(sys.argv[1:])
+        if corregida:
+            consola_err.print("[red]✘ Una ruta lleva unas comillas metidas.[/red] En Windows, una \\ justo "
+                              "antes de las comillas de cierre se las come (el TAB de PowerShell la añade).")
+            consola_err.print(f"Quita la \\ del final y repite:  [bold]{escape(corregida)}[/bold]")
+            raise SystemExit(2)  # 2 = uso incorrecto
+        return super().__call__(*args, **kwargs)
+
+
+app = Dam(
     help="dam: automatiza tareas con ficheros y mantiene tu almacén de apuntes sincronizado.",
     no_args_is_help=False,
     add_completion=True,  # --install-completion / --show-completion y el TAB (ver completar_*)
@@ -100,6 +140,21 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam instalar-hook ~/DAM-almacen", "En otro repositorio"),
         ("dam instalar-hook --quitar", "Lo desactiva"),
     ],
+    "doctor": [
+        ("dam doctor", "Revisa el proyecto de la carpeta actual"),
+        ("dam doctor ~/Electrician", "Revisa otro proyecto (no cambia nada)"),
+    ],
+    "pendientes": [
+        ("dam pendientes ~/Electrician", "Etiquetas por fichero, lo que está sin verificar y el registro de pendientes"),
+        ("dam pendientes ~/Electrician --quien Gabi", "Solo lo que te toca a ti (y lo de «Todos»)"),
+        ("dam pendientes . --resumen", "Solo los números, sin las listas"),
+    ],
+    "entregar": [
+        ("dam entregar ~/Electrician --simular", "Enseña qué entraría en el zip y qué se queda fuera, sin crearlo"),
+        ("dam entregar ~/Electrician", "Crea Electrician_AAAA-MM-DD.zip al lado de la carpeta"),
+        ("dam entregar . --destino ~/Escritorio", "El zip de la carpeta actual, en otra carpeta"),
+        ('dam entregar . --nombre "Vidal_Gabriel_practica3"', "Con el nombre que pida el profesor"),
+    ],
     "test-links": [
         ("dam test-links ~/portfolio", "Revisa todos los .html de la carpeta (enlaces internos y externos)"),
         ("dam test-links index.html", "Una sola página"),
@@ -153,6 +208,7 @@ GRUPOS = [
     ("Ficheros: ordenar, limpiar y convertir", ["listar", "validar", "acciones", "ejecutar"]),
     ("Almacén de apuntes (git): clase, casa y USB", ["status", "sync"]),
     ("Seguridad: claves expuestas", ["scan-secrets", "instalar-hook"]),
+    ("Tus proyectos: revisar y entregar", ["doctor", "pendientes", "entregar"]),
     ("Tu web (portfolio): enlaces y cabeceras", ["test-links", "check-headers"]),
     ("Otros", ["version", "help"]),
 ]
@@ -339,6 +395,43 @@ def acciones(ctx: typer.Context) -> None:
 # ---------- Autocompletado con TAB ----------
 # Al pulsar TAB la terminal ejecuta dam por debajo y enseña lo que devuelven estas funciones.
 # Nunca deben fallar ni escribir nada: si algo va mal, simplemente no sugieren nada.
+
+# Script de PowerShell: el de Typer, con dos arreglos. Con el original, un TAB en una ruta
+# devolvía una línea vacía, PowerShell daba error y las variables _DAM_COMPLETE... se quedaban
+# puestas: desde entonces, cada «dam» de esa ventana solo imprimía una línea en blanco.
+#   1. Se salta las sugerencias vacías (PowerShell no acepta una sugerencia vacía).
+#   2. try/finally: borra SIEMPRE las variables, aunque algo falle o pulses Ctrl+C.
+# Sin sugerencias, PowerShell completa la ruta él solo, como siempre.
+SCRIPT_TAB_POWERSHELL = """
+Import-Module PSReadLine
+Set-PSReadLineKeyHandler -Chord Tab -Function MenuComplete
+$scriptblock = {
+    param($wordToComplete, $commandAst, $cursorPosition)
+    try {
+        $Env:%(autocomplete_var)s = "complete_powershell"
+        $Env:_TYPER_COMPLETE_ARGS = $commandAst.ToString()
+        $Env:_TYPER_COMPLETE_WORD_TO_COMPLETE = $wordToComplete
+        %(prog_name)s | ForEach-Object {
+            $commandArray = $_ -Split ":::"
+            $command = $commandArray[0]
+            $helpString = $commandArray[1]
+            if (-not [string]::IsNullOrWhiteSpace($command)) {
+                if ([string]::IsNullOrWhiteSpace($helpString)) { $helpString = $command }
+                [System.Management.Automation.CompletionResult]::new(
+                    $command, $command, 'ParameterValue', $helpString)
+            }
+        }
+    } finally {
+        Remove-Item Env:%(autocomplete_var)s, Env:_TYPER_COMPLETE_ARGS, Env:_TYPER_COMPLETE_WORD_TO_COMPLETE -ErrorAction SilentlyContinue
+    }
+}
+Register-ArgumentCompleter -Native -CommandName %(prog_name)s -ScriptBlock $scriptblock
+"""
+# Typer no deja cambiarlo por configuración: se sustituye su plantilla (la usan instalar.ps1,
+# --install-completion y --show-completion). Si Typer cambia, lo detecta test_completado.py.
+_completion_classes.PowerShellComplete.source_template = SCRIPT_TAB_POWERSHELL
+for _terminal in ("powershell", "pwsh"):
+    _completion_shared._completion_scripts[_terminal] = SCRIPT_TAB_POWERSHELL
 
 
 def _config_al_completar(ctx: typer.Context) -> Optional[Path]:
@@ -583,7 +676,14 @@ def scan_secrets(
     if not hallazgos:
         consola.print(f"[green]✔ Sin claves a la vista[/green] en {alcance}.")
         return
-    tabla = Table(title=f"Posibles secretos en {alcance}")
+    pintar_hallazgos(hallazgos, f"Posibles secretos en {alcance}")
+    consola.print(f"[red]✘ {len(hallazgos)} hallazgo(s).[/red] Quítalos, y si ya se subieron, cámbialos en el servicio.")
+    raise typer.Exit(1)
+
+
+def pintar_hallazgos(hallazgos: list[escanear.Hallazgo], titulo: str) -> None:
+    """Tabla de scan-secrets (también la usa entregar). La muestra ya viene enmascarada."""
+    tabla = Table(title=titulo)
     tabla.add_column("Dónde", overflow="fold")
     tabla.add_column("Línea", justify="right")
     tabla.add_column("Qué parece", overflow="fold")
@@ -594,8 +694,6 @@ def scan_secrets(
         tabla.add_row(escape(h.donde), str(h.linea or "—"), escape(h.tipo), escape(h.muestra),
                       f"[{color}]{h.confianza}[/{color}]")
     consola.print(tabla)
-    consola.print(f"[red]✘ {len(hallazgos)} hallazgo(s).[/red] Quítalos, y si ya se subieron, cámbialos en el servicio.")
-    raise typer.Exit(1)
 
 
 @comando
@@ -614,6 +712,187 @@ def instalar_hook(
     ruta = ruta.expanduser()
     mensaje = hook.quitar(ruta) if quitar else hook.instalar(ruta, forzar)
     consola.print(f"[green]✔ {escape(mensaje)}[/green]")
+
+
+@comando
+@controlar_errores
+def doctor(
+    carpeta: Annotated[Path, typer.Argument(metavar="CARPETA", help="Proyecto que quieres revisar (por defecto, la carpeta actual).")] = Path("."),
+) -> None:
+    """Revisa que un proyecto esté sano antes de subirlo o entregarlo.
+
+    Básicas (si falla alguna, sale con 1): repositorio git, .gitignore, .env ignorado y sin subir, .env.example con las mismas variables que tu .env, README y sin secretos a la vista.
+
+    Recomendadas (solo avisan): tests, dependencias declaradas (pyproject.toml, requirements.txt o package.json), CI con GitHub Actions y ficheros de más de 50 MB.
+
+    No cambia nada. Del .env solo lee los NOMBRES de las variables, nunca los valores.
+    """
+    informe = doctor_mod.revisar(carpeta)
+    tabla = Table(title=f"Revisión de {escape(str(informe.carpeta))}")
+    tabla.add_column("Comprobación", overflow="fold")
+    tabla.add_column("Estado", no_wrap=True)
+    tabla.add_column("Detalle", overflow="fold")
+    estados = {"ok": "[green]✔ ok[/green]", "falta": "[red]✘ falta[/red]",
+               "aviso": "[yellow]⚠ aviso[/yellow]", "no aplica": "[dim]— no aplica[/dim]"}
+    for c in informe.comprobaciones:
+        nombre = c.nombre + ("" if c.basica else " (recomendada)")
+        tabla.add_row(escape(nombre), estados[c.estado], escape(c.detalle))
+    consola.print(tabla)
+    consola.print(f"{informe.correctas} de {len(informe.aplicables)} comprobaciones bien.")
+    for repo in informe.repos_dentro:
+        consola.print(f'[yellow]⚠ Parece la carpeta de fuera. Revisa el proyecto:[/yellow]  '
+                      f'dam doctor "{escape(str(informe.carpeta / repo))}"')
+    if informe.fallan_basicas:
+        consola.print(f"[red]✘ Falla lo básico: {escape(', '.join(informe.fallan_basicas))}[/red]")
+        raise typer.Exit(1)
+    consola.print("[green]✔ Lo básico está bien.[/green]")
+
+
+COLORES_ETIQUETA = {"Verificado": "green", "Hipótesis": "magenta", "Pendiente": "yellow"}
+COLORES_ESTADO = {"Pendiente": "yellow", "En curso": "cyan", "Verificado": "green", "Descartado": "dim",
+                  "sin estado": "white"}
+
+
+def _pintar_etiquetas(informe: pendientes_mod.Informe) -> None:
+    """Tabla con las etiquetas de cada fichero y una fila de total."""
+    tabla = Table(title="Etiquetas por fichero")
+    tabla.add_column("Fichero", overflow="fold")
+    for tipo in pendientes_mod.TIPOS:
+        tabla.add_column(f"[{COLORES_ETIQUETA[tipo]}]{tipo}[/]", justify="right")
+    tabla.add_column("Verificado sin fecha", justify="right")
+    for fichero in dict.fromkeys(e.fichero for e in informe.etiquetas):  # en orden, sin repetir
+        c = informe.cuenta(fichero)
+        tabla.add_row(escape(fichero), *(str(c[t] or "") for t in pendientes_mod.TIPOS), str(c["sin fecha"] or ""))
+    total = informe.cuenta()
+    tabla.add_row("[bold]Total[/bold]", *(f"[bold]{total[t]}[/bold]" for t in pendientes_mod.TIPOS),
+                  f"[bold]{total['sin fecha']}[/bold]")
+    consola.print(tabla)
+
+
+def _pintar_lista_etiquetas(titulo: str, etiquetas: list[pendientes_mod.Etiqueta]) -> None:
+    if not etiquetas:
+        return
+    tabla = Table(title=f"{titulo} ({len(etiquetas)})")
+    tabla.add_column("Dónde", overflow="fold", no_wrap=True)
+    tabla.add_column("Tipo")
+    tabla.add_column("Texto", overflow="fold")
+    for e in etiquetas:
+        color = COLORES_ETIQUETA[e.tipo]
+        tabla.add_row(escape(f"{e.fichero}:{e.linea}"), f"[{color}]{e.tipo}[/{color}]", escape(e.texto))
+    consola.print(tabla)
+
+
+def _pintar_registro(filas: list[pendientes_mod.FilaRegistro], quien: Optional[str], resumen: bool) -> None:
+    for fichero in dict.fromkeys(f.fichero for f in filas):
+        del_fichero = [f for f in filas if f.fichero == fichero]
+        estados = {}
+        for f in del_fichero:
+            estados[f.estado] = estados.get(f.estado, 0) + 1
+        texto_estados = " · ".join(f"[{COLORES_ESTADO[e]}]{e} {n}[/]" for e, n in estados.items())
+        consola.print(f"\n[bold]Registro {escape(fichero)}:[/bold] {len(del_fichero)} filas · {texto_estados}")
+
+        abiertas = [f for f in del_fichero if f.abierta]
+        if abiertas:
+            reparto = " · ".join(f"{escape(p)} {n}" for p, n in pendientes_mod.reparto(abiertas).items())
+            consola.print(f"Abiertas por persona (una fila compartida cuenta para cada uno): {reparto}")
+        if quien:
+            abiertas = [f for f in abiertas if pendientes_mod.es_de(f, quien)]
+        if resumen or not abiertas:
+            if quien and not abiertas:
+                consola.print(f"[green]✔ A «{escape(quien)}» no le queda nada abierto.[/green]")
+            continue
+        titulo = f"Abiertas de {quien} (y de «Todos»)" if quien else "Abiertas (Pendiente o En curso)"
+        tabla = Table(title=f"{escape(titulo)}: {len(abiertas)}")
+        tabla.add_column("#", justify="right")
+        tabla.add_column("Dato", overflow="fold")
+        tabla.add_column("Responsable", overflow="fold")
+        tabla.add_column("Estado", no_wrap=True)
+        for f in abiertas:
+            color = COLORES_ESTADO[f.estado]
+            tabla.add_row(escape(f.numero), escape(f.dato), escape(f.responsable), f"[{color}]{f.estado}[/{color}]")
+        consola.print(tabla)
+
+
+@comando
+@controlar_errores
+def pendientes(
+    carpeta: Annotated[Path, typer.Argument(metavar="CARPETA", help="Proyecto cuya documentación quieres revisar (por defecto, la carpeta actual).")] = Path("."),
+    quien: Annotated[Optional[str], typer.Option("--quien", metavar="NOMBRE", help="Solo las filas del registro de esa persona (y las de «Todos»).")] = None,
+    resumen: Annotated[bool, typer.Option("--resumen", help="Solo los números, sin las listas.")] = False,
+) -> None:
+    """Cuenta lo verificado y lo pendiente en la documentación de un proyecto.
+
+    Busca en los .md las etiquetas \\[Verificado], \\[Hipótesis] y \\[Pendiente] (también con texto detrás: \\[Verificado, entrevista 4, 29/10/2026]) y las cuenta por fichero. Un \\[Verificado] sin fecha en su línea sale aparte: le falta la fuente.
+
+    Si hay un pendientes.md con una tabla de columnas #, Dato, Responsable y Estado, resume el registro y lista lo abierto (Pendiente o En curso).
+
+    No cuenta las líneas de leyenda, los enlaces \\[Pendiente](x.md), docs/historico/ ni las líneas con dam:ignore. No cambia nada.
+    """
+    informe = pendientes_mod.revisar(carpeta)
+    consola.print(f"[bold]Documentación de[/bold] {escape(str(informe.carpeta))}: {len(informe.ficheros)} ficheros .md")
+    if not informe.etiquetas and not informe.registro:
+        consola.print("No hay etiquetas \\[Verificado], \\[Hipótesis] ni \\[Pendiente], ni registro de pendientes.")
+        return
+    if informe.etiquetas:
+        _pintar_etiquetas(informe)
+    if not resumen and not quien:  # con --quien, lo que importa es el registro
+        sin_verificar = [e for e in informe.etiquetas if e.tipo != "Verificado"]
+        sin_fecha = [e for e in informe.etiquetas if e.tipo == "Verificado" and not e.con_fecha]
+        _pintar_lista_etiquetas("Sin verificar en los documentos", sin_verificar)
+        _pintar_lista_etiquetas("Verificado, pero sin fecha en la línea", sin_fecha)
+    if informe.registro:
+        _pintar_registro(informe.registro, quien, resumen)
+    elif quien:
+        consola.print("[yellow]⚠ No hay registro (pendientes.md con columna Responsable): --quien no filtra nada.[/yellow]")
+
+
+@comando
+@controlar_errores
+def entregar(
+    carpeta: Annotated[Path, typer.Argument(metavar="CARPETA", help="Proyecto que quieres entregar (por defecto, la carpeta actual).")] = Path("."),
+    destino: Annotated[Optional[Path], typer.Option("--destino", metavar="CARPETA", help="Dónde dejar el zip (por defecto, al lado del proyecto).")] = None,
+    nombre: Annotated[Optional[str], typer.Option("--nombre", metavar="NOMBRE", help="Nombre del zip (por defecto, CARPETA_AAAA-MM-DD.zip).")] = None,
+    simular: Annotated[bool, typer.Option("--simular", help="Enseña qué entraría en el zip sin crearlo.")] = False,
+) -> None:
+    """Empaqueta un proyecto en un .zip limpio, listo para entregar.
+
+    Deja fuera .env, claves privadas, .git, .venv, node_modules, __pycache__ y la basura del sistema (Thumbs.db, .DS_Store). Si la carpeta es un repositorio git, tampoco entra lo que ignora .gitignore.
+
+    Antes de crear el zip pasa scan-secrets sobre lo que va dentro: si encuentra un secreto seguro, NO lo crea y sale con 1. Los avisos «posibles» se enseñan, pero no bloquean.
+
+    Nunca sobrescribe: si el zip ya existe, añade « (1)». Dentro del zip todo va en una carpeta con el nombre del proyecto.
+    """
+    plan = entregar_mod.preparar(carpeta, destino, nombre)
+    origen = "respetando su .gitignore" if plan.con_git else "no es un repositorio git"
+    consola.print(f"[bold]Proyecto:[/bold] {escape(str(plan.carpeta))} ({origen})")
+
+    if simular:
+        consola.print(f"\n[bold green]Entraría en el zip ({len(plan.incluidos)}):[/bold green]")
+        for rel in plan.incluidos:
+            consola.print(f"  {escape(rel)}")
+    if plan.excluidos:
+        consola.print("\n[bold yellow]Se queda fuera:[/bold yellow]")
+        for motivo, rutas in plan.excluidos.items():
+            muestra = ", ".join(rutas[:6]) + (f" y {len(rutas) - 6} más" if len(rutas) > 6 else "")
+            consola.print(f"  [yellow]{escape(motivo)}:[/yellow] {escape(muestra)}")
+
+    if plan.hallazgos:
+        pintar_hallazgos(plan.hallazgos, "Posibles secretos dentro de la entrega")
+    if plan.bloqueado:
+        consola.print("[red]✘ Hay secretos dentro: no creo el zip.[/red] Sácalos a .env (y ponlo en .gitignore) "
+                      "o, si es un falso aviso, añade dam:ignore en esa línea.")
+        raise typer.Exit(1)
+    if plan.hallazgos:
+        consola.print("[yellow]⚠ Revisa los avisos de arriba antes de entregar.[/yellow]")
+
+    resumen = f"{len(plan.incluidos)} ficheros · {tamano_legible(plan.tamano)} sin comprimir"
+    if simular:
+        consola.print(f"\n[cyan]SIMULACIÓN:[/cyan] {resumen} → {escape(str(plan.zip))}")
+        consola.print("Para crearlo de verdad, repite la orden sin --simular.")
+        return
+    zip_creado = entregar_mod.crear_zip(plan)
+    consola.print(f"\n[green]✔ Creado[/green] {escape(str(zip_creado))} "
+                  f"({resumen} · {tamano_legible(zip_creado.stat().st_size)} el zip)")
 
 
 # ---------- tu web (portfolio) ----------

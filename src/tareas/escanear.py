@@ -121,7 +121,7 @@ def _hallazgos_de_texto(donde: str, contenido: str, filtro_alta: bool) -> list[H
 
 
 # ---------- git ----------
-def _git(raiz: Path, *args: str) -> subprocess.CompletedProcess:
+def ejecutar_git(raiz: Path, *args: str) -> subprocess.CompletedProcess:
     entorno = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C"}
     try:
         return subprocess.run(["git", "-C", str(raiz), *args], capture_output=True, encoding="utf-8",
@@ -130,14 +130,14 @@ def _git(raiz: Path, *args: str) -> subprocess.CompletedProcess:
         raise GitError("No encuentro git. Instálalo: winget install --id Git.Git -e") from None
 
 
-def _es_repo(raiz: Path) -> bool:
-    return _git(raiz, "rev-parse", "--is-inside-work-tree").stdout.strip() == "true"
+def es_repo(raiz: Path) -> bool:
+    return ejecutar_git(raiz, "rev-parse", "--is-inside-work-tree").stdout.strip() == "true"
 
 
-def _ficheros(raiz: Path) -> list[Path]:
+def ficheros_del_proyecto(raiz: Path) -> list[Path]:
     """Lo que se subiría: ficheros rastreados + nuevos NO ignorados. Fuera de git, todo salvo carpetas típicas."""
-    if _es_repo(raiz):
-        p = _git(raiz, "ls-files", "-z", "--cached", "--others", "--exclude-standard")
+    if es_repo(raiz):
+        p = ejecutar_git(raiz, "ls-files", "-z", "--cached", "--others", "--exclude-standard")
         rutas = [raiz / r for r in p.stdout.split("\0") if r]
         return sorted(r for r in rutas if r.is_file())
     encontrados = []
@@ -147,21 +147,30 @@ def _ficheros(raiz: Path) -> list[Path]:
     return sorted(encontrados)
 
 
-def _es_env(nombre: str) -> bool:
+def es_env(nombre: str) -> bool:
     n = nombre.lower()
     return (n.startswith(".env") or n.endswith(".env") or ".env." in n) and not n.endswith(".example")
 
 
-def escanear_arbol(raiz: Path, solo_alta: bool = False) -> tuple[list[Hallazgo], int, int]:
-    """Devuelve (hallazgos, ficheros_revisados, ficheros_omitidos)."""
+def es_clave_privada(ruta: Path) -> bool:
+    """.pem, .key, id_rsa... (la parte pública, id_rsa.pub, sí se puede compartir)."""
+    return ruta.suffix.lower() in EXTENSIONES_CLAVE or (
+        ruta.name.lower().startswith(("id_rsa", "id_ed25519", "id_ecdsa")) and ruta.suffix.lower() != ".pub"
+    )
+
+
+def escanear_arbol(raiz: Path, solo_alta: bool = False,
+                   ficheros: list[Path] | None = None) -> tuple[list[Hallazgo], int, int]:
+    """Devuelve (hallazgos, ficheros_revisados, ficheros_omitidos).
+
+    Sin «ficheros» revisa lo que se subiría a git; con ella, solo esa lista (la usa dam entregar).
+    """
     hallazgos, revisados, omitidos = [], 0, 0
-    for ruta in _ficheros(raiz):
+    for ruta in ficheros if ficheros is not None else ficheros_del_proyecto(raiz):
         rel = ruta.relative_to(raiz).as_posix()
-        if _es_env(ruta.name):
+        if es_env(ruta.name):
             hallazgos.append(Hallazgo(rel, None, "Fichero .env que NO está en .gitignore", "(fichero)", "alta"))
-        if ruta.suffix.lower() in EXTENSIONES_CLAVE or (
-            ruta.name.lower().startswith(("id_rsa", "id_ed25519", "id_ecdsa")) and ruta.suffix.lower() != ".pub"
-        ):
+        if es_clave_privada(ruta):
             hallazgos.append(Hallazgo(rel, None, "Fichero de clave privada", "(fichero)", "alta"))
             continue
         try:
@@ -184,7 +193,7 @@ _HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
 
 def _escanear_diff(raiz: Path, args: list[str], con_commit: bool, solo_alta: bool) -> list[Hallazgo]:
-    if not _es_repo(raiz):
+    if not es_repo(raiz):
         raise TareasError(f"«{raiz}» no es un repositorio git: no hay historial ni zona de preparación.")
     proceso = subprocess.Popen(
         ["git", "-C", str(raiz), *args], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,

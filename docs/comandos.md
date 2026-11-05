@@ -26,6 +26,9 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `dam status [ASIGNATURA]` | Qué hay pendiente (no toca nada) | `uv run dam status programacion` |
 | `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves y contraseñas expuestas | `uv run dam scan-secrets --staged` |
 | `dam instalar-hook [REPO] [--quitar] [--forzar]` | Revisa claves en cada `git commit` | `uv run dam instalar-hook` |
+| `dam doctor [CARPETA]` | Revisa que un proyecto esté sano (git, `.env`, README, tests...) | `uv run dam doctor .` |
+| `dam pendientes [CARPETA] [--quien NOMBRE] [--resumen]` | Cuenta `[Verificado]`, `[Hipótesis]` y `[Pendiente]` y resume `pendientes.md` | `uv run dam pendientes ~/Electrician --quien Gabi` |
+| `dam entregar [CARPETA] [--destino D] [--nombre N] [--simular]` | Proyecto en un `.zip` limpio, sin `.env` ni claves | `uv run dam entregar . --simular` |
 | `dam test-links [FUENTE] [--sin-externos] [--timeout S]` | Busca enlaces rotos en tu web | `uv run dam test-links ~/portfolio` |
 | `dam check-headers URL [--timeout S]` | Cabeceras de seguridad de tu web o API | `uv run dam check-headers https://tu-web.com` |
 | `dam sync [ASIGNATURA] [-m MENSAJE] [--integrar] [--simular]` | Sincroniza con GitHub | `uv run dam sync programacion -m "tema 3"` |
@@ -66,7 +69,7 @@ uv run dam ejecutar convertir-webp
 
 | Opción | Dónde | Qué hace |
 |---|---|---|
-| `--simular` | `ejecutar`, `sync` | Enseña qué haría sin tocar nada |
+| `--simular` | `ejecutar`, `sync`, `entregar` | Enseña qué haría sin tocar nada |
 | `-m, --mensaje TEXTO` | `sync` | Mensaje del commit (con o sin asignatura) |
 | `--sin-externos` | `test-links` | Solo enlaces internos (no necesita internet) |
 | `--timeout SEGUNDOS` | `test-links`, `check-headers` | Tiempo máximo de espera (Render gratis: `--timeout 60`) |
@@ -170,6 +173,41 @@ git commit --no-verify -m "..."   # salta la revisión UNA vez (solo si es un fa
 
 El hook ejecuta `dam scan-secrets --staged` justo antes de cada commit y lo cancela si encuentra algo. Si `dam` no está en el PATH, avisa pero no bloquea. No sobrescribe un hook que no sea de dam (salvo `--forzar`).
 
+### Revisar un proyecto antes de subirlo o entregarlo
+
+```powershell
+dam doctor                 # el proyecto de la carpeta actual
+dam doctor ~/Electrician   # otro proyecto (no cambia nada)
+```
+
+- **Básicas** (si falla alguna, sale con **1**): repositorio git, `.gitignore`, `.env` ignorado y sin subir, `.env.example` con las mismas variables que tu `.env`, README y sin secretos a la vista.
+- **Recomendadas** (solo avisan): tests, dependencias declaradas (`pyproject.toml`, `requirements.txt` o `package.json`), CI con GitHub Actions y ficheros de más de 50 MB.
+- Del `.env` solo lee los **nombres** de las variables, nunca los valores.
+
+### Qué está verificado y qué no: `dam pendientes`
+
+```powershell
+dam pendientes ~/Electrician               # etiquetas por fichero, lo sin verificar y el registro
+dam pendientes ~/Electrician --quien Gabi  # solo lo tuyo (y lo de «Todos»)
+dam pendientes ~/Electrician --resumen     # solo los números
+```
+
+- Cuenta en los `.md` las etiquetas `[Verificado]`, `[Hipótesis]` y `[Pendiente]`, también con texto detrás (`[Verificado, entrevista 4, 29/10/2026]`). Un `[Verificado]` **sin fecha** en su línea sale aparte: le falta la fuente.
+- Si hay un `pendientes.md` con una tabla de columnas `#`, `Dato`, `Responsable` y `Estado`, resume el registro, reparte lo abierto por persona (una fila de «Gabi y Javi» cuenta para los dos) y lista lo que está *Pendiente* o *En curso*.
+- No cuenta las leyendas («Etiquetas: [Verificado]…»), los enlaces `[Pendiente](x.md)`, `docs/historico/` ni las líneas con `dam:ignore`. No cambia nada.
+
+### Entregar un proyecto en un .zip limpio
+
+```powershell
+dam entregar . --simular                           # qué entra y qué se queda fuera, sin crear nada
+dam entregar .                                     # crea CARPETA_AAAA-MM-DD.zip al lado de la carpeta
+dam entregar . --nombre "Vidal_Gabriel_p3" --destino ~/Escritorio
+```
+
+- Deja fuera `.env`, claves privadas, `.git`, `.venv`, `node_modules`, `__pycache__`, `dist`, `build` y la basura del sistema (`Thumbs.db`, `.DS_Store`). En un repositorio, tampoco entra lo que ignora `.gitignore`. `.env.example` sí entra.
+- Antes de crear el zip pasa `scan-secrets` sobre lo que va dentro: con un secreto seguro **no lo crea** y sale con **1**. Los avisos «posibles» se enseñan pero no bloquean.
+- Nunca sobrescribe (añade ` (1)`). Dentro del zip todo va en una carpeta con el nombre del proyecto.
+
 ### Otras protecciones
 
 - `--simular` no crea, mueve ni borra nada.
@@ -214,12 +252,14 @@ Luego: `uv run dam ejecutar limpiar`.
 | `No sé dónde está tu almacén` | Define `DAM_ALMACEN` o usa `--almacen` |
 | `Conflicto real` | `dam sync --integrar` o resuélvelo a mano |
 | `No existe la asignatura` | `dam status` te dice las que hay. Si querías poner un mensaje, usa `-m` |
+| `Una ruta lleva unas comillas metidas` | Quita la `\` del final: `"C:\carpeta\"` → `"C:\carpeta"` (en Windows, `\"` se come las comillas; el TAB de PowerShell la añade) |
+| `dam` solo imprime una línea en blanco (PowerShell) | El script del TAB antiguo se atascaba al completar rutas. Vuelve a lanzar `instalar.cmd` (genera el arreglado) y abre otra ventana |
 
 ## 10. Códigos de salida
 
 | Código | Significado |
 |---|---|
 | `0` | Todo bien |
-| `1` | Falló al ejecutar, o `scan-secrets`, `test-links` o `check-headers` encontraron problemas |
+| `1` | Falló al ejecutar, `scan-secrets`, `test-links` o `check-headers` encontraron problemas, `entregar` encontró un secreto, o `doctor` encontró un fallo básico |
 | `2` | Uso incorrecto del comando |
 | `3` | `acciones.json` inválido |
