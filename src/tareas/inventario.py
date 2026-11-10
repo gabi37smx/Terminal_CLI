@@ -164,12 +164,17 @@ def _es_enlace(ruta: Path) -> bool:
         return True
 
 
-def tamano_carpeta(carpeta: Path) -> Medida:
-    """Lo que ocupa una carpeta entera (en el disco y en la nube), sin seguir enlaces."""
+def tamano_carpeta(carpeta: Path, ignorar: frozenset[str] = frozenset()) -> Medida:
+    """Lo que ocupa una carpeta entera (en el disco y en la nube), sin seguir enlaces.
+
+    «ignorar»: nombres de fichero en minúsculas que no cuentan (dam readme no cuenta los README.md).
+    """
     medida = Medida()
     for raiz, carpetas, ficheros in carpeta.walk(on_error=lambda e: None):
         carpetas[:] = [c for c in carpetas if not _es_enlace(raiz / c)]
         for nombre in ficheros:
+            if nombre.lower() in ignorar:
+                continue
             try:
                 datos = (raiz / nombre).stat(follow_symlinks=False)
             except OSError:

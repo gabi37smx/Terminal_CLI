@@ -93,6 +93,7 @@ Windows: cambia la política a `Unrestricted` y repite el script en el perfil ca
 | `dam entregar [CARPETA] [--destino D] [--nombre N] [--simular]` | Empaqueta un proyecto en un `.zip` limpio (sin `.env`, claves ni `node_modules`); no lo crea si hay un secreto dentro. |
 | `dam inventario [CARPETA] [--guardar INFORME.md] [--top N]` | Inventario de una carpeta antes de organizarla: tamaño por carpeta, tipos, repos (y si tienen remoto), instaladores, basura, `node_modules`/`.venv` y ficheros de más de 100 MB. Solo lee. |
 | `dam duplicados [CARPETA] [--guardar INFORME.md] [--top N]` | Ficheros repetidos (por contenido, SHA-256) y carpetas que son copia de otra; marca las copias que están en un repo. No borra nada. |
+| `dam readme [CARPETA] [--niveles N] [--simular] [--si]` | Pone en cada carpeta un README.md cuyo apartado «Qué hay dentro» es una tabla: subcarpetas (tamaño y la primera frase de su README) y archivos (tamaño y tipo). No toca lo que escribes encima, ni los README sin ese apartado, ni repos o proyectos de código. Pregunta s/N antes de escribir. |
 | `dam test-links [FUENTE] [--sin-externos] [--timeout S]` | Busca enlaces rotos en una web (carpeta, `.html` o URL). |
 | `dam check-headers URL [--timeout S]` | Revisa las cabeceras de seguridad de una web o API. |
 
@@ -192,7 +193,7 @@ Para tu web: `dam test-links` encuentra enlaces, imágenes y anclas rotas (tambi
 ## Pruebas
 
 ```bash
-uv run pytest        # config, acciones, motor, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes, entregar, inventario y duplicados
+uv run pytest        # config, acciones, motor, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes, entregar, inventario, duplicados y readme
 ```
 
 Ejecútalo desde la raíz del repositorio. Los tests de red usan un servidor local de mentira: no necesitan internet.
