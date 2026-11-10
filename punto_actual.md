@@ -7,7 +7,7 @@
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
 **Estado:** `main` en GitHub hasta `2f59e1d` (6-nov): los tres comandos nuevos (`doctor`, `pendientes` y `entregar`) y los arreglos del TAB entraron con el **PR #3** (rama `feature/doctor-entregar-pendientes`, commit `0893964`, subida por Claude Code porque se lo pedí; la fusión la hice yo). Antes: instalador (`40ff2e5`), `dam help` (`7e62593`) y TAB (`1f34747`), del 3-nov; la rama `feature/seguridad-y-web` entró con el PR #2 (1-nov). Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
 **Tests:** `uv run pytest -q` → **279 passed, 1 skipped** (10-nov, desde la raíz).
-**Rama actual (10-nov):** `feature/inventario`, con `dam inventario` (sin subir todavía a GitHub).
+**Rama actual (10-nov):** `feature/inventario`, con `dam inventario`, subida en el PR #4 (falta fusionarla).
 **Carpeta nueva (10-nov):** el repo está ahora en `C:\Users\HP\Datos\REPOS\TERMINAL_CLI` (antes en el Escritorio). `dam` se reinstaló desde aquí con `uv tool install --editable . --force`.
 
 ## Qué hay hecho
