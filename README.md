@@ -91,6 +91,7 @@ Windows: cambia la política a `Unrestricted` y repite el script en el perfil ca
 | `dam doctor [CARPETA]` | Revisa que un proyecto esté sano: git, `.env` ignorado, `.env.example` al día, README, secretos, tests y CI. |
 | `dam pendientes [CARPETA] [--quien NOMBRE] [--resumen]` | Cuenta las etiquetas `[Verificado]`, `[Hipótesis]` y `[Pendiente]` de la documentación y resume el registro `pendientes.md` por persona. |
 | `dam entregar [CARPETA] [--destino D] [--nombre N] [--simular]` | Empaqueta un proyecto en un `.zip` limpio (sin `.env`, claves ni `node_modules`); no lo crea si hay un secreto dentro. |
+| `dam inventario [CARPETA] [--guardar INFORME.md] [--top N]` | Inventario de una carpeta antes de organizarla: tamaño por carpeta, tipos, repos (y si tienen remoto), instaladores, basura, `node_modules`/`.venv` y ficheros de más de 100 MB. Solo lee. |
 | `dam test-links [FUENTE] [--sin-externos] [--timeout S]` | Busca enlaces rotos en una web (carpeta, `.html` o URL). |
 | `dam check-headers URL [--timeout S]` | Revisa las cabeceras de seguridad de una web o API. |
 
@@ -190,7 +191,7 @@ Para tu web: `dam test-links` encuentra enlaces, imágenes y anclas rotas (tambi
 ## Pruebas
 
 ```bash
-uv run pytest        # config, acciones, motor, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes y entregar
+uv run pytest        # config, acciones, motor, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes, entregar e inventario
 ```
 
 Ejecútalo desde la raíz del repositorio. Los tests de red usan un servidor local de mentira: no necesitan internet.

@@ -6,7 +6,9 @@
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
 **Estado:** `main` en GitHub hasta `2f59e1d` (6-nov): los tres comandos nuevos (`doctor`, `pendientes` y `entregar`) y los arreglos del TAB entraron con el **PR #3** (rama `feature/doctor-entregar-pendientes`, commit `0893964`, subida por Claude Code porque se lo pedí; la fusión la hice yo). Antes: instalador (`40ff2e5`), `dam help` (`7e62593`) y TAB (`1f34747`), del 3-nov; la rama `feature/seguridad-y-web` entró con el PR #2 (1-nov). Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
-**Tests:** `uv run pytest -q` → **249 passed** (6-nov, desde la raíz).
+**Tests:** `uv run pytest -q` → **279 passed, 1 skipped** (10-nov, desde la raíz).
+**Rama actual (10-nov):** `feature/inventario`, con `dam inventario` (sin subir todavía a GitHub).
+**Carpeta nueva (10-nov):** el repo está ahora en `C:\Users\HP\Datos\REPOS\TERMINAL_CLI` (antes en el Escritorio). `dam` se reinstaló desde aquí con `uv tool install --editable . --force`.
 
 ## Qué hay hecho
 
@@ -52,6 +54,15 @@ Grupo nuevo en la ayuda: «Tus proyectos: revisar y entregar». Los tres solo le
 - [x] **`dam pendientes CARPETA [--quien NOMBRE] [--resumen]`** (`pendientes.py`): cuenta `[Verificado]`, `[Hipótesis]` y `[Pendiente]` en los `.md` (y los verificados sin fecha) y resume `docs/pendientes.md` por persona. Electrician: 39 verificados (15 sin fecha), 10 hipótesis y 33 pendientes; registro de 52 filas con 33 abiertas (Sergio 12 · Gabi 9 · Javi 9 · Mar 7 · Todos 3).
 - [x] **Arreglo del TAB en PowerShell:** un TAB en una ruta dejaba `dam` atascado (solo imprimía líneas en blanco) hasta cerrar la ventana. El script del TAB ahora borra siempre sus variables. Mi `~/.config/dam/completado.ps1` ya está regenerado.
 - [x] **Aviso de la `\` final:** `dam doctor "C:\carpeta\"` ya no dice «no existe»: explica que la `\` se come las comillas y da la orden corregida.
+
+### Organizar el PC en `~/Datos` (10-nov, Claude Code)
+Plan en 5 fases: 1 `dam inventario` → 2 `dam duplicados` (solo informa, nunca borra) → 3 `dam readme` → 4 `ordenar` con plan B por tipo (`POR-TIPO/`) → 5 la mudanza la hago yo por bloques.
+- [x] **`dam inventario [CARPETA] [--guardar INFORME.md] [--top N]`** (`inventario.py`, solo lee): tamaño por carpeta, tipos, repos (y si tienen remoto), instaladores, basura, carpetas regenerables (`.venv`, `node_modules`) y ficheros de más de 100 MB. Los ficheros de OneDrive «solo en la nube» no cuentan como espacio en el disco. Probado en `~/Datos`: 73 170 ficheros en 4 s.
+- [x] **Mudanza hecha** (fase 5 adelantada, con `~/mudanza-datos.ps1`): todo está en `~/Datos` con las carpetas en MAYÚSCULAS (`CURSOS`, `DAM`, `MAQUINAS-VIRTUALES`, `PERSONAL`, `POR-TIPO`, `REPOS`, `SMX`) y un README en cada carpeta hasta el tercer nivel. Dentro de los repos no se ha cambiado ningún nombre.
+- [x] Los apuntes de DAM están solo en el almacén (`REPOS\DAM-ALMACEN`). En este PC, `dam` lo encuentra por la variable `DAM_ALMACEN`; `acciones.json` sigue con `~/DAM-almacen` porque es la ruta de los otros equipos.
+- [ ] Fase 2 `dam duplicados`: ya sé lo que tiene que encontrar (en la revisión del 10-nov había 437 MB repetidos; las copias exactas se mandaron a la Papelera a mano).
+- [ ] Fase 3 `dam readme`: que actualice la lista de «Qué hay dentro» de los README que ya existen sin borrar la descripción escrita a mano.
+- [ ] Fase 4 `ordenar`: lo que sea de una asignatura de DAM, al almacén (`asignaturas/<asignatura>`); lo que no, a `~/Datos/POR-TIPO/<TIPO>` (en MAYÚSCULAS).
 
 ## Qué falta (por orden)
 
