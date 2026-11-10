@@ -517,6 +517,8 @@ def ejecutar(
     Nunca sobrescribe: si el destino ya existe, añade « (1)». Sale con 1 si algún fichero falla.
 
     Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén y, al acabar, pregunta si quieres hacer dam sync (con --si no lo hace: te lo recuerda).
+
+    Con «por_tipo»: "~/Datos/POR-TIPO", lo que no es de ninguna asignatura va a POR-TIPO/DOCUMENTOS, IMAGENES, COMPRIMIDOS... Los ficheros del sistema, temporales y descargas a medias (desktop.ini, .crdownload, .part...) no se mueven nunca.
     """
     motor = Motor(config.cargar(config.buscar(ctx.obj)))
     accion, ficheros = motor.preparar(nombre, carpeta)
@@ -543,7 +545,8 @@ def ejecutar(
     pintar_tabla(nombre, resultados, simular)
     if simular:
         consola.print("Para hacerlo de verdad, repite la orden sin --simular.")
-    hechos = sum(1 for r in resultados if r.estado == "hecho")
+    # solo cuenta lo que ha entrado en el almacén (lo de «por_tipo» no se sube)
+    hechos = sum(1 for r in resultados if r.estado == "hecho" and r.nota != "por tipo")
     if almacen is not None and hechos:
         if si:
             consola.print("Para subir los apuntes a GitHub: [bold]dam sync[/bold]")

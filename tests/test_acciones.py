@@ -283,3 +283,54 @@ def test_ordenar_al_almacen_sin_almacen(al_almacen, tmp_path, monkeypatch):
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--si"])
     assert r.exit_code == 1 and "No encuentro las asignaturas" in r.output
     assert (descargas / "linux tema 1.pdf").exists()
+
+
+# ---------- plan B de ordenar: lo que no es de ninguna asignatura, a POR-TIPO ----------
+@pytest.mark.parametrize("nombre, destino", [
+    ("foto playa.png", "IMAGENES"),
+    ("factura luz.pdf", "DOCUMENTOS"),
+    ("fotos.zip", "COMPRIMIDOS"),
+    ("setup.exe", "INSTALADORES"),
+    ("red casa.pkt", "REDES"),
+    ("disco.vdi", "OTROS"),        # máquinas virtuales: no hay carpeta propia en POR-TIPO
+    ("raro.xyz", "OTROS"),
+    ("apuntes linux.pdf", None),   # es de una asignatura: no va por tipo
+])
+def test_ordenar_por_tipo(tmp_path, nombre, destino):
+    origen = tmp_path / "Downloads"
+    origen.mkdir()
+    f = origen / nombre
+    f.write_bytes(b"x")
+    o = Ordenar({"nombre": "o", "descripcion": "d", "tipo": "ordenar", "por_tipo": str(tmp_path / "POR-TIPO"),
+                 "carpetas": {"sistemas": ["linux"]}})
+    r = o.aplicar(f, 1, simular=True)
+    if destino is None:
+        assert r.destino == origen / "sistemas" / nombre and r.nota == ""
+    else:
+        assert r.destino == tmp_path / "POR-TIPO" / destino / nombre and r.nota == "por tipo"
+
+
+@pytest.mark.parametrize("nombre", ["desktop.ini", "Thumbs.db", "linux.iso.crdownload", "linux.part",
+                                    "~$apuntes linux.docx", ".oculto linux"])
+def test_ordenar_nunca_mueve_ficheros_del_sistema_ni_a_medias(tmp_path, nombre):
+    f = tmp_path / nombre
+    f.write_bytes(b"x")
+    o = Ordenar({"nombre": "o", "descripcion": "d", "tipo": "ordenar", "por_tipo": str(tmp_path / "P"),
+                 "carpetas": {"sistemas": ["linux"]}})
+    r = o.aplicar(f, 1, simular=False)
+    assert r.estado == "saltado" and f.exists()
+
+
+def test_ordenar_al_almacen_y_por_tipo(al_almacen, tmp_path):
+    descargas, almacen, cfg, llamadas = al_almacen
+    datos = json.loads(cfg.read_text(encoding="utf-8"))
+    datos["acciones"][0]["por_tipo"] = str(tmp_path / "Datos" / "POR-TIPO")
+    cfg.write_text(json.dumps(datos), encoding="utf-8")
+    (descargas / "desktop.ini").write_text("x", encoding="utf-8")
+    r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas)], input="s\ns\n")
+    assert r.exit_code == 0, r.output
+    assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
+    assert (tmp_path / "Datos" / "POR-TIPO" / "DOCUMENTOS" / "misterio.txt").exists()
+    assert (descargas / "desktop.ini").exists()
+    # dam sync solo cuenta lo que ha entrado en el almacén
+    assert llamadas == [(almacen, None, "ordenar: 1 apunte(s) nuevo(s)")]
