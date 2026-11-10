@@ -167,6 +167,11 @@ def _validar_accion(a: object, i: int, vistos: set[str]) -> None:
         raise AccionNoValida(nombre, "destino", "debe ser un texto (una ruta)")
     if "confirmar" in a and not isinstance(a["confirmar"], bool):
         raise AccionNoValida(nombre, "confirmar", "debe ser true o false")
+    if "al_almacen" in a:
+        if tipo != "ordenar" or not isinstance(a["al_almacen"], bool):
+            raise AccionNoValida(nombre, "al_almacen", "solo vale en acciones de tipo ordenar y debe ser true o false")
+        if a["al_almacen"] and "destino" in a:
+            raise AccionNoValida(nombre, "al_almacen", "usa «al_almacen» o «destino», no los dos")
     if "filtro" in a:
         _validar_filtro(nombre, a["filtro"])
     if tipo == "borrar" and not a.get("filtro"):

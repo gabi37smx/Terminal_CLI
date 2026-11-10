@@ -63,6 +63,9 @@ def test_fichero_inexistente(tmp_path):
     (con_accion(tipo="ordenar", carpetas={"a": ["x"]}, por_extension={".py": "b"}), "por_extension..py"),
     (con_accion(tipo="convertir", calidad=500), "calidad"),
     (con_accion(confirmar="si"), "confirmar"),
+    (con_accion(al_almacen=True), "al_almacen"),  # solo en ordenar
+    (con_accion(tipo="ordenar", carpetas={"a": ["x"]}, al_almacen="si"), "al_almacen"),
+    (con_accion(tipo="ordenar", carpetas={"a": ["x"]}, al_almacen=True), "al_almacen"),  # BASE trae «destino»
 ])
 def test_casos_feos_dicen_accion_y_campo(tmp_path, datos, campo):
     with pytest.raises(AccionNoValida) as e:

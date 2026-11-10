@@ -11,12 +11,14 @@ COMANDOS = sorted(typer.main.get_command(app).commands)
 
 def test_todos_los_comandos_tienen_ejemplos_y_grupo():
     assert set(COMANDOS) == set(EJEMPLOS), "añade EJEMPLOS para el comando nuevo"
-    agrupados = {n for _, nombres in GRUPOS for n in nombres}
+    agrupados = {n for _, _, nombres in GRUPOS for n in nombres}
     assert set(COMANDOS) == agrupados, "añade el comando nuevo a GRUPOS"
 
 
 @pytest.mark.parametrize("args", [[], ["-h"], ["--help"]])
-def test_ayuda_general_lista_todo(args):
+def test_ayuda_general_lista_todo(args, monkeypatch):
+    from tareas import cli
+    monkeypatch.setattr(cli.consola, "width", 120)  # un terminal normal: la tabla no depende de COLUMNS
     r = run.invoke(app, args)
     assert r.exit_code == 0
     for nombre in COMANDOS:

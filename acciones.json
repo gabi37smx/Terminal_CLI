@@ -6,7 +6,7 @@
   "acciones": [
     {
       "nombre": "ordenar",
-      "descripcion": "Ordena los ficheros por asignatura del DAM (por nombre, extensión y contenido del PDF)",
+      "descripcion": "Ordena los ficheros por asignatura del DAM y los mete en tu almacén (por nombre, extensión y contenido del PDF)",
       "tipo": "ordenar",
       "origen": "~/pruebas-tareas/prueba-final",
       "carpetas": {
@@ -103,6 +103,7 @@
         ".db": "bases-datos",
         ".htm": "lenguaje-marcas"
       },
+      "al_almacen": true,
       "confirmar": true
     },
     {
