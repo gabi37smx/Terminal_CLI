@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any, Optional
 
 import typer
+from rich import box
 from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
@@ -109,10 +110,15 @@ def controlar_errores(funcion):
     return envoltorio
 
 
-def confirmar(pregunta: str) -> None:
-    """Pregunta s/n (acepta s, sí, si, y, yes). Cualquier otra cosa cancela: nunca actúa por defecto."""
+def preguntar(pregunta: str) -> bool:
+    """Pregunta s/n (acepta s, sí, si, y, yes). Cualquier otra cosa es «no»: nunca actúa por defecto."""
     respuesta = typer.prompt(f"{pregunta} [s/N]", default="n", show_default=False)
-    if respuesta.strip().lower() not in {"s", "si", "sí", "y", "yes"}:
+    return respuesta.strip().lower() in {"s", "si", "sí", "y", "yes"}
+
+
+def confirmar(pregunta: str) -> None:
+    """Como preguntar, pero si la respuesta no es «sí» cancela la orden."""
+    if not preguntar(pregunta):
         raise typer.Abort()
 
 
@@ -210,14 +216,15 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
     ],
 }
 
+# (tema, para qué, comandos): el tema y el «para qué» salen en la primera columna de la tabla de ayuda
 GRUPOS = [
-    ("Ficheros: ordenar, limpiar y convertir", ["listar", "validar", "acciones", "ejecutar"]),
-    ("Almacén de apuntes (git): clase, casa y USB", ["status", "sync"]),
-    ("Seguridad: claves expuestas", ["scan-secrets", "instalar-hook"]),
-    ("Tus proyectos: revisar y entregar", ["doctor", "pendientes", "entregar"]),
-    ("Tus datos: organizar el PC", ["inventario", "duplicados", "readme"]),
-    ("Tu web (portfolio): enlaces y cabeceras", ["test-links", "check-headers"]),
-    ("Otros", ["version", "help"]),
+    ("Ficheros", "ordenar y limpiar", ["listar", "validar", "acciones", "ejecutar"]),
+    ("Almacén (git)", "clase, casa y USB", ["status", "sync"]),
+    ("Seguridad", "claves expuestas", ["scan-secrets", "instalar-hook"]),
+    ("Tus proyectos", "revisar y entregar", ["doctor", "pendientes", "entregar"]),
+    ("Tus datos", "organizar el PC", ["inventario", "duplicados", "readme"]),
+    ("Tu web", "enlaces y cabeceras", ["test-links", "check-headers"]),
+    ("Otros", "", ["version", "help"]),
 ]
 
 
@@ -226,36 +233,33 @@ def _resumen(cmd: Any) -> str:
     return " ".join(((cmd.help or "").strip().split("\n\n") or [""])[0].split())
 
 
-def _pintar_comando(nombre: str, cmd: Any) -> None:
-    """Una sola línea: el comando y su descripción corta."""
-    consola.print(f"  [bold cyan]{escape('dam ' + nombre):<18}[/bold cyan] {escape(_resumen(cmd))}")
-
-
 def mostrar_ayuda() -> None:
-    """Ayuda general corta: cada comando con una descripción de una línea."""
+    """Ayuda general corta: una tabla con cada comando y una descripción de una línea."""
     comandos = typer.main.get_command(app).commands
     consola.print(
         "[bold]dam[/bold] — automatiza tareas con ficheros y mantiene tu almacén "
         "de apuntes sincronizado."
     )
-    consola.print("\n[bold]Uso:[/bold]  dam COMANDO [ARGUMENTOS] [OPCIONES]")
+    consola.print("\n[bold]Uso:[/bold]  dam COMANDO [ARGUMENTOS] [OPCIONES]\n")
 
-    mostrados: set[str] = set()
-    for titulo, nombres in GRUPOS:
-        consola.print(f"\n[bold underline]{titulo}[/bold underline]")
-        for nombre in nombres:
-            if nombre in comandos:
-                _pintar_comando(nombre, comandos[nombre])
-                mostrados.add(nombre)
-    resto = [n for n in comandos if n not in mostrados]  # comandos nuevos que falten en GRUPOS
-    if resto:
-        consola.print("\n[bold underline]Más comandos[/bold underline]")
-        for nombre in resto:
-            _pintar_comando(nombre, comandos[nombre])
+    agrupados = {n for _, _, nombres in GRUPOS for n in nombres}
+    resto = [n for n in comandos if n not in agrupados]  # comandos nuevos que falten en GRUPOS
+    grupos = GRUPOS + ([("Más", "", resto)] if resto else [])
+    tabla = Table(box=box.ROUNDED, header_style="bold")
+    tabla.add_column("Tema", no_wrap=True)
+    tabla.add_column("Comando", style="bold cyan", no_wrap=True)
+    tabla.add_column("Qué hace")
+    for i, (tema, para, nombres) in enumerate(grupos):
+        primera = [f"[bold magenta]{escape(tema)}[/bold magenta]", f"[dim]{escape(para)}[/dim]"]
+        for j, nombre in enumerate(n for n in nombres if n in comandos):
+            tabla.add_row(primera[j] if j < 2 else "", escape(f"dam {nombre}"), escape(_resumen(comandos[nombre])))
+        if i < len(grupos) - 1:
+            tabla.add_section()  # una raya entre temas
+    consola.print(tabla)
 
     consola.print("\nUsar otro acciones.json:  [bold]dam --config RUTA COMANDO[/bold]")
-    consola.print("Activa el TAB:            [bold]dam --install-completion[/bold] (mejor con instalar.sh / instalar.ps1)"
-                  " · ver el script: [bold]dam --show-completion[/bold]")
+    consola.print("Activa el TAB:            [bold]instalar.sh[/bold] / [bold]instalar.ps1[/bold] (o dam --install-completion)")
+    consola.print("Ver el script del TAB:    [bold]dam --show-completion[/bold]")
 
 
 @app.callback(invoke_without_command=True)
@@ -511,9 +515,19 @@ def ejecutar(
     Sin --simular, las acciones que borran (o que tienen «confirmar») enseñan primero la tabla y preguntan s/N; --si se salta la pregunta.
 
     Nunca sobrescribe: si el destino ya existe, añade « (1)». Sale con 1 si algún fichero falla.
+
+    Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén y, al acabar, pregunta si quieres hacer dam sync (con --si no lo hace: te lo recuerda).
     """
     motor = Motor(config.cargar(config.buscar(ctx.obj)))
     accion, ficheros = motor.preparar(nombre, carpeta)
+    almacen = None
+    if accion.config.get("al_almacen"):
+        almacen = _abrir_almacen(ctx, None)
+        asignaturas = almacen.ruta / almacen.carpeta_asignaturas
+        if not asignaturas.is_dir():
+            raise TareasError(f"No encuentro las asignaturas de tu almacén en «{asignaturas}». "
+                              "Revisa la variable DAM_ALMACEN o «almacen» en acciones.json.")
+        accion.config["destino"] = str(asignaturas)
     if not ficheros:
         consola.print("Ningún fichero cumple el filtro: no hay nada que hacer.")
         return
@@ -529,6 +543,14 @@ def ejecutar(
     pintar_tabla(nombre, resultados, simular)
     if simular:
         consola.print("Para hacerlo de verdad, repite la orden sin --simular.")
+    hechos = sum(1 for r in resultados if r.estado == "hecho")
+    if almacen is not None and hechos:
+        if si:
+            consola.print("Para subir los apuntes a GitHub: [bold]dam sync[/bold]")
+        elif preguntar(f"¿Hago ahora dam sync para subir {hechos} apunte(s) nuevo(s) a GitHub?"):
+            _pintar_sync(almacen.sincronizar(None, f"ordenar: {hechos} apunte(s) nuevo(s)"))
+        else:
+            consola.print("Vale. Cuando quieras subirlos: [bold]dam sync[/bold]")
     if any(r.estado == "error" for r in resultados):
         raise typer.Exit(1)
 
@@ -623,7 +645,7 @@ def sync(
     simular: Annotated[bool, typer.Option("--simular", help="Enseña qué haría sin tocar nada")] = False,
     almacen: OpcionAlmacen = None,
 ) -> None:
-    """Sincroniza el almacén con GitHub de forma segura (no pisa nada ante la duda).
+    """Sincroniza el almacén con GitHub sin pisar nada ante la duda.
 
     Hace primero un fetch y decide según lo que encuentre:
 
@@ -640,13 +662,18 @@ def sync(
     Se niega a subir .env, claves (.pem, .key...) y ficheros de más de 95 MB.
     """
     informe = _abrir_almacen(ctx, almacen).sincronizar(asignatura, mensaje_opcion or mensaje, integrar, simular)
+    _pintar_sync(informe)
+    if informe.estado == "pendiente":
+        raise typer.Exit(1)
+
+
+def _pintar_sync(informe: sincronizar.InformeSync) -> None:
+    """Lo que cuenta dam sync (también lo usa ordenar cuando sincroniza al acabar)."""
     for linea in informe.mensajes:
         color = "yellow" if informe.estado == "pendiente" else "green"
         consola.print(f"[{color}]{escape(linea)}[/{color}]")
     if informe.detalle:
         consola.print(f"\n{escape(informe.detalle)}")
-    if informe.estado == "pendiente":
-        raise typer.Exit(1)
 
 
 # ---------- seguridad ----------

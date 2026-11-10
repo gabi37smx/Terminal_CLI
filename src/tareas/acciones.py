@@ -197,6 +197,8 @@ class Ordenar(Accion):
         if asignatura is None:
             return Resultado(fichero, None, "saltado", "no sé de qué asignatura es")
         carpeta = self._carpeta_destino(fichero) / asignatura
+        if self.config.get("al_almacen") and not carpeta.is_dir():  # en el almacén no se inventan asignaturas
+            return Resultado(fichero, None, "saltado", f"«{asignatura}» no está en el almacén")
         destino = destino_libre(carpeta / fichero.name, self._reservados)
         if not simular:
             carpeta.mkdir(parents=True, exist_ok=True)

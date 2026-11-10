@@ -213,3 +213,73 @@ def test_cli_ordenar_con_confirmar_muestra_tabla_y_cuenta_solo_los_que_se_mueven
     assert r.exit_code != 0 and (tmp_path / "linux.txt").exists() and "1 fichero(s)" in r.output
     r = run.invoke(app, ["--config", str(cfg), "ejecutar", "o", str(tmp_path)], input="si\n")
     assert r.exit_code == 0 and (tmp_path / "sistemas" / "linux.txt").exists()
+
+
+# ---------- ordenar al almacén y dam sync al acabar ----------
+@pytest.fixture
+def al_almacen(tmp_path, monkeypatch):
+    """Descargas con dos apuntes, un almacén de mentira (sin git) y una acción con «al_almacen»."""
+    descargas = tmp_path / "Downloads"
+    descargas.mkdir()
+    (descargas / "linux tema 1.pdf").write_bytes(b"x")
+    (descargas / "apuntes sql.txt").write_text("select 1", encoding="utf-8")
+    (descargas / "misterio.txt").write_text("x", encoding="utf-8")
+    almacen = tmp_path / "DAM-almacen"
+    (almacen / "asignaturas" / "sistemas").mkdir(parents=True)  # bases-datos no está en el almacén
+    monkeypatch.setenv("DAM_ALMACEN", str(almacen))
+    cfg = tmp_path / "a.json"
+    cfg.write_text(json.dumps({"version": 1, "acciones": [
+        {"nombre": "ordenar", "descripcion": "d", "tipo": "ordenar", "al_almacen": True, "confirmar": True,
+         "carpetas": {"sistemas": ["linux"], "bases-datos": ["sql"]}}]}), encoding="utf-8")
+    llamadas = []
+
+    def sync_falso(self, asignatura, mensaje, integrar=False, simular=False):
+        llamadas.append((self.ruta, asignatura, mensaje))
+        from tareas.sincronizar import InformeSync
+        return InformeSync("subido", [f"Subido a GitHub: «[sync]: {mensaje}»."])
+
+    monkeypatch.setattr("tareas.sincronizar.Almacen.sincronizar", sync_falso)
+    monkeypatch.setattr("tareas.cli.consola.width", 300)  # que la tabla no parta las rutas largas de tmp_path
+    return descargas, almacen, cfg, llamadas
+
+
+def test_ordenar_al_almacen_simular(al_almacen):
+    descargas, almacen, cfg, llamadas = al_almacen
+    r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--simular"])
+    assert r.exit_code == 0, r.output
+    assert "DAM-almacen" in r.output and "no está en el almacén" in r.output
+    assert (descargas / "linux tema 1.pdf").exists() and not llamadas
+
+
+def test_ordenar_al_almacen_y_no_sincroniza(al_almacen):
+    descargas, almacen, cfg, llamadas = al_almacen
+    r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas)], input="s\nn\n")
+    assert r.exit_code == 0, r.output
+    assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
+    assert (descargas / "apuntes sql.txt").exists()  # su asignatura no está en el almacén: no se inventa
+    assert not (almacen / "asignaturas" / "bases-datos").exists()
+    assert "dam sync" in r.output and "Cuando quieras" in r.output and not llamadas
+
+
+def test_ordenar_al_almacen_y_sincroniza(al_almacen):
+    descargas, almacen, cfg, llamadas = al_almacen
+    r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas)], input="s\ns\n")
+    assert r.exit_code == 0, r.output
+    assert llamadas == [(almacen, None, "ordenar: 1 apunte(s) nuevo(s)")]
+    assert "Subido a GitHub" in r.output
+
+
+def test_ordenar_al_almacen_con_si_no_pregunta_ni_sincroniza(al_almacen):
+    descargas, almacen, cfg, llamadas = al_almacen
+    r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--si"])
+    assert r.exit_code == 0, r.output
+    assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
+    assert "dam sync" in r.output and not llamadas
+
+
+def test_ordenar_al_almacen_sin_almacen(al_almacen, tmp_path, monkeypatch):
+    descargas, almacen, cfg, llamadas = al_almacen
+    monkeypatch.setenv("DAM_ALMACEN", str(tmp_path / "no-esta"))
+    r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--si"])
+    assert r.exit_code == 1 and "No encuentro las asignaturas" in r.output
+    assert (descargas / "linux tema 1.pdf").exists()

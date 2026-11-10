@@ -83,7 +83,7 @@ Windows: cambia la política a `Unrestricted` y repite el script en el perfil ca
 | `dam listar [CARPETA]` | Tabla con nombre, tipo, tamaño y fecha. |
 | `dam validar` | Comprueba `acciones.json`. Sale con 3 si está mal. |
 | `dam acciones` | Lista las acciones configuradas. |
-| `dam ejecutar NOMBRE [CARPETA] [--simular] [--si]` | Ejecuta una acción. `--simular` enseña qué haría sin tocar nada; borrar pide confirmación salvo `--si`. |
+| `dam ejecutar NOMBRE [CARPETA] [--simular] [--si]` | Ejecuta una acción. `--simular` enseña qué haría sin tocar nada; borrar pide confirmación salvo `--si`. `ordenar` (con `al_almacen`) mete los apuntes en el almacén y luego ofrece `dam sync`. |
 | `dam status [ASIGNATURA]` | Qué has cambiado en local y qué hay nuevo en GitHub. No modifica nada. |
 | `dam sync [ASIGNATURA] [MENSAJE] [-m TEXTO] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
 | `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves, tokens y contraseñas expuestas. Sale con 1 si encuentra algo. |
@@ -126,6 +126,7 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 | `filtro` | no (borrar: sí) | `extensiones`, `patron` (regex), `mas_antiguo_que_dias`, `mayor_que_mb`; se cumplen todos. |
 | `carpetas` | ordenar | `{"asignatura": ["palabra clave", ...]}`. Se comparan palabras completas, sin tildes ni mayúsculas. |
 | `por_extension` | no (ordenar) | `{".sql": "bases-datos"}`: pista extra por extensión. |
+| `al_almacen` | no (ordenar) | `true` = cada fichero va a `asignaturas/ASIGNATURA` de tu almacén (no a una subcarpeta del origen). Si la asignatura no existe en el almacén, se salta. Al acabar pregunta si haces `dam sync` (con `--si` solo te lo recuerda). No se puede usar junto a `destino`. |
 | `calidad` | no (convertir) | 1-100, por defecto 80. |
 | `confirmar` | no | `true` = pide confirmación antes de actuar (salvo `--si`). |
 
