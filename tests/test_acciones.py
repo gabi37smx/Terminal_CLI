@@ -114,6 +114,19 @@ def test_ordenar_clasifica_palabras_completas(tmp_path, nombre, esperado):
     assert clasificador().clasificar(f) == esperado
 
 
+def test_ordenar_real_apuntes_de_arquitectura_van_a_sistemas(tmp_path, monkeypatch):
+    """Caso real: «UD-01-ARQUITECTURA VON NEUMANN.pdf» iba a programación porque solo
+    reconocía «funció» en el texto. Con el acciones.json del repo debe ir a sistemas."""
+    config = json.loads((Path(__file__).parent.parent / "acciones.json").read_text(encoding="utf-8"))
+    ordenar = Ordenar(next(a for a in config["acciones"] if a["tipo"] == "ordenar"))
+    texto = ("Unitat 2 Arquitectura d'ordinadors. Unitat central de procés (UCP). "
+             "Connexió amb la CPU. Unitat de E/S: funcions. L'aportació de Von Neumann. Funció.")
+    monkeypatch.setattr("tareas.acciones._texto_pdf", lambda ruta: texto)
+    f = tmp_path / "UD-01-ARQUITECTURA VON NEUMANN.pdf"
+    f.write_bytes(b"%PDF")
+    assert ordenar.clasificar(f) == "sistemas"
+
+
 def test_ordenar_pdf_roto_no_revienta(tmp_path):
     f = tmp_path / "raro.pdf"
     f.write_bytes(b"%PDF-1.4 esto no es un pdf de verdad")
