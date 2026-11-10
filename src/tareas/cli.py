@@ -16,8 +16,10 @@ from rich.table import Table
 from tareas import __version__, config, escanear, hook, sincronizar, web
 from tareas import doctor as doctor_mod  # «doctor», «entregar» y «pendientes» ya son nombres de comandos
 from tareas import entregar as entregar_mod
+from tareas import inventario as inventario_mod
 from tareas import pendientes as pendientes_mod
 from tareas.errores import ConfigError, TareasError
+from tareas.inventario import tamano_legible
 from tareas.motor import Motor
 from typer import _completion_classes, _completion_shared, rich_utils
 
@@ -112,19 +114,6 @@ def confirmar(pregunta: str) -> None:
         raise typer.Abort()
 
 
-def tamano_legible(n: int) -> str:
-    """Convierte bytes en texto: 532 B, 1.2 KB, 3.4 MB..."""
-    if n < 1024:
-        return f"{n} B"
-    tamano = float(n)
-    unidad = "B"
-    for unidad in ("KB", "MB", "GB", "TB"):
-        tamano /= 1024
-        if tamano < 1024:
-            break
-    return f"{tamano:.1f} {unidad}"
-
-
 # ---------- ayuda ----------
 # Ejemplos por comando: salen en `dam` (ayuda general) y al final de `dam COMANDO --help`.
 # Hay un test que obliga a que cada comando nuevo tenga los suyos.
@@ -154,6 +143,11 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam entregar ~/Electrician", "Crea Electrician_AAAA-MM-DD.zip al lado de la carpeta"),
         ("dam entregar . --destino ~/Escritorio", "El zip de la carpeta actual, en otra carpeta"),
         ('dam entregar . --nombre "Vidal_Gabriel_practica3"', "Con el nombre que pida el profesor"),
+    ],
+    "inventario": [
+        ("dam inventario ~/Desktop", "Qué hay en el Escritorio: tamaños, repos, tipos, instaladores y basura"),
+        ("dam inventario ~ --guardar ~/inventario.md", "Todo tu usuario, con el informe completo en un .md"),
+        ("dam inventario ~/Downloads --top 30", "Enseña 30 filas por lista en vez de 15"),
     ],
     "test-links": [
         ("dam test-links ~/portfolio", "Revisa todos los .html de la carpeta (enlaces internos y externos)"),
@@ -209,6 +203,7 @@ GRUPOS = [
     ("Almacén de apuntes (git): clase, casa y USB", ["status", "sync"]),
     ("Seguridad: claves expuestas", ["scan-secrets", "instalar-hook"]),
     ("Tus proyectos: revisar y entregar", ["doctor", "pendientes", "entregar"]),
+    ("Tus datos: organizar el PC", ["inventario"]),
     ("Tu web (portfolio): enlaces y cabeceras", ["test-links", "check-headers"]),
     ("Otros", ["version", "help"]),
 ]
@@ -893,6 +888,111 @@ def entregar(
     zip_creado = entregar_mod.crear_zip(plan)
     consola.print(f"\n[green]✔ Creado[/green] {escape(str(zip_creado))} "
                   f"({resumen} · {tamano_legible(zip_creado.stat().st_size)} el zip)")
+
+
+# ---------- tus datos: organizar el PC ----------
+def _pintar_ficheros(titulo: str, color: str, lista: list[inventario_mod.Fichero], top: int) -> None:
+    """Una lista del inventario (instaladores, basura...) con su total; si está vacía, no sale."""
+    if not lista:
+        return
+    titulo = f"[{color}]{titulo}[/{color}] ({len(lista)} · {inventario_mod.resumen_tamano(lista)})"
+    con_nube = any(f.en_nube for f in lista)
+    tabla = Table(title=titulo, title_justify="left")
+    tabla.add_column("Ruta", overflow="fold")
+    tabla.add_column("Tamaño", justify="right", no_wrap=True)
+    if con_nube:
+        tabla.add_column("Dónde", no_wrap=True)
+    for f in lista[:top]:
+        donde = ["[blue]nube[/blue]" if f.en_nube else "disco"] if con_nube else []
+        tabla.add_row(escape(f.ruta), tamano_legible(f.tamano), *donde)
+    if len(lista) > top:
+        tabla.add_row(f"[dim]…y {len(lista) - top} más[/dim]", "", *([""] if con_nube else []))
+    consola.print(tabla)
+
+
+@comando
+@controlar_errores
+def inventario(
+    carpeta: Annotated[Path, typer.Argument(metavar="CARPETA", help="Carpeta que quieres revisar (por defecto, la actual).")] = Path("."),
+    guardar: Annotated[Optional[Path], typer.Option("--guardar", metavar="INFORME.md", help="Guarda el informe completo en un .md.")] = None,
+    top: Annotated[int, typer.Option("--top", min=1, metavar="N", help="Filas por lista (por defecto, 15).")] = 15,
+) -> None:
+    """Hace inventario de una carpeta antes de organizarla. No cambia nada.
+
+    Saca el tamaño de cada subcarpeta, los ficheros por tipo, los repos git (y si tienen remoto configurado), los instaladores, la basura (temporales, descargas a medias, Thumbs.db...), las carpetas que se pueden regenerar (node_modules, .venv...), las de programas (miniconda3, .vscode...) y los ficheros de más de 100 MB.
+
+    Separa lo que ocupa el disco de lo que está «solo en la nube» (OneDrive): eso no gasta disco.
+
+    Solo lee nombres y tamaños. No entra en AppData ni sigue enlaces (como «Mis documentos»), para no contar nada dos veces.
+    """
+    if guardar is not None:
+        guardar = guardar.expanduser()
+        if guardar.suffix.lower() != ".md":
+            raise TareasError("El informe tiene que ser un .md (por ejemplo, --guardar ~/inventario.md).")
+        if guardar.is_file() and not guardar.read_text(encoding="utf-8", errors="replace").startswith("# Inventario de"):
+            raise TareasError(f"«{guardar}» ya existe y no es un inventario: no lo sobrescribo. Elige otro nombre.")
+
+    with consola.status("Recorriendo la carpeta (en el disco entero puede tardar unos minutos)…"):
+        informe = inventario_mod.revisar(carpeta)
+
+    consola.print(f"[bold]Inventario de[/bold] {escape(str(informe.carpeta))}")
+    con_nube = informe.tamano_nube > 0
+    nube = f" · [blue]{tamano_legible(informe.tamano_nube)} solo en la nube[/blue]" if con_nube else ""
+    consola.print(f"{informe.ficheros} ficheros en {informe.carpetas} carpetas · "
+                  f"[bold]{tamano_legible(informe.tamano)} en el disco[/bold]{nube}\n")
+
+    def columnas_tamano(tabla: Table) -> None:
+        tabla.add_column("En el disco", justify="right", no_wrap=True)
+        if con_nube:
+            tabla.add_column("Solo en la nube", justify="right", no_wrap=True, style="blue")
+
+    def tamanos(disco: int, en_nube: int) -> list[str]:
+        return [tamano_legible(disco)] + ([tamano_legible(en_nube)] if con_nube else [])
+
+    tabla = Table(title="Tamaño por carpeta", title_justify="left")
+    tabla.add_column("Carpeta", overflow="fold")
+    columnas_tamano(tabla)
+    for nombre in informe.carpetas_ordenadas[:top]:
+        tabla.add_row(escape(nombre), *tamanos(informe.por_carpeta[nombre], informe.por_carpeta_nube[nombre]))
+    consola.print(tabla)
+
+    tabla = Table(title="Por tipo", title_justify="left")
+    tabla.add_column("Tipo")
+    tabla.add_column("Ficheros", justify="right")
+    columnas_tamano(tabla)
+    for tipo in informe.tipos_ordenados:
+        tabla.add_row(tipo, str(informe.cuantos_por_tipo[tipo]),
+                      *tamanos(informe.tamano_por_tipo[tipo], informe.nube_por_tipo[tipo]))
+    consola.print(tabla)
+
+    if informe.repos:
+        remoto = {True: "[green]sí[/green]", False: "[yellow]sin remoto configurado[/yellow]", None: "?"}
+        tabla = Table(title=f"Repos git ({len(informe.repos)})", title_justify="left")
+        tabla.add_column("Repo", overflow="fold")
+        tabla.add_column("Tamaño", justify="right", no_wrap=True)
+        tabla.add_column("Remoto", no_wrap=True)
+        for r in informe.repos:
+            tabla.add_row(escape(r.ruta), tamano_legible(r.tamano), remoto[r.con_remoto])
+        consola.print(tabla)
+
+    _pintar_ficheros("Instaladores", "magenta", informe.instaladores, top)
+    _pintar_ficheros("Basura", "red", informe.basura, top)
+    _pintar_ficheros("Carpetas regenerables (uv sync, npm install)", "yellow", informe.regenerables, top)
+    _pintar_ficheros("Programas y configuración (no se organizan)", "dim", informe.programas, top)
+    _pintar_ficheros("Ficheros de más de 100 MB", "cyan", informe.grandes, top)
+
+    consola.print(f"\nRecuperable sin perder nada: basura {tamano_legible(inventario_mod.en_disco(informe.basura))} · "
+                  f"regenerables {tamano_legible(inventario_mod.en_disco(informe.regenerables))}. "
+                  f"Instaladores: {inventario_mod.resumen_tamano(informe.instaladores)}.")
+    if informe.saltadas:
+        consola.print(f"[dim]No recorridas (sistema o enlaces): {len(informe.saltadas)}.[/dim]")
+    if informe.sin_acceso:
+        consola.print(f"[yellow]⚠ Sin permiso de lectura: {len(informe.sin_acceso)} rutas (detalle en --guardar).[/yellow]")
+
+    if guardar is not None:
+        guardar.parent.mkdir(parents=True, exist_ok=True)
+        guardar.write_text(inventario_mod.a_markdown(informe, top), encoding="utf-8")
+        consola.print(f"[green]✔ Informe guardado en[/green] {escape(str(guardar))}")
 
 
 # ---------- tu web (portfolio) ----------
