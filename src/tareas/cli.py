@@ -15,6 +15,7 @@ from rich.table import Table
 
 from tareas import __version__, config, escanear, hook, sincronizar, web
 from tareas import doctor as doctor_mod  # «doctor», «entregar» y «pendientes» ya son nombres de comandos
+from tareas import duplicados as duplicados_mod
 from tareas import entregar as entregar_mod
 from tareas import inventario as inventario_mod
 from tareas import pendientes as pendientes_mod
@@ -149,6 +150,11 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam inventario ~ --guardar ~/inventario.md", "Todo tu usuario, con el informe completo en un .md"),
         ("dam inventario ~/Downloads --top 30", "Enseña 30 filas por lista en vez de 15"),
     ],
+    "duplicados": [
+        ("dam duplicados ~/Datos", "Ficheros repetidos y carpetas que son copia de otra (no borra nada)"),
+        ("dam duplicados ~/Datos --guardar ~/duplicados.md", "Con el informe en un .md para repasarlo con calma"),
+        ("dam duplicados ~/Downloads --top 50", "Enseña los 50 grupos más grandes en vez de 15"),
+    ],
     "test-links": [
         ("dam test-links ~/portfolio", "Revisa todos los .html de la carpeta (enlaces internos y externos)"),
         ("dam test-links index.html", "Una sola página"),
@@ -203,7 +209,7 @@ GRUPOS = [
     ("Almacén de apuntes (git): clase, casa y USB", ["status", "sync"]),
     ("Seguridad: claves expuestas", ["scan-secrets", "instalar-hook"]),
     ("Tus proyectos: revisar y entregar", ["doctor", "pendientes", "entregar"]),
-    ("Tus datos: organizar el PC", ["inventario"]),
+    ("Tus datos: organizar el PC", ["inventario", "duplicados"]),
     ("Tu web (portfolio): enlaces y cabeceras", ["test-links", "check-headers"]),
     ("Otros", ["version", "help"]),
 ]
@@ -992,6 +998,84 @@ def inventario(
     if guardar is not None:
         guardar.parent.mkdir(parents=True, exist_ok=True)
         guardar.write_text(inventario_mod.a_markdown(informe, top), encoding="utf-8")
+        consola.print(f"[green]✔ Informe guardado en[/green] {escape(str(guardar))}")
+
+
+@comando
+@controlar_errores
+def duplicados(
+    carpeta: Annotated[Path, typer.Argument(metavar="CARPETA", help="Carpeta que quieres revisar (por defecto, la actual).")] = Path("."),
+    guardar: Annotated[Optional[Path], typer.Option("--guardar", metavar="INFORME.md", help="Guarda el informe en un .md.")] = None,
+    top: Annotated[int, typer.Option("--top", min=1, metavar="N", help="Grupos de ficheros que enseña (por defecto, 15).")] = 15,
+) -> None:
+    """Busca ficheros repetidos y carpetas que son copia de otra. No borra nada.
+
+    Compara el contenido (no el nombre): dos ficheros son iguales si tienen la misma huella SHA-256.
+
+    Primero enseña las carpetas en las que TODOS los ficheros tienen otra copia fuera (las primeras candidatas a borrar) y después los grupos de ficheros repetidos, de más a menos espacio. Marca las copias que están dentro de un repo git: esas se quitan con un commit.
+
+    No lee los ficheros «solo en la nube» de OneDrive (se descargarían) y se salta lo mismo que dam inventario (AppData, enlaces, .git, .venv, node_modules...).
+    """
+    if guardar is not None:
+        guardar = guardar.expanduser()
+        if guardar.suffix.lower() != ".md":
+            raise TareasError("El informe tiene que ser un .md (por ejemplo, --guardar ~/duplicados.md).")
+        if guardar.is_file() and not guardar.read_text(encoding="utf-8", errors="replace").startswith("# Duplicados de"):
+            raise TareasError(f"«{guardar}» ya existe y no es un informe de duplicados: no lo sobrescribo. Elige otro nombre.")
+
+    with consola.status("Comparando ficheros (en carpetas grandes puede tardar unos minutos)…"):
+        informe = duplicados_mod.revisar(carpeta)
+
+    consola.print(f"[bold]Duplicados en[/bold] {escape(str(informe.carpeta))}")
+    consola.print(f"{informe.ficheros} ficheros revisados ({tamano_legible(informe.tamano)}) · "
+                  f"[bold]{len(informe.grupos)} grupos repetidos[/bold] · "
+                  f"dejando una copia de cada, se liberarían [bold]{tamano_legible(informe.sobra)}[/bold]\n")
+    if not informe.grupos:
+        consola.print("[green]✔ No hay ficheros repetidos.[/green]")
+
+    def marca(ruta: str) -> str:
+        return escape(ruta) + (" [yellow](repo)[/yellow]" if informe.repo_de(ruta) else "")
+
+    if informe.carpetas_copia:
+        tabla = Table(title=f"[magenta]Carpetas que son copia de otra[/magenta] ({len(informe.carpetas_copia)})",
+                      title_justify="left", caption_justify="left",
+                      caption="Todos sus ficheros tienen otra copia fuera. Primero las de fuera de los repos; "
+                              "si dos carpetas son copia una de otra, sale solo una.")
+        tabla.add_column("Carpeta", overflow="fold")
+        tabla.add_column("Ficheros", justify="right")
+        tabla.add_column("Tamaño", justify="right", no_wrap=True)
+        tabla.add_column("La otra copia está en", overflow="fold")
+        for c in informe.carpetas_copia[:top]:
+            original = marca(c.original) if c.original else "[dim]repartida en varios sitios[/dim]"
+            tabla.add_row(marca(c.ruta), str(c.ficheros), tamano_legible(c.tamano), original)
+        if len(informe.carpetas_copia) > top:
+            tabla.add_row(f"[dim]…y {len(informe.carpetas_copia) - top} más (--top o --guardar para verlas)[/dim]", "", "", "")
+        consola.print(tabla)
+
+    if informe.grupos:
+        tabla = Table(title=f"[cyan]Ficheros repetidos[/cyan] ({len(informe.grupos)} grupos)", title_justify="left",
+                      show_lines=True)
+        tabla.add_column("Copias", overflow="fold")
+        tabla.add_column("Tamaño", justify="right", no_wrap=True)
+        tabla.add_column("Sobra", justify="right", no_wrap=True)
+        for grupo in informe.grupos[:top]:
+            tabla.add_row("\n".join(marca(r) for r in grupo.rutas),
+                          f"{tamano_legible(grupo.tamano)} × {len(grupo.rutas)}", tamano_legible(grupo.sobra))
+        if len(informe.grupos) > top:
+            tabla.add_row(f"[dim]…y {len(informe.grupos) - top} grupos más (--top o --guardar para verlos)[/dim]", "", "")
+        consola.print(tabla)
+
+    if informe.en_nube:
+        consola.print(f"[dim]No leídos por estar solo en la nube (OneDrive): {informe.en_nube}.[/dim]")
+    if informe.sin_acceso:
+        consola.print(f"[yellow]⚠ Sin permiso de lectura: {len(informe.sin_acceso)} rutas (detalle en --guardar).[/yellow]")
+    if informe.grupos:
+        consola.print("\n[bold]dam duplicados no borra nada.[/bold] Antes de borrar, decide qué copia guardas; "
+                      "si la que sobra está en un repo, quítala con un commit. Mejor a la Papelera que borrar del todo.")
+
+    if guardar is not None:
+        guardar.parent.mkdir(parents=True, exist_ok=True)
+        guardar.write_text(duplicados_mod.a_markdown(informe, top), encoding="utf-8")
         consola.print(f"[green]✔ Informe guardado en[/green] {escape(str(guardar))}")
 
 
