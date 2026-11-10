@@ -3,7 +3,7 @@
 ## Stack y órdenes
 - Python 3.12 + Typer + Rich (+ Pillow y pypdf), gestionado con uv (src layout, paquete src/tareas).
 - El comando se llama `dam`. Ejecutar: `uv run dam --help` · Validar config: `uv run dam validar` · Pruebas: `uv run pytest`.
-- Módulos: errores.py, config.py (valida acciones.json), acciones.py (clases Accion), motor.py, sincronizar.py (almacén git), escanear.py (scan-secrets), web.py (test-links y check-headers), hook.py (instalar-hook), doctor.py (revisa un proyecto), pendientes.py (etiquetas y registro de pendientes), entregar.py (zip limpio para entregar), inventario.py (qué hay en una carpeta, solo lee), duplicados.py (ficheros repetidos y carpetas copia, solo lee), cli.py (solo interfaz).
+- Módulos: errores.py, config.py (valida acciones.json), acciones.py (clases Accion), motor.py, sincronizar.py (almacén git), escanear.py (scan-secrets), web.py (test-links y check-headers), hook.py (instalar-hook), doctor.py (revisa un proyecto), pendientes.py (etiquetas y registro de pendientes), entregar.py (zip limpio para entregar), inventario.py (qué hay en una carpeta, solo lee), duplicados.py (ficheros repetidos y carpetas copia, solo lee), readme.py (tabla «Qué hay dentro» de cada README), cli.py (solo interfaz).
 
 ## Normas
 - Mensajes y comentarios en español; código claro antes que listo.

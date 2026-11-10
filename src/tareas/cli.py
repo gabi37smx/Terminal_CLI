@@ -19,6 +19,7 @@ from tareas import duplicados as duplicados_mod
 from tareas import entregar as entregar_mod
 from tareas import inventario as inventario_mod
 from tareas import pendientes as pendientes_mod
+from tareas import readme as readme_mod
 from tareas.errores import ConfigError, TareasError
 from tareas.inventario import tamano_legible
 from tareas.motor import Motor
@@ -155,6 +156,11 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam duplicados ~/Datos --guardar ~/duplicados.md", "Con el informe en un .md para repasarlo con calma"),
         ("dam duplicados ~/Downloads --top 50", "Enseña los 50 grupos más grandes en vez de 15"),
     ],
+    "readme": [
+        ("dam readme ~/Datos --simular", "Enseña qué README crearía o pondría al día, sin tocar nada"),
+        ("dam readme ~/Datos", "Lo hace de verdad: enseña la lista y pregunta s/N"),
+        ("dam readme ~/Datos/SMX --niveles 1", "Solo SMX y sus carpetas de primer nivel"),
+    ],
     "test-links": [
         ("dam test-links ~/portfolio", "Revisa todos los .html de la carpeta (enlaces internos y externos)"),
         ("dam test-links index.html", "Una sola página"),
@@ -209,7 +215,7 @@ GRUPOS = [
     ("Almacén de apuntes (git): clase, casa y USB", ["status", "sync"]),
     ("Seguridad: claves expuestas", ["scan-secrets", "instalar-hook"]),
     ("Tus proyectos: revisar y entregar", ["doctor", "pendientes", "entregar"]),
-    ("Tus datos: organizar el PC", ["inventario", "duplicados"]),
+    ("Tus datos: organizar el PC", ["inventario", "duplicados", "readme"]),
     ("Tu web (portfolio): enlaces y cabeceras", ["test-links", "check-headers"]),
     ("Otros", ["version", "help"]),
 ]
@@ -247,10 +253,9 @@ def mostrar_ayuda() -> None:
         for nombre in resto:
             _pintar_comando(nombre, comandos[nombre])
 
-    consola.print("\nOpciones y ejemplos de un comando:  [bold]dam help COMANDO[/bold]")
-    consola.print("Usar otro acciones.json:            [bold]dam --config RUTA COMANDO[/bold]")
-    consola.print("Activa el TAB en tu terminal:       [bold]dam --install-completion[/bold]  (mejor con instalar.sh / instalar.ps1)")
-    consola.print("Ver el script del TAB:              [bold]dam --show-completion[/bold]")
+    consola.print("\nUsar otro acciones.json:  [bold]dam --config RUTA COMANDO[/bold]")
+    consola.print("Activa el TAB:            [bold]dam --install-completion[/bold] (mejor con instalar.sh / instalar.ps1)"
+                  " · ver el script: [bold]dam --show-completion[/bold]")
 
 
 @app.callback(invoke_without_command=True)
@@ -310,7 +315,7 @@ def ayuda(
         typer.Argument(metavar="COMANDO", help="Comando del que quieres la ayuda (sin él, la lista de comandos)."),
     ] = None,
 ) -> None:
-    """Muestra la lista de comandos, o la ayuda detallada de uno."""
+    """Esta lista, o las opciones y ejemplos de un comando: dam help COMANDO."""
     if nombre is None:
         mostrar_ayuda()
         return
@@ -1077,6 +1082,58 @@ def duplicados(
         guardar.parent.mkdir(parents=True, exist_ok=True)
         guardar.write_text(duplicados_mod.a_markdown(informe, top), encoding="utf-8")
         consola.print(f"[green]✔ Informe guardado en[/green] {escape(str(guardar))}")
+
+
+@comando
+@controlar_errores
+def readme(
+    carpeta: Annotated[Path, typer.Argument(metavar="CARPETA", help="Carpeta de arriba (por defecto, la actual).")] = Path("."),
+    niveles: Annotated[int, typer.Option("--niveles", min=0, metavar="N", help="Hasta qué profundidad baja (por defecto, 3).")] = 3,
+    simular: Annotated[bool, typer.Option("--simular", help="Enseña qué haría sin tocar nada.")] = False,
+    si: Annotated[bool, typer.Option("--si", help="No pregunta antes de escribir (solo si estás seguro).")] = False,
+) -> None:
+    """Pone en cada carpeta un README.md con una tabla de lo que hay dentro.
+
+    El apartado «## Qué hay dentro» es una tabla: cada subcarpeta con su tamaño y la primera frase de su propio README, y cada archivo con su tamaño y su tipo.
+
+    Lo que escribes tú encima de ese apartado no se toca nunca, ni un README que no tenga ese apartado (el de un repo, por ejemplo). No entra en repos git ni en proyectos de código.
+
+    Enseña primero qué README crearía o pondría al día y pregunta s/N; --simular solo lo enseña y --si no pregunta.
+    """
+    with consola.status("Mirando las carpetas…"):
+        cambios = readme_mod.planear(carpeta, niveles)
+    raiz = carpeta.expanduser().resolve()
+    cuenta = {q: sum(1 for c in cambios if c.que == q) for q in ("crear", "actualizar", "igual", "propio")}
+    estilo = {"crear": "[green]crear[/green]", "actualizar": "[yellow]poner al día[/yellow]",
+              "propio": "[dim]no se toca (README sin «Qué hay dentro»)[/dim]"}
+    visibles = [c for c in cambios if c.que != "igual"]
+    if visibles:
+        titulo = "README (SIMULACIÓN: no se ha tocado nada)" if simular else "README"
+        tabla = Table(title=titulo, title_justify="left")
+        tabla.add_column("Carpeta", overflow="fold")
+        tabla.add_column("Qué hará")
+        for c in visibles:
+            ruta = c.carpeta.relative_to(raiz).as_posix() if c.carpeta != raiz else f". ({raiz.name})"
+            tabla.add_row(escape(ruta), estilo[c.que])
+        consola.print(tabla)
+    consola.print(f"{cuenta['crear']} nuevos · {cuenta['actualizar']} a poner al día · "
+                  f"{cuenta['igual']} ya al día · {cuenta['propio']} que no se tocan")
+    a_escribir = cuenta["crear"] + cuenta["actualizar"]
+    if a_escribir == 0:
+        consola.print("No hay nada que hacer.")
+        return
+    if simular:
+        consola.print("Para hacerlo de verdad, repite la orden sin --simular.")
+        return
+    if not si:
+        confirmar(f"¿Escribir {a_escribir} README?")
+    errores = readme_mod.aplicar(cambios)
+    for cambio, motivo in errores:
+        consola.print(f"[red]✘ {escape(str(cambio.carpeta))}: {escape(motivo)}[/red]")
+    consola.print(f"[green]✔ {a_escribir - len(errores)} README escritos.[/green]"
+                  + (f" [red]{len(errores)} con error.[/red]" if errores else ""))
+    if errores:
+        raise typer.Exit(1)
 
 
 # ---------- tu web (portfolio) ----------
