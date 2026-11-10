@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .errores import AccionNoValida
+from .inventario import es_basura, tipo_de
 
 
 ESTADOS = {"hecho", "simulado", "saltado", "error"}
@@ -158,6 +159,14 @@ def _texto_pdf(ruta: Path) -> str:
         return ""
 
 
+# Plan B de ordenar («por_tipo»): el tipo de dam inventario -> su carpeta (en MAYÚSCULAS, como en ~/Datos/POR-TIPO)
+CARPETA_POR_TIPO = {"documentos": "DOCUMENTOS", "imagenes": "IMAGENES", "video": "VIDEO", "audio": "AUDIO",
+                    "comprimidos": "COMPRIMIDOS", "instaladores": "INSTALADORES", "codigo": "CODIGO",
+                    "redes": "REDES"}  # lo demás (máquinas virtuales, otros...) va a OTROS
+# Ficheros que pone Windows o macOS: no se mueven nunca
+DEL_SISTEMA = {"desktop.ini", "thumbs.db", ".ds_store"}
+
+
 class Ordenar(Accion):
     """Reparte ficheros en carpetas por asignatura usando palabras clave (palabras COMPLETAS)."""
 
@@ -193,17 +202,24 @@ class Ordenar(Accion):
         return next(a for a, p in puntos.items() if p == mejor)  # empate: gana la primera
 
     def aplicar(self, fichero, n, simular):
+        if fichero.name.lower() in DEL_SISTEMA or fichero.name.startswith(".") or es_basura(fichero.name):
+            return Resultado(fichero, None, "saltado", "del sistema, temporal o a medio descargar")
         asignatura = self.clasificar(fichero)
-        if asignatura is None:
+        nota = ""
+        if asignatura is not None:
+            carpeta = self._carpeta_destino(fichero) / asignatura
+            if self.config.get("al_almacen") and not carpeta.is_dir():  # en el almacén no se inventan asignaturas
+                return Resultado(fichero, None, "saltado", f"«{asignatura}» no está en el almacén")
+        elif self.config.get("por_tipo"):  # plan B: no es de ninguna asignatura
+            carpeta = Path(self.config["por_tipo"]).expanduser() / CARPETA_POR_TIPO.get(tipo_de(fichero.name), "OTROS")
+            nota = "por tipo"
+        else:
             return Resultado(fichero, None, "saltado", "no sé de qué asignatura es")
-        carpeta = self._carpeta_destino(fichero) / asignatura
-        if self.config.get("al_almacen") and not carpeta.is_dir():  # en el almacén no se inventan asignaturas
-            return Resultado(fichero, None, "saltado", f"«{asignatura}» no está en el almacén")
         destino = destino_libre(carpeta / fichero.name, self._reservados)
         if not simular:
             carpeta.mkdir(parents=True, exist_ok=True)
             shutil.move(fichero, destino)
-        return Resultado(fichero, destino, "simulado" if simular else "hecho")
+        return Resultado(fichero, destino, "simulado" if simular else "hecho", nota)
 
 
 class Convertir(Accion):
