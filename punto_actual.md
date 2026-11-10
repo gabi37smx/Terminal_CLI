@@ -6,8 +6,8 @@
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
 **Estado:** `main` en GitHub hasta `2f59e1d` (6-nov): los tres comandos nuevos (`doctor`, `pendientes` y `entregar`) y los arreglos del TAB entraron con el **PR #3** (rama `feature/doctor-entregar-pendientes`, commit `0893964`, subida por Claude Code porque se lo pedí; la fusión la hice yo). Antes: instalador (`40ff2e5`), `dam help` (`7e62593`) y TAB (`1f34747`), del 3-nov; la rama `feature/seguridad-y-web` entró con el PR #2 (1-nov). Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
-**Tests:** `uv run pytest -q` → **279 passed, 1 skipped** (10-nov, desde la raíz).
-**Rama actual (10-nov):** `feature/inventario`, con `dam inventario`, subida en el PR #4 (falta fusionarla).
+**Tests:** `uv run pytest -q` → **303 passed, 1 skipped** (10-nov, desde la raíz).
+**Rama actual (10-nov):** `feature/duplicados`, con `dam duplicados` (el PR #4 de `dam inventario` ya está fusionado).
 **Carpeta nueva (10-nov):** el repo está ahora en `C:\Users\HP\Datos\REPOS\TERMINAL_CLI` (antes en el Escritorio). `dam` se reinstaló desde aquí con `uv tool install --editable . --force`.
 
 ## Qué hay hecho
@@ -60,7 +60,8 @@ Plan en 5 fases: 1 `dam inventario` → 2 `dam duplicados` (solo informa, nunca 
 - [x] **`dam inventario [CARPETA] [--guardar INFORME.md] [--top N]`** (`inventario.py`, solo lee): tamaño por carpeta, tipos, repos (y si tienen remoto), instaladores, basura, carpetas regenerables (`.venv`, `node_modules`) y ficheros de más de 100 MB. Los ficheros de OneDrive «solo en la nube» no cuentan como espacio en el disco. Probado en `~/Datos`: 73 170 ficheros en 4 s.
 - [x] **Mudanza hecha** (fase 5 adelantada, con `~/mudanza-datos.ps1`): todo está en `~/Datos` con las carpetas en MAYÚSCULAS (`CURSOS`, `DAM`, `MAQUINAS-VIRTUALES`, `PERSONAL`, `POR-TIPO`, `REPOS`, `SMX`) y un README en cada carpeta hasta el tercer nivel. Dentro de los repos no se ha cambiado ningún nombre.
 - [x] Los apuntes de DAM están solo en el almacén (`REPOS\DAM-ALMACEN`). En este PC, `dam` lo encuentra por la variable `DAM_ALMACEN`; `acciones.json` sigue con `~/DAM-almacen` porque es la ruta de los otros equipos.
-- [ ] Fase 2 `dam duplicados`: ya sé lo que tiene que encontrar (en la revisión del 10-nov había 437 MB repetidos; las copias exactas se mandaron a la Papelera a mano).
+- [x] **Fase 2 `dam duplicados [CARPETA] [--guardar INFORME.md] [--top N]`** (`duplicados.py`, solo lee): compara el contenido (SHA-256; primero por tamaño y por los primeros 64 KB, para ir rápido). Enseña primero las **carpetas que son copia de otra** (todos sus ficheros tienen copia fuera), las de fuera de los repos antes, y cada pareja una sola vez; después los grupos de ficheros repetidos, de más a menos espacio. Marca «(repo)» lo que está en un repo (eso se quita con un commit). Una carpeta con un repo dentro nunca sale como copia (su `.git` no se compara). No lee lo que está «solo en la nube». Probado en `~/Datos` (después de la limpieza a mano): 3746 ficheros, 327 grupos, 125 MB repetidos y 56 carpetas copia, en 20 s. Lo primero que sale: `SMX2/APLICACIONS WEB/APW-MAIN` repite lo del repo `APLICACIONS-WEB`, y los PDF de Java están dos veces en DAM-almacen (`entornos` y `lenguaje-marcas`).
+- [ ] Ojo: la ayuda general ya tiene 39 líneas y `test_ayuda.py` exige menos de 40. El próximo comando no cabe sin acortarla.
 - [ ] Fase 3 `dam readme`: que actualice la lista de «Qué hay dentro» de los README que ya existen sin borrar la descripción escrita a mano.
 - [ ] Fase 4 `ordenar`: lo que sea de una asignatura de DAM, al almacén (`asignaturas/<asignatura>`); lo que no, a `~/Datos/POR-TIPO/<TIPO>` (en MAYÚSCULAS).
 

@@ -30,6 +30,7 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `dam pendientes [CARPETA] [--quien NOMBRE] [--resumen]` | Cuenta `[Verificado]`, `[Hipótesis]` y `[Pendiente]` y resume `pendientes.md` | `uv run dam pendientes ~/Electrician --quien Gabi` |
 | `dam entregar [CARPETA] [--destino D] [--nombre N] [--simular]` | Proyecto en un `.zip` limpio, sin `.env` ni claves | `uv run dam entregar . --simular` |
 | `dam inventario [CARPETA] [--guardar INFORME.md] [--top N]` | Qué hay en una carpeta: tamaños, repos, tipos, instaladores y basura (solo lee) | `uv run dam inventario ~/Desktop` |
+| `dam duplicados [CARPETA] [--guardar INFORME.md] [--top N]` | Ficheros repetidos y carpetas que son copia de otra (no borra nada) | `uv run dam duplicados ~/Datos` |
 | `dam test-links [FUENTE] [--sin-externos] [--timeout S]` | Busca enlaces rotos en tu web | `uv run dam test-links ~/portfolio` |
 | `dam check-headers URL [--timeout S]` | Cabeceras de seguridad de tu web o API | `uv run dam check-headers https://tu-web.com` |
 | `dam sync [ASIGNATURA] [-m MENSAJE] [--integrar] [--simular]` | Sincroniza con GitHub | `uv run dam sync programacion -m "tema 3"` |
