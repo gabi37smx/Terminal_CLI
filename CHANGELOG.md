@@ -31,6 +31,11 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 - Vocabulario de SMX, tras probarlo con apuntes reales de 1º: `.pka` (actividades de Packet Tracer)
   a redes, `.odb` (LibreOffice Base) a ofimática, discos y cajas a montaje, las siglas MME y SOX,
   cambio climático a sostenibilidad y John the Ripper y contraseñas a seguridad.
+- Al repetir `dam configurar`, «tus asignaturas de la última vez» traían las palabras clave viejas:
+  las que aprende el vocabulario después no llegaban nunca (solo las extensiones). Ahora se añaden,
+  sin quitar las tuyas.
+- `ejecutar ordenar` con un almacén que no es un repositorio git (uno de prueba) ofrecía `dam sync`
+  y fallaba. Ahora avisa de que los apuntes ya están en él pero no se pueden subir.
 
 ## [1.0.1] - 2026-11-11
 

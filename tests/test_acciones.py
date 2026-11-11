@@ -226,6 +226,7 @@ def al_almacen(tmp_path, monkeypatch):
     (descargas / "misterio.txt").write_text("x", encoding="utf-8")
     almacen = tmp_path / "DAM-almacen"
     (almacen / "asignaturas" / "sistemas").mkdir(parents=True)  # bases-datos no está en el almacén
+    (almacen / ".git").mkdir()  # parece un repositorio (sync es de mentira): si no, no ofrece dam sync
     monkeypatch.setenv("DAM_ALMACEN", str(almacen))
     cfg = tmp_path / "a.json"
     cfg.write_text(json.dumps({"version": 1, "acciones": [
