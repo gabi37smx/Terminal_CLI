@@ -23,6 +23,15 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 - Los instaladores ya no copian `acciones.json` tal cual: después de clonar el almacén lanzan
   `dam configurar`. Si lo cancelas, copian el de 1º de DAM como antes.
 
+### Corregido
+
+- En `dam configurar`, al escribir números en «asignaturas que añades» (pensando que eran las que
+  te quedas) se creaban asignaturas llamadas «3», «4»... Ahora la pregunta dice que son NUEVAS y por
+  nombre, se ve con cuáles te quedas y, si escribes un número, lo explica y vuelve a preguntar.
+- Vocabulario de SMX, tras probarlo con apuntes reales de 1º: `.pka` (actividades de Packet Tracer)
+  a redes, `.odb` (LibreOffice Base) a ofimática, discos y cajas a montaje, las siglas MME y SOX,
+  cambio climático a sostenibilidad y John the Ripper y contraseñas a seguridad.
+
 ## [1.0.1] - 2026-11-11
 
 Arreglos que salieron al instalar la 1.0.0 en un portátil con Ubuntu 24.04 recién instalado,

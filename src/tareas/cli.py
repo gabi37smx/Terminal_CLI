@@ -722,6 +722,9 @@ def _nueva_asignatura(texto: str) -> tuple[str, list[str]]:
     carpeta = ciclos.a_nombre_de_carpeta(nombre)
     if not carpeta:
         raise TareasError(f"«{texto}» no sirve como nombre de asignatura (usa letras y números)")
+    if carpeta.replace("-", "").isdigit():  # «3»: casi seguro que es el número de una de la lista
+        raise TareasError(f"«{nombre.strip()}» es un número: escribe el NOMBRE de la asignatura nueva "
+                          "(las de la lista que no quitas ya se quedan)")
     lista = [p.strip().lower() for p in palabras.split(",") if p.strip()] or [nombre.strip().lower()]
     return carpeta, lista
 
@@ -740,19 +743,26 @@ def _tabla_asignaturas(asignaturas: dict[str, list[str]]) -> None:
 
 
 def _editar_asignaturas(asignaturas: dict[str, list[str]]) -> dict[str, list[str]]:
-    """Pregunta qué quitar y qué añadir (Enter = nada)."""
+    """Pregunta qué quitar (por número) y qué añadir (por nombre). Enter = nada."""
     nombres = list(asignaturas)
-    quitar = typer.prompt("Números de las que quitas, separados por comas (Enter: ninguna)",
+    quitar = typer.prompt("Números de las que QUITAS, separados por comas; las demás se quedan (Enter: ninguna)",
                           default="", show_default=False)
     for parte in (p.strip() for p in quitar.split(",") if p.strip()):
         if parte.isdigit() and 1 <= int(parte) <= len(nombres):
             asignaturas.pop(nombres[int(parte) - 1], None)
         else:
             consola.print(f"[yellow]«{escape(parte)}» no es ningún número de la lista: no lo tengo en cuenta[/yellow]")
-    nuevas = typer.prompt("Asignaturas que añades, separadas por comas (Enter: ninguna)",
-                          default="", show_default=False)
-    for nombre in (n.strip() for n in nuevas.split(",") if n.strip()):
-        carpeta, _ = _nueva_asignatura(nombre)
+    if asignaturas:
+        consola.print(f"Te quedas con: {escape(', '.join(asignaturas))}")
+    while True:  # si escribe un número en vez de un nombre, se le explica y se repite la pregunta
+        nuevas = typer.prompt("Asignaturas NUEVAS que añades: escribe su nombre, separadas por comas (Enter: ninguna)",
+                              default="", show_default=False)
+        try:
+            lista = [(n, _nueva_asignatura(n)[0]) for n in (x.strip() for x in nuevas.split(",")) if n]
+            break
+        except TareasError as e:
+            consola.print(f"[yellow]{escape(str(e))}[/yellow]")
+    for nombre, carpeta in lista:
         palabras = typer.prompt(f"  Palabras clave de «{carpeta}» (separadas por comas)", default=nombre.lower())
         asignaturas[carpeta] = _nueva_asignatura(f"{nombre}={palabras}")[1]
     return asignaturas
