@@ -10,8 +10,8 @@ from pathlib import Path
 from .errores import AccionNoValida, ConfigError
 
 NOMBRE_FICHERO = "acciones.json"
-TIPOS = {"mover", "copiar", "renombrar", "borrar", "ordenar", "convertir", "resumir"}
-TIPOS_IA = {"resumir"}  # las que preguntan a un modelo (ver ia.py)
+TIPOS = {"mover", "copiar", "renombrar", "borrar", "ordenar", "convertir", "resumir", "renombrar-ia", "clasificar"}
+TIPOS_IA = {"resumir", "renombrar-ia", "clasificar"}  # las que preguntan a un modelo (ver ia.py)
 CAMPOS_IA = ("instrucciones", "max_caracteres", "categorias")
 OBLIGATORIOS = ("nombre", "descripcion", "tipo")
 POR_TIPO = {  # campos obligatorios según el tipo
@@ -19,6 +19,7 @@ POR_TIPO = {  # campos obligatorios según el tipo
     "copiar": ("destino",),
     "renombrar": ("plantilla",),
     "ordenar": ("carpetas",),
+    "clasificar": ("categorias", "destino"),
 }
 FILTROS = {"extensiones", "patron", "mas_antiguo_que_dias", "mayor_que_mb"}
 NOMBRE_VALIDO = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
