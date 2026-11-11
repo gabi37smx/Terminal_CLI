@@ -185,6 +185,23 @@
         ]
       },
       "confirmar": true
+    },
+    {
+      "nombre": "resumir-tema",
+      "descripcion": "Resume cada tema de apuntes (PDF, TXT o MD, en castellano o valenciano) en un .md para repasar",
+      "tipo": "resumir",
+      "origen": "~/pruebas-tareas/apuntes-ia",
+      "filtro": {
+        "extensiones": [
+          ".pdf",
+          ".txt",
+          ".md"
+        ],
+        "patron": "^(?!.*\\.resumen\\.md$)"
+      },
+      "destino": "~/pruebas-tareas/resumenes",
+      "instrucciones": "Resume en castellano, aunque el apunte esté en valenciano. Como máximo 6 viñetas; pon entre `comillas invertidas` las órdenes, etiquetas o palabras clave de código. Acaba con una línea que empiece por «Para el examen:» y diga, en una frase, lo que más cuenta.",
+      "max_caracteres": 12000
     }
   ]
 }

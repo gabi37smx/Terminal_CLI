@@ -528,6 +528,9 @@ def ejecutar(
     Con «por_tipo»: "~/Datos/POR-TIPO", lo que no es de ninguna asignatura va a POR-TIPO/DOCUMENTOS, IMAGENES, COMPRIMIDOS... Los ficheros del sistema, temporales y descargas a medias (desktop.ini, .crdownload, .part...) no se mueven nunca.
     """
     motor = Motor(config.cargar(config.buscar(ctx.obj)))
+    previa = motor.acciones.get(nombre)
+    if previa is not None and previa.necesita_ia and not simular:
+        motor.proveedor = ProveedorCentro.desde_entorno()  # solo si hace falta: lo demás va sin red
     accion, ficheros = motor.preparar(nombre, carpeta)
     almacen = None
     if accion.config.get("al_almacen"):
@@ -561,6 +564,8 @@ def ejecutar(
             _pintar_sync(almacen.sincronizar(None, f"ordenar: {hechos} apunte(s) nuevo(s)"))
         else:
             consola.print("Vale. Cuando quieras subirlos: [bold]dam sync[/bold]")
+    if accion.corte_ia is not None:  # la IA se cayó a mitad: lo hecho, hecho; el resto, sin tocar
+        raise accion.corte_ia
     if any(r.estado == "error" for r in resultados):
         raise typer.Exit(1)
 

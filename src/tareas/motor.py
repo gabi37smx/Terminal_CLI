@@ -8,11 +8,13 @@ from pathlib import Path
 
 from .acciones import Accion, Resultado
 from .errores import TareasError
+from .ia import ProveedorIA
 
 
 class Motor:
-    def __init__(self, acciones: list[dict]):
+    def __init__(self, acciones: list[dict], proveedor: ProveedorIA | None = None):
         self.acciones = {a["nombre"]: Accion.desde_config(a) for a in acciones}
+        self.proveedor = proveedor  # solo lo usan las acciones con IA; lo pone cli.py si hace falta
 
     @staticmethod
     def seleccionar(carpeta: Path, filtro: dict) -> list[Path]:
@@ -55,6 +57,8 @@ class Motor:
         origen = Path(origen).expanduser()
         if not origen.is_dir():
             raise TareasError(f"La carpeta {origen} no existe")
+        if accion.necesita_ia:
+            accion.proveedor = self.proveedor
         return accion, self.seleccionar(origen, accion.config.get("filtro", {}))
 
     def ejecutar(self, nombre: str, carpeta: Path | None, simular: bool) -> list[Resultado]:
