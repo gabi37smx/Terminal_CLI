@@ -7,6 +7,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from . import URL_EJEMPLO_ACCIONES, URL_REPO
 from .errores import AccionNoValida, ConfigError
 
 NOMBRE_FICHERO = "acciones.json"
@@ -42,9 +43,13 @@ def buscar(ruta: Path | None) -> Path:
     for candidato in sitios:
         if candidato.is_file():
             return candidato
+    # Quien instaló sin clonar no tiene ninguno: se le dice de dónde bajar el ejemplo y dónde ponerlo
     raise ConfigError(
-        f"No encuentro {NOMBRE_FICHERO}. Busqué en: {', '.join(str(s) for s in sitios)}. "
-        "Créalo o usa --config RUTA"
+        f"No encuentro {NOMBRE_FICHERO}. Busqué en: {', '.join(str(s) for s in sitios)}.\n"
+        f"Para empezar, guarda el de ejemplo como {sitios[-1]}:\n"
+        f"  {URL_EJEMPLO_ACCIONES}\n"
+        f"Cómo se escribe cada acción: {URL_REPO}#esquema-de-accionesjson\n"
+        "También puedes usar otro con --config RUTA."
     )
 
 

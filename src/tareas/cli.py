@@ -47,6 +47,49 @@ rich_utils.ERRORS_PANEL_TITLE = "Error de uso"
 rich_utils.ABORTED_TEXT = "Cancelado."
 rich_utils.DEFAULT_STRING = "[por defecto: {}]"
 rich_utils.REQUIRED_LONG_STRING = "[obligatorio]"
+rich_utils.RICH_HELP = "Prueba [blue]'{command_path} {help_option}'[/] para ver la ayuda."
+
+# Los errores de uso («No such command...») los escribe Click, dentro de Typer, en inglés y sin
+# traducción. No toco la librería: traduzco su mensaje justo antes de que Typer lo pinte.
+# Lo que no esté en la lista sale tal cual (en inglés, pero sin perderse nada).
+TRADUCCIONES_CLICK = [
+    (r"No such command '([^']*)'\.", r"No existe el comando «\1»."),
+    (r"Did you mean one of (.+?)\?", r"¿Querías decir uno de estos: \1?"),
+    (r"Did you mean (.+?)\?", r"¿Querías decir \1?"),
+    (r"No such option: (\S+)", r"No existe la opción \1"),
+    (r"\(Possible options: ([^)]*)\)", r"(¿Querías decir \1?)"),
+    (r"Missing argument", "Falta el argumento"),
+    (r"Missing option", "Falta la opción"),
+    (r"Missing parameter", "Falta el parámetro"),
+    (r"Got unexpected extra argument\(s\) \(([^)]*)\)", r"Sobra: \1"),
+    (r"Invalid value for (.+?): ", r"Valor no válido para \1: "),
+    (r"Invalid value: ", "Valor no válido: "),
+    (r"Option ('[^']*') requires an argument\.", r"La opción \1 necesita un valor."),
+    (r"Option ('[^']*') requires (\d+) arguments\.", r"La opción \1 necesita \2 valores."),
+    (r"Option ('[^']*') does not take a value\.", r"La opción \1 no lleva valor."),
+    (r"('[^']*') is not a valid integer\.", r"\1 no es un número entero."),
+    (r"('[^']*') is not a valid float\.", r"\1 no es un número."),
+    (r"('[^']*') is not one of (.+)\.", r"\1 no es ninguno de estos: \2."),
+]
+
+
+def traducir_error_click(mensaje: str) -> str:
+    """Pasa al español los mensajes de error de uso más comunes de Click."""
+    for patron, cambio in TRADUCCIONES_CLICK:
+        mensaje = re.sub(patron, cambio, mensaje)
+    return mensaje
+
+
+_pintar_error_click = rich_utils.rich_format_error
+
+
+def _pintar_error_en_espanol(error) -> None:
+    original = error.format_message
+    error.format_message = lambda: traducir_error_click(original())
+    _pintar_error_click(error)
+
+
+rich_utils.rich_format_error = _pintar_error_en_espanol
 
 _PARECE_RUTA = re.compile(r"^([A-Za-z]:[\\/]|\.{1,2}[\\/]|~[\\/]|\\\\)")
 
@@ -247,7 +290,10 @@ def mostrar_ayuda() -> None:
         "[bold]dam[/bold] — automatiza tareas con ficheros y mantiene tu almacén "
         "de apuntes sincronizado."
     )
-    consola.print("\n[bold]Uso:[/bold]  dam COMANDO [ARGUMENTOS] [OPCIONES]\n")
+    consola.print(
+        "\n[bold]Uso:[/bold]  dam COMANDO [ARGUMENTOS] [OPCIONES]"
+        "   [dim](o «tareas»: es el mismo programa con otro nombre)[/dim]\n"
+    )
 
     agrupados = {n for _, _, nombres in GRUPOS for n in nombres}
     resto = [n for n in comandos if n not in agrupados]  # comandos nuevos que falten en GRUPOS
@@ -265,7 +311,10 @@ def mostrar_ayuda() -> None:
     consola.print(tabla)
 
     consola.print("\nUsar otro acciones.json:  [bold]dam --config RUTA COMANDO[/bold]")
-    consola.print("Activa el TAB:            [bold]instalar.sh[/bold] / [bold]instalar.ps1[/bold] (o dam --install-completion)")
+    consola.print(
+        "Activa el TAB:            [bold]instalar.sh[/bold] / [bold]instalar.ps1[/bold] si clonaste el repo; "
+        "si no (Linux y macOS): [bold]dam --install-completion[/bold]"
+    )
     consola.print("Ver el script del TAB:    [bold]dam --show-completion[/bold]")
 
 

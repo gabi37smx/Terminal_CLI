@@ -21,6 +21,7 @@ from pathlib import Path
 import httpx
 from dotenv import find_dotenv, load_dotenv
 
+from . import URL_REPO
 from .errores import IANoDisponible
 
 MODELO_POR_DEFECTO = "qwen3.8-flash-next"
@@ -81,7 +82,12 @@ class ProveedorCentro(ProveedorIA):
         url = os.environ.get("CENTRO_IA_URL", "").strip()
         clave = os.environ.get("CENTRO_IA_KEY", "").strip()
         if not url or not clave:
-            raise IANoDisponible("Faltan CENTRO_IA_URL o CENTRO_IA_KEY: ponlas en .env (mira .env.example)")
+            raise IANoDisponible(
+                "Faltan CENTRO_IA_URL o CENTRO_IA_KEY. Defínelas en la terminal "
+                "(export CENTRO_IA_URL=... en Linux y macOS; $env:CENTRO_IA_URL=\"...\" en PowerShell) "
+                "o en un fichero .env en la carpeta desde la que ejecutas dam. "
+                f"Qué poner en cada una: {URL_REPO}#ia-opcional-acciones-con-los-modelos-del-centro"
+            )
         modelo = os.environ.get("CENTRO_IA_MODELO", "").strip() or MODELO_POR_DEFECTO
         return ProveedorCentro(url, clave, modelo, os.environ.get("CENTRO_IA_CA") or None)
 
