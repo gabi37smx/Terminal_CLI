@@ -24,3 +24,9 @@ class AccionNoValida(ConfigError):
 
 class GitError(TareasError):
     """Fallo al hablar con git o con GitHub (sin red, conflicto, rama desactualizada...)."""
+
+
+class IANoDisponible(TareasError):
+    """Sin clave, sin red o el servidor de IA no responde: las acciones sin IA siguen."""
+
+    codigo_salida = 4

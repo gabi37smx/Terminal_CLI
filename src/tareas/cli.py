@@ -21,7 +21,8 @@ from tareas import entregar as entregar_mod
 from tareas import inventario as inventario_mod
 from tareas import pendientes as pendientes_mod
 from tareas import readme as readme_mod
-from tareas.errores import ConfigError, TareasError
+from tareas.errores import ConfigError, IANoDisponible, TareasError
+from tareas.ia import ProveedorCentro
 from tareas.inventario import tamano_legible
 from tareas.motor import Motor
 from typer import _completion_classes, _completion_shared, rich_utils
@@ -105,6 +106,8 @@ def controlar_errores(funcion):
             return funcion(*args, **kwargs)
         except TareasError as e:
             consola_err.print(f"[red]✘ {escape(str(e))}[/red]")
+            if isinstance(e, IANoDisponible):
+                consola_err.print("Las acciones sin IA siguen funcionando: mira cuáles son con «dam acciones».")
             raise typer.Exit(e.codigo_salida) from None
 
     return envoltorio
@@ -202,6 +205,9 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam ejecutar limpiar-temporales ~/pruebas-tareas", "Usa otra carpeta en vez del origen de la acción"),
         ("dam ejecutar convertir-webp --si", "Sin preguntar (solo si estás seguro)"),
     ],
+    "comprobar-ia": [
+        ("dam comprobar-ia", "¿Llego al servidor de IA del centro? Enseña servidor y modelo, nunca la clave"),
+    ],
     "status": [
         ("dam status", "Qué has cambiado y qué hay nuevo en GitHub (no modifica nada)"),
         ("dam status programacion", "Mira solo la asignatura programacion"),
@@ -219,6 +225,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
 # (tema, para qué, comandos): el tema y el «para qué» salen en la primera columna de la tabla de ayuda
 GRUPOS = [
     ("Ficheros", "ordenar y limpiar", ["listar", "validar", "acciones", "ejecutar"]),
+    ("IA", "modelos del centro", ["comprobar-ia"]),
     ("Almacén (git)", "clase, casa y USB", ["status", "sync"]),
     ("Seguridad", "claves expuestas", ["scan-secrets", "instalar-hook"]),
     ("Tus proyectos", "revisar y entregar", ["doctor", "pendientes", "entregar"]),
@@ -390,15 +397,19 @@ def acciones(ctx: typer.Context) -> None:
 
     Muestra el nombre (el que escribes en «dam ejecutar NOMBRE»), el tipo y la descripción.
 
-    Tipos disponibles: mover, copiar, renombrar, borrar, ordenar (por asignatura) y convertir (a WebP).
+    Tipos sin IA: mover, copiar, renombrar, borrar, ordenar (por asignatura) y convertir (a WebP).
+
+    Tipos con IA (columna IA): resumir, renombrar-ia y clasificar. Necesitan el servidor del centro (mira dam comprobar-ia); las demás funcionan sin red.
     """
     lista = config.cargar(config.buscar(ctx.obj))
     tabla = Table(title="Acciones disponibles")
     tabla.add_column("Nombre", style="bold")
     tabla.add_column("Tipo")
+    tabla.add_column("IA", justify="center")
     tabla.add_column("Descripción")
     for a in lista:
-        tabla.add_row(escape(a["nombre"]), a["tipo"], escape(a["descripcion"]))
+        ia = "[magenta]sí[/magenta]" if a["tipo"] in config.TIPOS_IA else "—"
+        tabla.add_row(escape(a["nombre"]), a["tipo"], ia, escape(a["descripcion"]))
     consola.print(tabla)
 
 
@@ -480,17 +491,31 @@ def completar_asignaturas(ctx: typer.Context, incomplete: str) -> list[str]:
     )
 
 
+def con_virgulilla(ruta: Path) -> str:
+    """C:\\Users\\HP\\pruebas-tareas\\x.pdf -> ~\\pruebas-tareas\\x.pdf: más corta y sin tu nombre de usuario."""
+    casa = Path.home()
+    try:
+        return str(Path("~") / ruta.relative_to(casa))
+    except ValueError:
+        return str(ruta)
+
+
 def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
     titulo = f"{nombre} (SIMULACIÓN: no se ha tocado nada)" if simular else nombre
     tabla = Table(title=titulo)
     tabla.add_column("Fichero", overflow="fold")
     tabla.add_column("Destino", overflow="fold")
     tabla.add_column("Estado")
+    con_detalle = any(r.nota for r in resultados)  # tokens, segundos, categoría, por qué se salta...
+    if con_detalle:
+        tabla.add_column("Detalle", overflow="fold")
     for r in resultados:
-        destino = escape(str(r.destino)) if r.destino else "—"
+        destino = escape(con_virgulilla(r.destino)) if r.destino else "—"
         color = COLORES.get(r.estado, "white")
-        estado = r.estado + (f" ({escape(r.nota)})" if r.nota else "")
-        tabla.add_row(escape(r.origen.name), destino, f"[{color}]{estado}[/{color}]")
+        fila = [escape(r.origen.name), destino, f"[{color}]{r.estado}[/{color}]"]
+        if con_detalle:
+            fila.append(escape(r.nota))
+        tabla.add_row(*fila)
     consola.print(tabla)
     cuenta = {e: sum(1 for r in resultados if r.estado == e) for e in COLORES}
     consola.print(
@@ -521,6 +546,9 @@ def ejecutar(
     Con «por_tipo»: "~/Datos/POR-TIPO", lo que no es de ninguna asignatura va a POR-TIPO/DOCUMENTOS, IMAGENES, COMPRIMIDOS... Los ficheros del sistema, temporales y descargas a medias (desktop.ini, .crdownload, .part...) no se mueven nunca.
     """
     motor = Motor(config.cargar(config.buscar(ctx.obj)))
+    previa = motor.acciones.get(nombre)
+    if previa is not None and previa.necesita_ia and not simular:
+        motor.proveedor = ProveedorCentro.desde_entorno()  # solo si hace falta: lo demás va sin red
     accion, ficheros = motor.preparar(nombre, carpeta)
     almacen = None
     if accion.config.get("al_almacen"):
@@ -554,8 +582,25 @@ def ejecutar(
             _pintar_sync(almacen.sincronizar(None, f"ordenar: {hechos} apunte(s) nuevo(s)"))
         else:
             consola.print("Vale. Cuando quieras subirlos: [bold]dam sync[/bold]")
+    if accion.corte_ia is not None:  # la IA se cayó a mitad: lo hecho, hecho; el resto, sin tocar
+        raise accion.corte_ia
     if any(r.estado == "error" for r in resultados):
         raise typer.Exit(1)
+
+
+@comando(nombre="comprobar-ia")
+@controlar_errores
+def comprobar_ia() -> None:
+    """Comprueba la conexión con el servidor de IA (sin enseñar la clave).
+
+    Lee CENTRO_IA_URL, CENTRO_IA_KEY, CENTRO_IA_CA y CENTRO_IA_MODELO de tu terminal o de un .env (mira .env.example) y hace una pregunta mínima al modelo (5 tokens como mucho).
+
+    Sale con 4 si no hay clave, no hay red, falta el certificado o el servidor no responde.
+    """
+    proveedor = ProveedorCentro.desde_entorno()
+    consola.print(f"Servidor: {escape(proveedor.url)}  ·  modelo: {escape(proveedor.modelo)}  ·  clave: definida")
+    r = proveedor.completar("Responde solo con la palabra: ok", "¿Me oyes?", max_tokens=5)
+    consola.print(f"[green]✔ El modelo responde «{escape(r.texto)}» en {r.segundos:.1f} s[/green] ({r.resumen()})")
 
 
 # ---------- almacén de apuntes (git) ----------

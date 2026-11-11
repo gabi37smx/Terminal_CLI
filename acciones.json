@@ -185,6 +185,68 @@
         ]
       },
       "confirmar": true
+    },
+    {
+      "nombre": "resumir-tema",
+      "descripcion": "Resume cada tema de apuntes (PDF, TXT o MD, en castellano o valenciano) en un .md para repasar",
+      "tipo": "resumir",
+      "origen": "~/pruebas-tareas/apuntes-ia",
+      "filtro": {
+        "extensiones": [
+          ".pdf",
+          ".txt",
+          ".md"
+        ],
+        "patron": "^(?!.*\\.resumen\\.md$)"
+      },
+      "destino": "~/pruebas-tareas/resumenes",
+      "instrucciones": "Resume en castellano, aunque el apunte esté en valenciano. Como máximo 6 viñetas; pon entre `comillas invertidas` las órdenes, etiquetas o palabras clave de código. Acaba con una línea que empiece por «Para el examen:» y diga, en una frase, lo que más cuenta.",
+      "max_caracteres": 12000
+    },
+    {
+      "nombre": "nombrar-descargas",
+      "descripcion": "Pone a los PDF con nombre genérico (escaneo, documento (3), descarga...) un nombre que diga de qué tratan",
+      "tipo": "renombrar-ia",
+      "origen": "~/pruebas-tareas/descargas-ia",
+      "filtro": {
+        "extensiones": [
+          ".pdf",
+          ".txt"
+        ],
+        "patron": "(?i)^(escaneo|scan|documento|document|descarga|download|unnamed|untitled|sin t[ií]tulo|file)"
+      },
+      "instrucciones": "Si es un tema de una asignatura de 1º de DAM, empieza por la asignatura (por ejemplo «redes-direccion-ip» o «bases-datos-consultas-sql»). Si es otra cosa (un calendario, una factura...), di lo que es.",
+      "max_caracteres": 4000,
+      "confirmar": true
+    },
+    {
+      "nombre": "clasificar-asignatura",
+      "descripcion": "Lee cada apunte que «ordenar» no sabe colocar y lo mueve a la carpeta de su asignatura de 1º de DAM",
+      "tipo": "clasificar",
+      "origen": "~/pruebas-tareas/apuntes-ia",
+      "filtro": {
+        "extensiones": [
+          ".pdf",
+          ".txt",
+          ".md"
+        ],
+        "patron": "^(?!.*\\.resumen\\.md$)"
+      },
+      "categorias": [
+        "bases-datos",
+        "entornos",
+        "ingles",
+        "ipo",
+        "lenguaje-marcas",
+        "programacion",
+        "proyecto",
+        "sistemas",
+        "otros"
+      ],
+      "destino": "~/pruebas-tareas/por-asignatura",
+      "instrucciones": "Son apuntes de 1º de DAM, en castellano o en valenciano. Redes, Linux, hardware y sistemas operativos van en «sistemas»; XML, HTML y JSON en «lenguaje-marcas»; Git, IDE y Docker en «entornos». Si no es de ninguna asignatura (un calendario, una factura...), responde «otros».",
+      "max_caracteres": 4000,
+      "confirmar": true
     }
   ]
 }

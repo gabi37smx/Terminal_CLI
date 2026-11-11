@@ -10,13 +10,16 @@ from pathlib import Path
 from .errores import AccionNoValida, ConfigError
 
 NOMBRE_FICHERO = "acciones.json"
-TIPOS = {"mover", "copiar", "renombrar", "borrar", "ordenar", "convertir"}
+TIPOS = {"mover", "copiar", "renombrar", "borrar", "ordenar", "convertir", "resumir", "renombrar-ia", "clasificar"}
+TIPOS_IA = {"resumir", "renombrar-ia", "clasificar"}  # las que preguntan a un modelo (ver ia.py)
+CAMPOS_IA = ("instrucciones", "max_caracteres", "categorias")
 OBLIGATORIOS = ("nombre", "descripcion", "tipo")
-POR_TIPO = {
-    "mover": "destino",
-    "copiar": "destino",
-    "renombrar": "plantilla",
-    "ordenar": "carpetas",
+POR_TIPO = {  # campos obligatorios según el tipo
+    "mover": ("destino",),
+    "copiar": ("destino",),
+    "renombrar": ("plantilla",),
+    "ordenar": ("carpetas",),
+    "clasificar": ("categorias", "destino"),
 }
 FILTROS = {"extensiones", "patron", "mas_antiguo_que_dias", "mayor_que_mb"}
 NOMBRE_VALIDO = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -158,9 +161,9 @@ def _validar_accion(a: object, i: int, vistos: set[str]) -> None:
         raise AccionNoValida(
             nombre, "tipo", f"«{tipo}» no existe; usa uno de: {', '.join(sorted(TIPOS))}"
         )
-    extra = POR_TIPO.get(tipo)
-    if extra and not a.get(extra):
-        raise AccionNoValida(nombre, extra, f"es obligatorio en acciones de tipo {tipo}")
+    for extra in POR_TIPO.get(tipo, ()):
+        if not a.get(extra):
+            raise AccionNoValida(nombre, extra, f"es obligatorio en acciones de tipo {tipo}")
     if "origen" in a and not _texto(a["origen"]):
         raise AccionNoValida(nombre, "origen", "debe ser un texto (una ruta)")
     if "destino" in a and not _texto(a["destino"]):
@@ -184,10 +187,36 @@ def _validar_accion(a: object, i: int, vistos: set[str]) -> None:
         _validar_plantilla(nombre, a["plantilla"])
     if tipo == "ordenar":
         _validar_ordenar(nombre, a)
+    if tipo in TIPOS_IA:
+        validar_ia(nombre, a)
+    else:
+        for campo in CAMPOS_IA:
+            if campo in a:
+                raise AccionNoValida(nombre, campo, f"solo vale en acciones con IA ({', '.join(sorted(TIPOS_IA))})")
     if tipo == "convertir" and "calidad" in a:
         c = a["calidad"]
         if isinstance(c, bool) or not isinstance(c, int) or not 1 <= c <= 100:
             raise AccionNoValida(nombre, "calidad", "debe ser un entero entre 1 y 100")
+
+
+def validar_ia(nombre: str, a: dict) -> None:
+    """Los campos de las acciones con IA: instrucciones, max_caracteres y categorias."""
+    if "instrucciones" in a and not _texto(a["instrucciones"]):
+        raise AccionNoValida(nombre, "instrucciones", "tiene que ser un texto (lo que le pides al modelo)")
+    tope = a.get("max_caracteres", 12000)
+    if isinstance(tope, bool) or not isinstance(tope, int) or not 500 <= tope <= 50000:
+        raise AccionNoValida(nombre, "max_caracteres", "tiene que ser un entero entre 500 y 50000")
+    if "categorias" in a:
+        cats = a["categorias"]
+        if not isinstance(cats, list) or not cats or not all(_texto(c) for c in cats):
+            raise AccionNoValida(nombre, "categorias", "tiene que ser una lista de textos no vacía")
+        if a["tipo"] != "clasificar":
+            raise AccionNoValida(nombre, "categorias", "solo vale en acciones de tipo clasificar")
+        for c in cats:  # cada categoría acaba siendo una carpeta
+            if any(x in c for x in PROHIBIDOS_EN_NOMBRES) or c.strip() in {".", ".."}:
+                raise AccionNoValida(nombre, f"categorias.{c}", "nombre de carpeta no válido")
+        if len({c.lower() for c in cats}) != len(cats):
+            raise AccionNoValida(nombre, "categorias", "hay categorías repetidas")
 
 
 def _validar_almacen(almacen: object) -> None:
