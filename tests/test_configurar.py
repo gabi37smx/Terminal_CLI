@@ -222,3 +222,40 @@ def test_quitar_una_que_no_esta_es_error_de_uso(entorno):
     r = lanzar(entorno, "--ciclo", "dam", "--curso", "1", "--quitar", "cocina", "--si")
     assert r.exit_code == 2
     assert not entorno["destino"].exists()
+
+
+# ---------- arreglos tras la prueba como alumno de SMX (11-nov) ----------
+def test_un_numero_en_asignaturas_nuevas_se_explica_y_se_vuelve_a_preguntar(entorno):
+    # SMX, 1º, quiero cambiar, quito la 1 y la 2, en «nuevas» escribo números (el fallo del 11-nov),
+    # me lo explica, Enter (ninguna), guardo y no creo carpetas
+    r = lanzar(entorno, entrada="1\n1\ns\n1, 2\n3,4,5\n\ns\nn\n")
+    assert r.exit_code == 0, r.output
+    assert "es un número" in r.output and "ya se quedan" in r.output
+    assert "Te quedas con: montaje-equipos" in r.output
+    carpetas = configurar.asignaturas_actuales(guardado(entorno))
+    assert list(carpetas) == [a for a in ciclos.CICLOS["smx"].cursos[1] if a not in ("ingles", "ipo")]
+
+
+def test_nueva_con_un_numero_no_guarda(entorno):
+    r = lanzar(entorno, "--ciclo", "smx", "--curso", "1", "--nueva", "3", "--si")
+    assert r.exit_code == 1
+    assert "es un número" in r.output
+    assert not entorno["destino"].exists()
+
+
+@pytest.mark.parametrize("fichero, asignatura", [
+    ("packet-tracer-acl.pka", "redes-locales"),  # actividad de Packet Tracer
+    ("T06.02_Activitat discos durs.odt", "montaje-equipos"),
+    ("ANALISIS DE CAIXES.odt", "montaje-equipos"),
+    ("Concesionario.odb", "ofimatica"),  # LibreOffice Base
+    ("Any bisiest.ods", None),  # .ods sin pistas en el nombre: no se adivina (lo hace clasificar)
+])
+def test_vocabulario_de_1_de_smx(tmp_path, fichero, asignatura):
+    from tareas.acciones import Ordenar
+
+    asignaturas = ciclos.asignaturas_de("smx", [1])
+    ordenar = Ordenar({"nombre": "o", "descripcion": "o", "tipo": "ordenar", "carpetas": asignaturas,
+                       "por_extension": ciclos.por_extension(list(asignaturas))})
+    ruta = tmp_path / fichero
+    ruta.write_text("x", encoding="utf-8")
+    assert ordenar.clasificar(ruta) == asignatura

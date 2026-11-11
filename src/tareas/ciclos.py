@@ -45,7 +45,7 @@ ASIGNATURAS: dict[str, Asignatura] = {
     "sostenibilidad": A("Sostenibilidad aplicada al sistema productivo",
                         "Sostenibilitat aplicada al sistema productiu",
                         ("sostenibilidad", "sostenibilitat", "ods", "medio ambiente", "medi ambient",
-                         "huella de carbono", "petjada de carboni")),
+                         "huella de carbono", "petjada de carboni", "cambio climatico", "canvi climatic")),
 
     # --- 1º de DAM y DAW (las palabras son las del acciones.json del repo: no cambiarlas sin él) ---
     "bases-datos": A("Bases de datos", "Bases de dades",
@@ -112,10 +112,10 @@ ASIGNATURAS: dict[str, Asignatura] = {
     "redes": A("Planificación y administración de redes", "Planificació i administració de xarxes",
                ("redes", "xarxes", "xarxa", "red", "router", "switch", "vlan", "tcp", "subred", "subxarxa",
                 "cisco", "packet tracer", "enrutamiento", "encaminament"),
-               (".pkt", ".pcap", ".pcapng")),
+               (".pkt", ".pka", ".pcap", ".pcapng")),
     "hardware": A("Fundamentos de hardware", "Fonaments de maquinari",
-                  ("hardware", "maquinari", "cpu", "placa base", "memoria", "disco", "disc", "fuente", "font",
-                   "bios", "uefi", "componentes", "components")),
+                  ("hardware", "maquinari", "cpu", "placa base", "memoria", "disco", "disc", "discos", "discs",
+                   "disco duro", "disc dur", "fuente", "font", "bios", "uefi", "componentes", "components")),
 
     # --- 2º de ASIR (servicios-red, aplicaciones-web y seguridad también son de 2º de SMX) ---
     "admin-sistemas": A("Administración de sistemas operativos", "Administració de sistemes operatius",
@@ -141,12 +141,13 @@ ASIGNATURAS: dict[str, Asignatura] = {
                    "Seguretat i alta disponibilitat (en SMX: Seguretat informàtica)",
                    ("seguridad", "seguretat", "cortafuegos", "tallafocs", "firewall", "vpn", "cifrado", "xifratge",
                     "copias de seguridad", "copies de seguretat", "alta disponibilidad", "alta disponibilitat",
-                    "malware", "antivirus")),
+                    "malware", "antivirus", "ripper", "contrasenas", "contrasenyes")),
 
     # --- 1º de SMX ---
     "montaje-equipos": A("Montaje y mantenimiento de equipos", "Muntatge i manteniment d'equips",
-                         ("montaje", "muntatge", "mantenimiento", "manteniment", "hardware", "maquinari",
-                          "placa base", "cpu", "memoria", "fuente", "font", "bios", "uefi", "componentes",
+                         ("montaje", "muntatge", "mantenimiento", "manteniment", "mme", "hardware", "maquinari",
+                          "placa base", "cpu", "memoria", "disco", "disc", "discos", "discs", "disco duro",
+                          "disc dur", "caixes", "cajas", "fuente", "font", "bios", "uefi", "componentes",
                           "components")),
     "sistemas-monopuesto": A("Sistemas operativos monopuesto", "Sistemes operatius monolloc",
                              ("monopuesto", "monolloc", "sistemas operativos", "sistemes operatius", "so",
@@ -154,15 +155,17 @@ ASIGNATURAS: dict[str, Asignatura] = {
                              (".sh", ".bat", ".ps1")),
     "ofimatica": A("Aplicaciones ofimáticas", "Aplicacions ofimàtiques",
                    ("ofimatica", "ofimatiques", "word", "excel", "writer", "calc", "powerpoint", "impress",
-                    "hoja de calculo", "full de calcul", "procesador de textos", "processador de textos")),
+                    "hoja de calculo", "full de calcul", "procesador de textos", "processador de textos",
+                    "base de datos", "base de dades"),
+                   (".odb",)),  # LibreOffice Base; .odt y .ods no: los usan todas las asignaturas
     "redes-locales": A("Redes locales", "Xarxes locals",
                        ("redes locales", "xarxes locals", "redes", "xarxes", "xarxa", "red", "cableado",
                         "cablejat", "switch", "router", "rj45", "tcp", "packet tracer", "cisco"),
-                       (".pkt", ".pcap", ".pcapng")),
+                       (".pkt", ".pka", ".pcap", ".pcapng")),
 
     # --- 2º de SMX ---
     "sistemas-red": A("Sistemas operativos en red", "Sistemes operatius en xarxa",
-                      ("sistemas operativos en red", "sistemes operatius en xarxa", "dominio", "domini",
+                      ("sistemas operativos en red", "sistemes operatius en xarxa", "sox", "dominio", "domini",
                        "active directory", "ldap", "samba", "windows server", "usuarios", "usuaris"),
                       (".sh", ".bat", ".ps1")),
 }
