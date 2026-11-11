@@ -22,16 +22,56 @@ mis apuntes de 1º DAM sincronizados entre el PC de clase, el de casa y el USB.
 
 ## Instalación
 
+### Antes de empezar: git, curl y uv
+
+Un sistema recién instalado puede no traer ni `git` ni `curl` (le pasa a Ubuntu 24.04). Comprueba
+con `git --version` y `curl --version`, e instala lo que falte:
+
+| Sistema | Orden |
+|---|---|
+| Ubuntu, Debian, Mint | `sudo apt update && sudo apt install -y git curl` |
+| Fedora | `sudo dnf install -y git curl` |
+| macOS | `xcode-select --install` (trae git; curl ya viene) |
+| Windows | `winget install --id Git.Git -e` (curl ya viene en Windows 10 y 11) |
+
+Después, **uv** con su instalador oficial. En Ubuntu, si escribes `uv` sin tenerlo, te sugiere
+`sudo snap install astral-uv`: **no lo uses**, el de snap no deja bien los comandos en `~/.local/bin`.
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh     # Linux y macOS
+source $HOME/.local/bin/env                         # o abre otra terminal
+```
+
+En Windows (PowerShell): `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`.
+Si usas el script `instalar.sh` / `instalar.cmd` de abajo, uv lo instala él; git sí lo necesitas antes.
+
 ### En una orden (si ya tienes uv)
 
 ```bash
-uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.0
+uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.1
 dam --help          # o «tareas --help»: es el mismo programa
 ```
 
 Así instalas solo el comando: `dam` buscará tus acciones en `./acciones.json` o en
-`~/.config/dam/acciones.json`. Para dejarlo todo listo (uv, acciones, TAB, git y almacén), usa el
-script de abajo.
+`~/.config/dam/acciones.json`, y sin clonar no tienes ninguno. Baja el de ejemplo (mis 9 acciones)
+y cámbialo a tu gusto siguiendo el [esquema](#esquema-de-accionesjson):
+
+```bash
+mkdir -p ~/.config/dam
+curl -fsSL https://raw.githubusercontent.com/gabi37smx/Terminal_CLI/main/acciones.json -o ~/.config/dam/acciones.json
+dam validar && dam acciones
+```
+
+En Windows (PowerShell), lo mismo:
+
+```powershell
+New-Item -ItemType Directory -Force "$HOME\.config\dam" | Out-Null
+curl.exe -fsSL https://raw.githubusercontent.com/gabi37smx/Terminal_CLI/main/acciones.json -o "$HOME\.config\dam\acciones.json"
+dam validar; dam acciones
+```
+
+Todas las acciones del ejemplo trabajan en `~/pruebas-tareas`, así que no tocan nada tuyo hasta
+que cambies las rutas; aun así, prueba siempre primero con `--simular`. Para dejarlo todo listo (uv, acciones, TAB, git y almacén), usa el script de abajo.
 
 ### Lo rápido: un script que lo hace todo
 
@@ -241,6 +281,10 @@ desde la que lanzas `dam`. `.env` está en `.gitignore` y nunca se sube; `.env.e
 cp .env.example .env      # y rellénalo (o exporta las variables en ~/.bashrc / setx)
 dam comprobar-ia          # Servidor: ... · modelo: qwen3.8-flash-next · clave: definida
 ```
+
+Si instalaste sin clonar no tienes `.env.example`: define las variables en la terminal
+(`export CENTRO_IA_URL=...` en Linux y macOS; `$env:CENTRO_IA_URL="..."` en PowerShell) o crea tú
+el `.env` con las líneas `CENTRO_IA_URL=...`, `CENTRO_IA_KEY=...` y `CENTRO_IA_CA=...`.
 
 | Variable | Para qué |
 |---|---|
