@@ -174,13 +174,17 @@ if (Test-Path (Join-Path $Almacen ".git")) {
 } elseif (Test-Path $Almacen) {
     Aviso "$Almacen existe pero no es un repositorio git: no lo toco."
 } else {
-    $usuario = Read-Host "    Tu usuario de GitHub para clonar DAM-almacen (Enter para saltar)"
+    Write-Host "    Tu usuario de GitHub es el de github.com/TU_USUARIO (no el de este ordenador)."
+    $usuario = Read-Host "    Usuario de GitHub para clonar DAM-almacen (Enter para saltar)"
     if ($usuario) {
+        Write-Host "    Si el repo es privado, se abrirá el navegador para iniciar sesión en GitHub."
         git clone "https://github.com/$usuario/DAM-almacen.git" "$Almacen"
         if ($LASTEXITCODE -eq 0) {
             Ok "Clonado en $Almacen"
         } else {
-            Aviso "No he podido clonarlo: revisa el usuario, el inicio de sesión y que el repo se llame DAM-almacen."
+            Aviso "No he podido clonarlo. Si pone «Repository not found»: el usuario está mal, no has iniciado"
+            Aviso "sesión o el repo no se llama DAM-almacen (GitHub esconde así los repos privados)."
+            Aviso "Puedes repetir el instalador: lo que ya está hecho se salta."
         }
     } else {
         Aviso "Saltado. Luego: git clone https://github.com/TU_USUARIO/DAM-almacen.git $Almacen"

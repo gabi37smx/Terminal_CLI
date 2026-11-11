@@ -27,6 +27,9 @@ siguiendo solo el README.
 - Los errores de uso salían en inglés dentro de un panel en español («No such command…»). Ahora se
   traducen los de Click antes de pintarlos: «No existe el comando «versiones». ¿Querías decir
   'version'?». La línea `Usage:` sigue en inglés (#20).
+- Al clonar `DAM-almacen`, el instalador no dejaba claro que pide el usuario de github.com (no el
+  del ordenador) ni qué escribir cuando git pide *Username* y *Password*. Ahora lo explica antes de
+  clonar y, si falla, dice qué significa «Repository not found» y que se puede repetir (#22).
 
 ## [1.0.0] - 2026-11-11
 

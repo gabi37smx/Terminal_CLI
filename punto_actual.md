@@ -115,7 +115,7 @@ Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes p
    - En clase, con el modelo:
      - `opencode run --agent plan` para sacar `docs/changelog-borrador.md` y apuntar en qué se equivocó comparado con mi `CHANGELOG.md`.
      - `bash scripts/revisar.sh` con algo en `git add`.
-   - ~~Ensayo de instalación en un ordenador limpio~~ HECHO (11-nov): en el portátil con Ubuntu 24.04 recién instalado, siguiendo solo el README. Salieron los issues #17-#20, arreglados en la 1.0.1.
+   - ~~Ensayo de instalación en un ordenador limpio~~ HECHO (11-nov): en el portátil con Ubuntu 24.04 recién instalado, siguiendo solo el README. Salieron los issues #17-#20 y, en la Fase B, el #22; todos arreglados en la 1.0.1.
    - Instalación cruzada con **otra persona** (lo pide la lista): un compañero instala con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.1` siguiendo solo el README y abre issues (`gh issue create`). Los contesto, y si hay arreglo sale como 1.0.2.
    - Rellenar los **[COMPLETAR]** de la entrada «Sesión 4 · ...» de `docs/prompts.md`.
 
