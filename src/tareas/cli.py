@@ -21,7 +21,8 @@ from tareas import entregar as entregar_mod
 from tareas import inventario as inventario_mod
 from tareas import pendientes as pendientes_mod
 from tareas import readme as readme_mod
-from tareas.errores import ConfigError, TareasError
+from tareas.errores import ConfigError, IANoDisponible, TareasError
+from tareas.ia import ProveedorCentro
 from tareas.inventario import tamano_legible
 from tareas.motor import Motor
 from typer import _completion_classes, _completion_shared, rich_utils
@@ -105,6 +106,8 @@ def controlar_errores(funcion):
             return funcion(*args, **kwargs)
         except TareasError as e:
             consola_err.print(f"[red]✘ {escape(str(e))}[/red]")
+            if isinstance(e, IANoDisponible):
+                consola_err.print("Las acciones sin IA siguen funcionando: mira cuáles son con «dam acciones».")
             raise typer.Exit(e.codigo_salida) from None
 
     return envoltorio
@@ -202,6 +205,9 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam ejecutar limpiar-temporales ~/pruebas-tareas", "Usa otra carpeta en vez del origen de la acción"),
         ("dam ejecutar convertir-webp --si", "Sin preguntar (solo si estás seguro)"),
     ],
+    "comprobar-ia": [
+        ("dam comprobar-ia", "¿Llego al servidor de IA del centro? Enseña servidor y modelo, nunca la clave"),
+    ],
     "status": [
         ("dam status", "Qué has cambiado y qué hay nuevo en GitHub (no modifica nada)"),
         ("dam status programacion", "Mira solo la asignatura programacion"),
@@ -219,6 +225,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
 # (tema, para qué, comandos): el tema y el «para qué» salen en la primera columna de la tabla de ayuda
 GRUPOS = [
     ("Ficheros", "ordenar y limpiar", ["listar", "validar", "acciones", "ejecutar"]),
+    ("IA", "modelos del centro", ["comprobar-ia"]),
     ("Almacén (git)", "clase, casa y USB", ["status", "sync"]),
     ("Seguridad", "claves expuestas", ["scan-secrets", "instalar-hook"]),
     ("Tus proyectos", "revisar y entregar", ["doctor", "pendientes", "entregar"]),
@@ -556,6 +563,21 @@ def ejecutar(
             consola.print("Vale. Cuando quieras subirlos: [bold]dam sync[/bold]")
     if any(r.estado == "error" for r in resultados):
         raise typer.Exit(1)
+
+
+@comando(nombre="comprobar-ia")
+@controlar_errores
+def comprobar_ia() -> None:
+    """Comprueba la conexión con el servidor de IA (sin enseñar la clave).
+
+    Lee CENTRO_IA_URL, CENTRO_IA_KEY, CENTRO_IA_CA y CENTRO_IA_MODELO de tu terminal o de un .env (mira .env.example) y hace una pregunta mínima al modelo (5 tokens como mucho).
+
+    Sale con 4 si no hay clave, no hay red, falta el certificado o el servidor no responde.
+    """
+    proveedor = ProveedorCentro.desde_entorno()
+    consola.print(f"Servidor: {escape(proveedor.url)}  ·  modelo: {escape(proveedor.modelo)}  ·  clave: definida")
+    r = proveedor.completar("Responde solo con la palabra: ok", "¿Me oyes?", max_tokens=5)
+    consola.print(f"[green]✔ El modelo responde «{escape(r.texto)}» en {r.segundos:.1f} s[/green] ({r.resumen()})")
 
 
 # ---------- almacén de apuntes (git) ----------
