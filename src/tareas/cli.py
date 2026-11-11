@@ -397,15 +397,19 @@ def acciones(ctx: typer.Context) -> None:
 
     Muestra el nombre (el que escribes en «dam ejecutar NOMBRE»), el tipo y la descripción.
 
-    Tipos disponibles: mover, copiar, renombrar, borrar, ordenar (por asignatura) y convertir (a WebP).
+    Tipos sin IA: mover, copiar, renombrar, borrar, ordenar (por asignatura) y convertir (a WebP).
+
+    Tipos con IA (columna IA): resumir, renombrar-ia y clasificar. Necesitan el servidor del centro (mira dam comprobar-ia); las demás funcionan sin red.
     """
     lista = config.cargar(config.buscar(ctx.obj))
     tabla = Table(title="Acciones disponibles")
     tabla.add_column("Nombre", style="bold")
     tabla.add_column("Tipo")
+    tabla.add_column("IA", justify="center")
     tabla.add_column("Descripción")
     for a in lista:
-        tabla.add_row(escape(a["nombre"]), a["tipo"], escape(a["descripcion"]))
+        ia = "[magenta]sí[/magenta]" if a["tipo"] in config.TIPOS_IA else "—"
+        tabla.add_row(escape(a["nombre"]), a["tipo"], ia, escape(a["descripcion"]))
     consola.print(tabla)
 
 
@@ -487,17 +491,31 @@ def completar_asignaturas(ctx: typer.Context, incomplete: str) -> list[str]:
     )
 
 
+def con_virgulilla(ruta: Path) -> str:
+    """C:\\Users\\HP\\pruebas-tareas\\x.pdf -> ~\\pruebas-tareas\\x.pdf: más corta y sin tu nombre de usuario."""
+    casa = Path.home()
+    try:
+        return str(Path("~") / ruta.relative_to(casa))
+    except ValueError:
+        return str(ruta)
+
+
 def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
     titulo = f"{nombre} (SIMULACIÓN: no se ha tocado nada)" if simular else nombre
     tabla = Table(title=titulo)
     tabla.add_column("Fichero", overflow="fold")
     tabla.add_column("Destino", overflow="fold")
     tabla.add_column("Estado")
+    con_detalle = any(r.nota for r in resultados)  # tokens, segundos, categoría, por qué se salta...
+    if con_detalle:
+        tabla.add_column("Detalle", overflow="fold")
     for r in resultados:
-        destino = escape(str(r.destino)) if r.destino else "—"
+        destino = escape(con_virgulilla(r.destino)) if r.destino else "—"
         color = COLORES.get(r.estado, "white")
-        estado = r.estado + (f" ({escape(r.nota)})" if r.nota else "")
-        tabla.add_row(escape(r.origen.name), destino, f"[{color}]{estado}[/{color}]")
+        fila = [escape(r.origen.name), destino, f"[{color}]{r.estado}[/{color}]"]
+        if con_detalle:
+            fila.append(escape(r.nota))
+        tabla.add_row(*fila)
     consola.print(tabla)
     cuenta = {e: sum(1 for r in resultados if r.estado == e) for e in COLORES}
     consola.print(
