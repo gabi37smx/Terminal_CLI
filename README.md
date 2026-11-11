@@ -85,9 +85,11 @@ bash instalar.sh          # Linux y macOS
 
 En Windows: doble clic en `instalar.cmd` (o `powershell -ExecutionPolicy Bypass -File instalar.ps1`).
 
-El script instala uv si no está (y uv baja Python 3.12), instala el comando `dam`, copia
-`acciones.json` a `~/.config/dam/`, te pide nombre y correo para git si faltan y clona tu
-`DAM-almacen` en `~/DAM-almacen`. Se puede repetir sin miedo: lo que ya está hecho se salta.
+El script instala uv si no está (y uv baja Python 3.12), instala el comando `dam`, te pide nombre y
+correo para git si faltan, clona tu `DAM-almacen` en `~/DAM-almacen` y, como `adduser` en Linux,
+**te pregunta qué estudias** (`dam configurar`): con tu ciclo y curso deja `~/.config/dam/acciones.json`
+con tus asignaturas y ofrece crear sus carpetas en el almacén. Se puede repetir sin miedo: lo que ya
+está hecho se salta.
 Al terminar, abre una terminal nueva. Si git te pide contraseña al clonar o al hacer `sync`, pega un
 **token de GitHub**, porque la contraseña normal no vale.
 
@@ -163,6 +165,7 @@ bórralas tú si ya no las quieres (antes, `dam status` para no perder nada sin 
 | Orden | Qué hace |
 |---|---|
 | `dam version` | Muestra la versión (`tareas version` hace lo mismo). |
+| `dam configurar [--ciclo C] [--curso N] [--quitar X] [--nueva NOMBRE=PALABRAS] [--simular] [--si]` | Pregunta tu ciclo (SMX, DAM, DAW, ASIR/ASIX u otro) y curso, y pone tus asignaturas en `acciones.json`. Mira [Tu ciclo y tus asignaturas](#tu-ciclo-y-tus-asignaturas-dam-configurar). |
 | `dam listar [CARPETA]` | Tabla con nombre, tipo, tamaño y fecha. |
 | `dam validar` | Comprueba `acciones.json`. Sale con 3 si está mal. |
 | `dam acciones` | Lista las acciones configuradas. |
@@ -201,6 +204,7 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 | `version` | sí (raíz) | Versión del esquema (ahora 1). |
 | `acciones` | sí (raíz) | Lista de acciones; vacía = error. |
 | `almacen.ruta` | no (raíz) | Carpeta del almacén git para `status` y `sync`. |
+| `perfil` | no (raíz) | Lo escribe `dam configurar`: `{"ciclo": "dam", "cursos": [1]}`. Sirve para proponerte lo mismo la próxima vez. |
 | `nombre` | sí | Único; minúsculas, números y guiones. Es lo que escribes en `dam ejecutar NOMBRE`. |
 | `descripcion` | sí | Lo que muestra `dam acciones`. |
 | `tipo` | sí | Sin IA: `mover`, `copiar`, `renombrar`, `borrar`, `ordenar` o `convertir`. Con IA: `resumir`, `renombrar-ia` o `clasificar`. |
@@ -233,6 +237,44 @@ la configuración se valida entera antes de mover un solo fichero.
 
 Ojo con `mover` y `copiar`: si pasas una `CARPETA`, los ficheros se cogen de ahí, pero van al `destino`
 fijo de `acciones.json`, aunque esté fuera de esa carpeta. Mira la tabla de `--simular` antes.
+
+## Tu ciclo y tus asignaturas (dam configurar)
+
+El `acciones.json` del repo es el mío (1º de DAM). Para que `ordenar` y `clasificar` sirvan a
+cualquiera de la familia de Informática, `dam configurar` pregunta, igual que `adduser`:
+
+```text
+$ dam configurar
+¿Qué estudias?
+  1. SMX — Sistemas Microinformáticos y Redes (grado medio)
+  2. DAM — Desarrollo de Aplicaciones Multiplataforma
+  3. DAW — Desarrollo de Aplicaciones Web
+  4. ASIR — Administración de Sistemas Informáticos en Red (ASIX en valenciano)
+  5. Otro ciclo (escribes tú las asignaturas)
+Número o nombre: 1
+¿Qué curso? 1, 2 o 1,2 (los dos) [1]: 1
+  (tabla con las 7 asignaturas de 1º de SMX y sus palabras clave)
+¿Quieres quitar o añadir alguna? [s/N]:
+¿Lo guardo en ~/.config/dam/acciones.json? [s/N]: s
+¿Creo en tu almacén las carpetas que faltan (...)? [s/N]: s
+```
+
+- Cada ciclo sabe sus asignaturas de 1º y 2º, con palabras clave en castellano y en valenciano y
+  las extensiones típicas (`.pkt` de Packet Tracer → redes, `.php` → servidor...). Están en
+  `src/tareas/ciclos.py`: para añadir un ciclo no hay que tocar nada más.
+- Puedes quitar asignaturas y añadir las tuyas (`--nueva "fol=fol,contrato,nomina"`): el nombre
+  pasa a carpeta sin tildes ni espacios.
+- Cambia `carpetas` y `por_extension` de `ordenar`, y `categorias` e `instrucciones` de
+  `clasificar` (con `otros` al final). Si eliges las mismas asignaturas que ya había, esas acciones
+  no se tocan. El resto de acciones se quedan igual.
+- Valida todo antes de guardar y deja una copia del anterior (`acciones.json.antes-FECHA`).
+- Las carpetas nuevas del almacén llevan un `.gitkeep` (git no sube carpetas vacías): súbelas con
+  `dam sync`.
+- La próxima vez te propone lo mismo (lo guarda en `perfil`). Sin preguntas:
+  `dam configurar --ciclo asix --curso 2 --si`.
+
+Dónde cae cada módulo común (inglés, itinerario para la empleabilidad, proyecto intermodular,
+digitalización y sostenibilidad) depende del centro: si no coincide con el tuyo, quítalo o añádelo.
 
 ## Almacén de apuntes (status y sync)
 

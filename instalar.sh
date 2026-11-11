@@ -51,29 +51,8 @@ case ":$PATH_ORIGINAL:" in
         ;;
 esac
 
-# 4. Configuración ---------------------------------------------------------
-paso "Configuración de acciones"
+# 4. Dónde van tus acciones (las configura el paso 6b, con el almacén ya clonado)
 CONFIG="$HOME/.config/dam/acciones.json"
-if [ -f "$CONFIG" ] && cmp -s acciones.json "$CONFIG"; then
-    ok "Ya tienes $CONFIG y está al día"
-elif [ -f "$CONFIG" ]; then
-    # Si es de una instalación vieja, dam seguiría usando las acciones viejas
-    aviso "Tu $CONFIG no es igual que la del repo (puede que sea de una instalación vieja)."
-    respuesta=""
-    read -rp "    ¿La cambio por la nueva? Guardo una copia de la tuya [s/N]: " respuesta || true
-    if [ "$respuesta" = "s" ] || [ "$respuesta" = "S" ]; then
-        copia="$CONFIG.antes-$(date +%Y%m%d-%H%M%S)"
-        cp "$CONFIG" "$copia"
-        cp acciones.json "$CONFIG"
-        ok "Puesta la nueva. La tuya está en $copia"
-    else
-        aviso "No la toco: dam seguirá usando la tuya."
-    fi
-else
-    mkdir -p "$(dirname "$CONFIG")"
-    cp acciones.json "$CONFIG"
-    ok "Copiado acciones.json a $CONFIG (así dam funciona desde cualquier carpeta)"
-fi
 
 # 4b. Autocompletado con TAB -----------------------------------------------
 # No uso «dam --install-completion»: miraría la terminal de ESTE script (bash), y en macOS la
@@ -191,6 +170,32 @@ else
         fi
     else
         aviso "Saltado. Luego: git clone https://github.com/TU_USUARIO/DAM-almacen.git ~/DAM-almacen"
+    fi
+fi
+
+# 6b. Tu ciclo y tus asignaturas --------------------------------------------
+# Como adduser en Linux: pregunta qué estudias y deja acciones.json a tu medida. Va después del
+# almacén para poder crear en él las carpetas de tus asignaturas.
+paso "Tu ciclo y tus asignaturas (dam configurar)"
+configurar() { uv run dam --config "$CONFIG" configurar --plantilla acciones.json; }
+if [ ! -f "$CONFIG" ]; then
+    if ! configurar; then
+        mkdir -p "$(dirname "$CONFIG")"
+        cp acciones.json "$CONFIG"
+        aviso "No se ha configurado: he copiado las acciones de 1º de DAM a $CONFIG."
+        aviso "Cuando quieras, elige tu ciclo con:  dam configurar"
+    fi
+elif cmp -s acciones.json "$CONFIG"; then
+    ok "Ya tienes $CONFIG y está al día (para cambiar de ciclo o de curso: dam configurar)"
+else
+    # O ya elegiste tus asignaturas o es de una instalación vieja (le faltarían las acciones nuevas)
+    aviso "Tu $CONFIG no es igual que la del repo: ya elegiste tus asignaturas o es de una instalación vieja."
+    respuesta=""
+    read -rp "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [s/N]: " respuesta || true
+    if [ "$respuesta" = "s" ] || [ "$respuesta" = "S" ]; then
+        configurar || aviso "No he cambiado nada: dam seguirá usando la tuya."
+    else
+        aviso "No la toco: dam seguirá usando la tuya."
     fi
 fi
 

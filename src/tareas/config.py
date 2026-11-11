@@ -70,6 +70,11 @@ def _leer_json(ruta: Path) -> dict:
     return datos
 
 
+def leer_json(ruta: Path) -> dict:
+    """Lee el fichero sin validar las acciones (dam configurar lo usa como plantilla)."""
+    return _leer_json(ruta)
+
+
 def _texto(valor: object) -> bool:
     return isinstance(valor, str) and bool(valor.strip())
 
@@ -233,12 +238,26 @@ def _validar_almacen(almacen: object) -> None:
         raise ConfigError("«almacen.asignaturas» debe ser el nombre de una carpeta (texto)")
 
 
+def _validar_perfil(perfil: object) -> None:
+    """«perfil» lo escribe dam configurar: qué estudias, para proponértelo la próxima vez."""
+    if perfil is None:
+        return
+    cursos = perfil.get("cursos") if isinstance(perfil, dict) else None
+    if not (isinstance(perfil, dict) and _texto(perfil.get("ciclo")) and isinstance(cursos, list)
+            and cursos and all(c in (1, 2) and not isinstance(c, bool) for c in cursos)):
+        raise ConfigError("«perfil» debe ser {\"ciclo\": \"dam\", \"cursos\": [1]}: repítelo con dam configurar")
+
+
 def leer(ruta: Path) -> dict:
     """Lee y valida TODO el fichero. Devuelve el diccionario completo."""
-    datos = _leer_json(ruta)
+    return validar_datos(_leer_json(ruta), ruta.name)
+
+
+def validar_datos(datos: dict, nombre: str = NOMBRE_FICHERO) -> dict:
+    """Valida un acciones.json ya leído (dam configurar lo usa ANTES de guardarlo)."""
     if datos.get("version") != 1:
         raise ConfigError(
-            f"{ruta.name}: falta «version»: 1 (o es una versión que no conozco: {datos.get('version')!r})"
+            f"{nombre}: falta «version»: 1 (o es una versión que no conozco: {datos.get('version')!r})"
         )
     acciones = datos.get("acciones")
     if not isinstance(acciones, list) or not acciones:
@@ -247,6 +266,7 @@ def leer(ruta: Path) -> dict:
     for i, accion in enumerate(acciones, start=1):
         _validar_accion(accion, i, vistos)
     _validar_almacen(datos.get("almacen"))
+    _validar_perfil(datos.get("perfil"))
     return datos
 
 

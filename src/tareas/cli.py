@@ -14,7 +14,8 @@ from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
 
-from tareas import __version__, config, escanear, hook, sincronizar, web
+from tareas import URL_EJEMPLO_ACCIONES, __version__, ciclos, config, escanear, hook, sincronizar, web
+from tareas import configurar as configurar_mod  # «configurar» ya es el nombre del comando
 from tareas import doctor as doctor_mod  # «doctor», «entregar» y «pendientes» ya son nombres de comandos
 from tareas import duplicados as duplicados_mod
 from tareas import entregar as entregar_mod
@@ -172,6 +173,12 @@ def confirmar(pregunta: str) -> None:
 # Ejemplos por comando: salen en `dam` (ayuda general) y al final de `dam COMANDO --help`.
 # Hay un test que obliga a que cada comando nuevo tenga los suyos.
 EJEMPLOS: dict[str, list[tuple[str, str]]] = {
+    "configurar": [
+        ("dam configurar", "Te pregunta ciclo, curso y asignaturas, y deja acciones.json a tu medida"),
+        ("dam configurar --ciclo asix --curso 2 --simular", "Enseña cómo quedaría para 2º de ASIR/ASIX, sin guardar"),
+        ('dam configurar --ciclo smx --curso 1 --nueva "fol=fol,contrato" --si', "Sin preguntas, con una asignatura más"),
+        ("dam configurar --plantilla acciones.json", "Parte del acciones.json del repo (lo hace el instalador)"),
+    ],
     "scan-secrets": [
         ("dam scan-secrets", "Revisa la carpeta actual (solo lo que se subiría a git)"),
         ("dam scan-secrets --staged", "Revisa solo lo preparado con git add: úsalo antes de cada commit"),
@@ -267,7 +274,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
 
 # (tema, para qué, comandos): el tema y el «para qué» salen en la primera columna de la tabla de ayuda
 GRUPOS = [
-    ("Ficheros", "ordenar y limpiar", ["listar", "validar", "acciones", "ejecutar"]),
+    ("Ficheros", "ordenar y limpiar", ["configurar", "listar", "validar", "acciones", "ejecutar"]),
     ("IA", "modelos del centro", ["comprobar-ia"]),
     ("Almacén (git)", "clase, casa y USB", ["status", "sync"]),
     ("Seguridad", "claves expuestas", ["scan-secrets", "instalar-hook"]),
@@ -652,6 +659,216 @@ def comprobar_ia() -> None:
     consola.print(f"Servidor: {escape(proveedor.url)}  ·  modelo: {escape(proveedor.modelo)}  ·  clave: definida")
     r = proveedor.completar("Responde solo con la palabra: ok", "¿Me oyes?", max_tokens=5)
     consola.print(f"[green]✔ El modelo responde «{escape(r.texto)}» en {r.segundos:.1f} s[/green] ({r.resumen()})")
+
+
+# ---------- configurar: tu ciclo y tus asignaturas ----------
+def _leer_si_vale(ruta: Path) -> dict:
+    """El acciones.json que ya tienes (para proponer lo de la última vez); si está roto, como si no hubiera."""
+    try:
+        return config.leer_json(ruta) if ruta.is_file() else {}
+    except ConfigError:
+        return {}
+
+
+def _elegir_plantilla(plantilla: Optional[Path], destino: Path) -> Path:
+    """De dónde salen las acciones: --plantilla, el fichero que ya tienes o el acciones.json de esta carpeta."""
+    if plantilla is not None:
+        plantilla = plantilla.expanduser()
+        if not plantilla.is_file():
+            raise ConfigError(f"No encuentro la plantilla {plantilla}")
+        return plantilla
+    for candidato in (destino, Path.cwd() / config.NOMBRE_FICHERO):
+        if candidato.is_file():
+            return candidato
+    raise ConfigError(
+        f"No tengo acciones de partida. Descarga el ejemplo ({URL_EJEMPLO_ACCIONES}) "
+        "y repite con --plantilla RUTA, o lanza dam configurar desde la carpeta del repositorio."
+    )
+
+
+def _pedir_ciclo(defecto: Optional[str]) -> str:
+    opciones = [*ciclos.CICLOS, ciclos.OTRO]
+    consola.print("\n[bold]¿Qué estudias?[/bold]")
+    for i, clave in enumerate(opciones, start=1):
+        if clave == ciclos.OTRO:
+            texto = "Otro ciclo (escribes tú las asignaturas)"
+        else:
+            texto = f"{ciclos.CICLOS[clave].nombre} — {ciclos.CICLOS[clave].titulo}"
+        consola.print(f"  {i}. {escape(texto)}")
+    numero_defecto = str(opciones.index(defecto) + 1) if defecto in opciones else None
+    while True:
+        respuesta = typer.prompt("Número o nombre", default=numero_defecto).strip()
+        if respuesta.isdigit() and 1 <= int(respuesta) <= len(opciones):
+            return opciones[int(respuesta) - 1]
+        try:
+            return ciclos.ciclo_valido(respuesta)
+        except ValueError as e:
+            consola.print(f"[red]{escape(str(e))}[/red]")
+
+
+def _pedir_cursos(defecto: list[int]) -> list[int]:
+    texto_defecto = ",".join(str(c) for c in defecto)
+    while True:
+        respuesta = typer.prompt("¿Qué curso? 1, 2 o 1,2 (los dos)", default=texto_defecto)
+        partes = [p.strip().rstrip("º") for p in respuesta.split(",") if p.strip()]
+        if partes and all(p in ("1", "2") for p in partes):
+            return sorted({int(p) for p in partes})
+        consola.print("[red]Escribe 1, 2 o 1,2[/red]")
+
+
+def _nueva_asignatura(texto: str) -> tuple[str, list[str]]:
+    """'fol=fol,contrato' -> ('fol', ['fol', 'contrato']). Sin «=», la palabra clave es el propio nombre."""
+    nombre, _, palabras = texto.partition("=")
+    carpeta = ciclos.a_nombre_de_carpeta(nombre)
+    if not carpeta:
+        raise TareasError(f"«{texto}» no sirve como nombre de asignatura (usa letras y números)")
+    lista = [p.strip().lower() for p in palabras.split(",") if p.strip()] or [nombre.strip().lower()]
+    return carpeta, lista
+
+
+def _tabla_asignaturas(asignaturas: dict[str, list[str]]) -> None:
+    tabla = Table(box=box.SIMPLE_HEAD, header_style="bold")
+    tabla.add_column("#", justify="right")
+    tabla.add_column("Carpeta", style="cyan")
+    tabla.add_column("Asignatura")
+    tabla.add_column("Palabras clave")
+    for i, (nombre, palabras) in enumerate(asignaturas.items(), start=1):
+        largo = ciclos.ASIGNATURAS[nombre].castellano if nombre in ciclos.ASIGNATURAS else "(tuya)"
+        resumen = ", ".join(palabras[:4]) + (f" y {len(palabras) - 4} más" if len(palabras) > 4 else "")
+        tabla.add_row(str(i), escape(nombre), escape(largo), escape(resumen))
+    consola.print(tabla)
+
+
+def _editar_asignaturas(asignaturas: dict[str, list[str]]) -> dict[str, list[str]]:
+    """Pregunta qué quitar y qué añadir (Enter = nada)."""
+    nombres = list(asignaturas)
+    quitar = typer.prompt("Números de las que quitas, separados por comas (Enter: ninguna)",
+                          default="", show_default=False)
+    for parte in (p.strip() for p in quitar.split(",") if p.strip()):
+        if parte.isdigit() and 1 <= int(parte) <= len(nombres):
+            asignaturas.pop(nombres[int(parte) - 1], None)
+        else:
+            consola.print(f"[yellow]«{escape(parte)}» no es ningún número de la lista: no lo tengo en cuenta[/yellow]")
+    nuevas = typer.prompt("Asignaturas que añades, separadas por comas (Enter: ninguna)",
+                          default="", show_default=False)
+    for nombre in (n.strip() for n in nuevas.split(",") if n.strip()):
+        carpeta, _ = _nueva_asignatura(nombre)
+        palabras = typer.prompt(f"  Palabras clave de «{carpeta}» (separadas por comas)", default=nombre.lower())
+        asignaturas[carpeta] = _nueva_asignatura(f"{nombre}={palabras}")[1]
+    return asignaturas
+
+
+@comando
+@controlar_errores
+def configurar(
+    ctx: typer.Context,
+    ciclo: Annotated[Optional[str], typer.Option("--ciclo", metavar="CICLO", help="smx, dam, daw, asir (o asix) u otro. Sin ella, te lo pregunta.")] = None,
+    curso: Annotated[Optional[list[int]], typer.Option("--curso", metavar="N", help="1 o 2. Repítela para los dos: --curso 1 --curso 2.")] = None,
+    quitar: Annotated[Optional[list[str]], typer.Option("--quitar", metavar="CARPETA", help="Quita esa asignatura de la lista del ciclo (se puede repetir).")] = None,
+    nueva: Annotated[Optional[list[str]], typer.Option("--nueva", metavar="NOMBRE=PALABRAS", help='Añade una asignatura: --nueva "fol=fol,contrato,nomina" (se puede repetir).')] = None,
+    plantilla: Annotated[Optional[Path], typer.Option("--plantilla", metavar="RUTA", help="acciones.json del que salen las acciones (por defecto: el que ya tienes).")] = None,
+    crear_carpetas: Annotated[bool, typer.Option("--crear-carpetas", help="Crea en el almacén las carpetas de asignatura que falten, sin preguntar.")] = False,
+    si: Annotated[bool, typer.Option("--si", help="No pregunta nada: usa las opciones y lo que elegiste la última vez.")] = False,
+    simular: Annotated[bool, typer.Option("--simular", help="Enseña cómo quedaría, sin guardar nada.")] = False,
+) -> None:
+    """Pregunta tu ciclo y curso y pone tus asignaturas en acciones.json.
+
+    Como adduser en Linux: eliges ciclo (SMX, DAM, DAW, ASIR/ASIX u otro) y curso, y dam ya sabe qué asignaturas tienes. Puedes quitar y añadir las que quieras. Con eso rellena las carpetas y palabras clave de «ordenar» y las categorías de «clasificar».
+
+    Guarda en ~/.config/dam/acciones.json (o en el de --config), con una copia del anterior. Si eliges las mismas asignaturas que ya tenías, esas acciones no cambian. Al acabar, ofrece crear las carpetas que falten en tu almacén.
+
+    Lo lanza el instalador. Repítelo cuando cambies de curso: te propone lo de la última vez.
+    """
+    destino = (ctx.obj or config.sitios_de_busqueda()[-1]).expanduser()
+    origen = _elegir_plantilla(plantilla, destino)
+    base = config.leer_json(origen)
+    actual = _leer_si_vale(destino)
+    anterior = configurar_mod.perfil(actual) or configurar_mod.perfil(base) or {}
+    consola.print(f"Acciones de partida: {escape(str(origen))}")
+
+    # 1. Ciclo y curso
+    if ciclo is not None:
+        try:
+            ciclo = ciclos.ciclo_valido(ciclo)
+        except ValueError as e:
+            raise typer.BadParameter(str(e), param_hint="--ciclo") from None
+    elif si:
+        if not anterior.get("ciclo"):
+            raise typer.BadParameter("con --si hace falta --ciclo (no hay nada elegido de otra vez)", param_hint="--ciclo")
+        ciclo = ciclos.ciclo_valido(anterior["ciclo"])
+    else:
+        ciclo = _pedir_ciclo(anterior.get("ciclo"))
+    mismo_ciclo = anterior.get("ciclo") == ciclo
+    if curso:
+        if any(c not in (1, 2) for c in curso):
+            raise typer.BadParameter("el curso es 1 o 2", param_hint="--curso")
+        cursos = sorted(set(curso))
+    elif ciclo == ciclos.OTRO:
+        cursos = [1]
+    elif si:
+        cursos = anterior.get("cursos", [1]) if mismo_ciclo else [1]
+    else:
+        cursos = _pedir_cursos(anterior.get("cursos", [1]) if mismo_ciclo else [1])
+
+    # 2. Asignaturas: las de la última vez si repites ciclo y curso; si no, las del ciclo
+    if mismo_ciclo and anterior.get("cursos") == cursos and configurar_mod.asignaturas_actuales(actual):
+        asignaturas = configurar_mod.asignaturas_actuales(actual)
+        consola.print(f"\nTus asignaturas de la última vez ({escape(ciclos.etiqueta(ciclo, cursos))}):")
+    else:
+        asignaturas = ciclos.asignaturas_de(ciclo, cursos)
+        if asignaturas:
+            consola.print(f"\nAsignaturas de {escape(ciclos.etiqueta(ciclo, cursos))}:")
+    for nombre in quitar or []:
+        if asignaturas.pop(nombre, None) is None:
+            raise typer.BadParameter(f"«{nombre}» no está en la lista: {', '.join(asignaturas)}", param_hint="--quitar")
+    for texto in nueva or []:
+        carpeta, palabras = _nueva_asignatura(texto)
+        asignaturas[carpeta] = palabras
+    if asignaturas:
+        _tabla_asignaturas(asignaturas)
+    if not si and (not asignaturas or preguntar("¿Quieres quitar o añadir alguna?")):
+        asignaturas = _editar_asignaturas(asignaturas)
+        _tabla_asignaturas(asignaturas)
+    if not asignaturas:
+        raise ConfigError("Sin asignaturas no hay nada que configurar (añádelas con --nueva NOMBRE=PALABRAS)")
+
+    # 3. Aplicar, validar y guardar
+    datos = configurar_mod.aplicar(base, ciclo, cursos, asignaturas)
+    config.validar_datos(datos, destino.name)
+    if simular:
+        consola.print(f"[cyan](simulado) Quedaría bien: {len(datos['acciones'])} acciones válidas. "
+                      f"No he guardado nada en {escape(str(destino))}[/cyan]")
+        return
+    if not si:
+        confirmar(f"¿Lo guardo en {destino}?")
+    copia = configurar_mod.guardar(datos, destino)
+    consola.print(f"[green]✔ Guardado en {escape(str(destino))}[/green]: {len(asignaturas)} asignaturas, "
+                  f"{len(datos['acciones'])} acciones válidas")
+    if copia:
+        consola.print(f"  La versión anterior está en {escape(str(copia))}")
+    if ctx.obj is None and (Path.cwd() / config.NOMBRE_FICHERO).is_file() and Path.cwd() / config.NOMBRE_FICHERO != destino:
+        consola.print("[yellow]Ojo: en esta carpeta hay otro acciones.json y aquí dam usa ese. "
+                      "Fuera de esta carpeta, dam usa el que acabo de guardar.[/yellow]")
+
+    # 4. Carpetas en el almacén
+    try:
+        almacen = _abrir_almacen(ctx, None)
+    except ConfigError:
+        almacen = None
+    base_asignaturas = almacen.ruta / almacen.carpeta_asignaturas if almacen else None
+    if base_asignaturas is None or not almacen.ruta.is_dir():
+        consola.print("Cuando tengas el almacén clonado, repite dam configurar para crear las carpetas de asignatura.")
+        return
+    faltan = configurar_mod.carpetas_que_faltan(base_asignaturas, list(asignaturas))
+    if not faltan:
+        consola.print(f"[green]✔ Tu almacén ya tiene todas las carpetas[/green] ({escape(str(base_asignaturas))})")
+    elif crear_carpetas or (not si and preguntar(f"¿Creo en tu almacén las carpetas que faltan ({', '.join(faltan)})?")):
+        configurar_mod.crear_carpetas(base_asignaturas, faltan)
+        consola.print(f"[green]✔ Creadas {len(faltan)} carpetas en {escape(str(base_asignaturas))}[/green]. "
+                      "Súbelas con: dam sync")
+    else:
+        consola.print(f"[yellow]Faltan en tu almacén: {escape(', '.join(faltan))}.[/yellow] "
+                      "«ordenar» no mete ficheros en asignaturas sin carpeta (créalas con --crear-carpetas).")
 
 
 # ---------- almacén de apuntes (git) ----------

@@ -8,6 +8,21 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+### Añadido
+
+- `dam configurar`: como `adduser` en Linux, pregunta tu ciclo (SMX, DAM, DAW, ASIR/ASIX u otro) y
+  curso, y pone tus asignaturas en `acciones.json` (carpetas y palabras clave de `ordenar`,
+  categorías e instrucciones de `clasificar`). Deja quitar y añadir asignaturas, guarda una copia
+  del anterior, recuerda lo que elegiste (`perfil`) y ofrece crear las carpetas en el almacén.
+- `ciclos.py`: las asignaturas de 1º y 2º de los cuatro ciclos de Informática, con palabras clave en
+  castellano y en valenciano.
+- Campo opcional `perfil` en `acciones.json`.
+
+### Cambiado
+
+- Los instaladores ya no copian `acciones.json` tal cual: después de clonar el almacén lanzan
+  `dam configurar`. Si lo cancelas, copian el de 1º de DAM como antes.
+
 ## [1.0.1] - 2026-11-11
 
 Arreglos que salieron al instalar la 1.0.0 en un portátil con Ubuntu 24.04 recién instalado,

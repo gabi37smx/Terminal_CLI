@@ -47,28 +47,8 @@ if (($PathOriginal -split ';') -contains $CarpetaBin) {
     Aviso "Al terminar, cierra esta terminal y abre otra para que «dam» funcione."
 }
 
-# 4. Configuración ---------------------------------------------------------
-Paso "Configuración de acciones"
+# 4. Dónde van tus acciones (las configura el paso 6b, con el almacén ya clonado)
 $Config = Join-Path $HOME ".config\dam\acciones.json"
-if ((Test-Path $Config) -and ((Get-FileHash acciones.json).Hash -eq (Get-FileHash $Config).Hash)) {
-    Ok "Ya tienes $Config y está al día"
-} elseif (Test-Path $Config) {
-    # Si es de una instalación vieja, dam seguiría usando las acciones viejas
-    Aviso "Tu $Config no es igual que la del repo (puede que sea de una instalación vieja)."
-    $respuesta = Read-Host "    ¿La cambio por la nueva? Guardo una copia de la tuya [s/N]"
-    if ($respuesta -eq 's') {
-        $copia = "$Config.antes-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-        Copy-Item $Config $copia
-        Copy-Item acciones.json $Config -Force
-        Ok "Puesta la nueva. La tuya está en $copia"
-    } else {
-        Aviso "No la toco: dam seguirá usando la tuya."
-    }
-} else {
-    New-Item -ItemType Directory -Force (Split-Path $Config) | Out-Null
-    Copy-Item acciones.json $Config
-    Ok "Copiado acciones.json a $Config (así dam funciona desde cualquier carpeta)"
-}
 
 # 4b. Autocompletado con TAB -----------------------------------------------
 # No uso «dam --install-completion»: cambiaría la política de PowerShell a Unrestricted
@@ -188,6 +168,33 @@ if (Test-Path (Join-Path $Almacen ".git")) {
         }
     } else {
         Aviso "Saltado. Luego: git clone https://github.com/TU_USUARIO/DAM-almacen.git $Almacen"
+    }
+}
+
+# 6b. Tu ciclo y tus asignaturas --------------------------------------------
+# Como adduser en Linux: pregunta qué estudias y deja acciones.json a tu medida. Va después del
+# almacén para poder crear en él las carpetas de tus asignaturas.
+Paso "Tu ciclo y tus asignaturas (dam configurar)"
+# Sin función: en PowerShell lo que escribe una función es su resultado y no se verían las preguntas
+if (-not (Test-Path $Config)) {
+    uv run dam --config "$Config" configurar --plantilla acciones.json
+    if ($LASTEXITCODE -ne 0) {
+        New-Item -ItemType Directory -Force (Split-Path $Config) | Out-Null
+        Copy-Item acciones.json $Config
+        Aviso "No se ha configurado: he copiado las acciones de 1º de DAM a $Config."
+        Aviso "Cuando quieras, elige tu ciclo con:  dam configurar"
+    }
+} elseif ((Get-FileHash acciones.json).Hash -eq (Get-FileHash $Config).Hash) {
+    Ok "Ya tienes $Config y está al día (para cambiar de ciclo o de curso: dam configurar)"
+} else {
+    # O ya elegiste tus asignaturas o es de una instalación vieja (le faltarían las acciones nuevas)
+    Aviso "Tu $Config no es igual que la del repo: ya elegiste tus asignaturas o es de una instalación vieja."
+    $respuesta = Read-Host "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [s/N]"
+    if ($respuesta -eq 's') {
+        uv run dam --config "$Config" configurar --plantilla acciones.json
+        if ($LASTEXITCODE -ne 0) { Aviso "No he cambiado nada: dam seguirá usando la tuya." }
+    } else {
+        Aviso "No la toco: dam seguirá usando la tuya."
     }
 }
 
