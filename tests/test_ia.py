@@ -338,3 +338,13 @@ def test_acciones_marca_las_que_usan_ia(tmp_path):
     r = run.invoke(app, ["--config", config_ia(tmp_path), "acciones"])
     filas = {l.split("│")[1].strip(): l.split("│")[3].strip() for l in r.output.splitlines() if l.count("│") >= 4}
     assert filas["resumir-tema"] == "sí" and filas["copiar-todo"] == "—"
+
+
+def test_sin_clave_el_mensaje_sirve_aunque_no_hayas_clonado():  # issue #19
+    r = run.invoke(app, ["comprobar-ia"])
+    salida = " ".join(r.output.split())
+    assert r.exit_code == 4
+    assert "export CENTRO_IA_URL" in salida and "$env:CENTRO_IA_URL" in salida
+    assert "carpeta desde la que ejecutas dam" in salida
+    assert "#ia-opcional" in salida.replace(" ", "")
+    assert ".env.example" not in salida  # sin clonar ese fichero no existe
