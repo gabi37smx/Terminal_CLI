@@ -78,14 +78,14 @@ Plan en 5 fases: 1 `dam inventario` → 2 `dam duplicados` (solo informa, nunca 
 3. **Lo que han encontrado los comandos nuevos:**
    - `portfolio-backend`: añadir a `.env.example`, con el valor vacío, `GITHUB_TOKEN`, `GNEWS_API_KEY` y `Gemini_API_Key` (lo hago yo; el agente no toca ficheros `.env*`).
    - Electrician: poner fecha y fuente a los 15 `[Verificado]` sin fecha (7 en el README) y un estado a la fila 53 de `docs/pendientes.md`. Avisar al equipo de `dam pendientes --quien NOMBRE`.
-   - `DAM-almacen`: añadir un README corto y sacar de git el `.zip` de más de 50 MB de `lenguaje-marcas`.
+   - ~~`DAM-almacen`: añadir un README corto y sacar de git el `.zip` de más de 50 MB de `lenguaje-marcas`.~~ HECHO (11-nov): README subido y ya no queda ningún `.zip` de más de 50 MB. Además, los apuntes de Java pasaron de `entornos` a `programacion/Apuntes JAVA` y se quitó su copia de `lenguaje-marcas` (72 MB menos).
    - `Terminal_CLI`: añadir GitHub Actions que pase `uv run pytest` en cada push (lo único que le falta según `doctor`).
 4. **Crear el token de GitHub** (Settings → Developer settings → Fine-grained tokens; solo `DAM-almacen`, permiso *Contents: Read and write*). No guardarlo en ningún fichero.
 5. (El PC de clase está ahora en el punto 1.)
 6. En Ubuntu (WSL): `git pull` en `~/Terminal_CLI` y `bash instalar.sh` otra vez para tener el TAB y clonar `DAM-almacen` con el token.
 7. Probar de verdad (sin `--simular`) en `~/pruebas-tareas` las 3 acciones antiguas (`ordenar`, `limpiar-temporales`, `convertir-webp`) y apuntar el resultado. (`renombrar-capturas`, `copiar-entregas` y `mover-zips` ya están probadas de verdad.)
 8. Pasar `@revisor` sobre `renombrar-capturas` y `copiar-entregas` (en `mover-zips` ya está), pasar `/review` y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
-9. `dam instalar-hook` en `DAM-almacen` (en `Terminal_CLI` ya está).
+9. ~~`dam instalar-hook` en `DAM-almacen`~~ HECHO (11-nov, en este PC; en el de clase y en WSL hay que instalarlo otra vez porque los hooks no se suben con git).
 10. Pendiente del portfolio: borrar o excluir `_backup_mejoras/` (67 enlaces rotos, todos ahí).
 11. Instalar sin clonar con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI` siguiendo solo el README (sin probar todavía).
 12. **Comprobación de proceso del 6 nov (semipresencial):** 3 acciones propias funcionando, ADR y commits reales.
