@@ -1,0 +1,26 @@
+# Pasa las pruebas en cada push y en cada PR, en los tres sistemas: Linux (como el PC de clase),
+# Windows (como el de casa) y macOS. fail-fast: false para ver los tres resultados aunque falle uno.
+name: Pruebas
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pruebas:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Instalar Python 3.12 y dependencias
+        run: uv sync --locked --python 3.12
+      - name: Pruebas
+        run: uv run pytest -v
+        env:
+          # Typer fuerza los colores si ve GITHUB_ACTIONS, y los códigos de color
+          # parten el texto que buscan los tests de la ayuda. Así sale como en local.
+          _TYPER_FORCE_DISABLE_TERMINAL: "1"
