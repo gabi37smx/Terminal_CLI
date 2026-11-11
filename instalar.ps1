@@ -50,8 +50,20 @@ if (($PathOriginal -split ';') -contains $CarpetaBin) {
 # 4. Configuración ---------------------------------------------------------
 Paso "Configuración de acciones"
 $Config = Join-Path $HOME ".config\dam\acciones.json"
-if (Test-Path $Config) {
-    Ok "Ya tienes $Config (no la toco)"
+if ((Test-Path $Config) -and ((Get-FileHash acciones.json).Hash -eq (Get-FileHash $Config).Hash)) {
+    Ok "Ya tienes $Config y está al día"
+} elseif (Test-Path $Config) {
+    # Si es de una instalación vieja, dam seguiría usando las acciones viejas
+    Aviso "Tu $Config no es igual que la del repo (puede que sea de una instalación vieja)."
+    $respuesta = Read-Host "    ¿La cambio por la nueva? Guardo una copia de la tuya [s/N]"
+    if ($respuesta -eq 's') {
+        $copia = "$Config.antes-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        Copy-Item $Config $copia
+        Copy-Item acciones.json $Config -Force
+        Ok "Puesta la nueva. La tuya está en $copia"
+    } else {
+        Aviso "No la toco: dam seguirá usando la tuya."
+    }
 } else {
     New-Item -ItemType Directory -Force (Split-Path $Config) | Out-Null
     Copy-Item acciones.json $Config
