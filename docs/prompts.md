@@ -311,6 +311,7 @@ Las pruebas ya pasaban de 28 (las que pide la página): ahora son 405.
 - **#18:** con la orden única no hay `acciones.json`, y el error decía «Créalo» sin decir cómo. → El mensaje dice de dónde bajar el ejemplo y dónde guardarlo. Una prueba comprueba que ese ejemplo es válido.
 - **#19:** `comprobar-ia` mandaba a `.env.example`, que sin clonar no existe. → El mensaje explica cómo definir las variables en la terminal o en un `.env`.
 - **#20:** errores de uso en inglés dentro de un panel en español, ayuda que solo habla de `dam` y TAB que pedía `instalar.sh`. → Traduzco los mensajes de Click antes de que Typer los pinte (sin tocar la librería). La línea `Usage:` se queda en inglés.
+- **#22 (en la Fase B, con `bash instalar.sh`):** en «Tu usuario de GitHub» puse `gabi`, el del portátil, y dejé vacíos el *Username* y el *Password* que pidió git → «Repository not found». → Los dos instaladores explican qué usuario es, qué poner en cada línea (Password = token) y qué significa ese error.
 
 También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instaló pypdf 7.0.1 y en casa tengo la 6.21.3.
 **Instalación cruzada con otra persona:** quién la hizo, en qué sistema, qué issues abrió y cómo los contesté: [COMPLETAR]

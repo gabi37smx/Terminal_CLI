@@ -175,13 +175,19 @@ elif [ -e "$ALMACEN" ]; then
     aviso "$ALMACEN existe pero no es un repositorio git: no lo toco."
 else
     usuario=""
-    read -rp "    Tu usuario de GitHub para clonar DAM-almacen (Enter para saltar): " usuario || true
+    echo "    Tu usuario de GitHub es el de github.com/TU_USUARIO (no el de este ordenador)."
+    read -rp "    Usuario de GitHub para clonar DAM-almacen (Enter para saltar): " usuario || true
     if [ -n "$usuario" ]; then
-        echo "    Si git te pide contraseña, pega un token de GitHub: la contraseña normal no vale."
+        echo "    Si el repo es privado, git te pedirá dos cosas:"
+        echo "      Username → $usuario"
+        echo "      Password → un token (la contraseña normal no vale). Créalo en"
+        echo "                 https://github.com/settings/tokens con permiso «repo». Al pegarlo no se ve: es normal."
         if git clone "https://github.com/$usuario/DAM-almacen.git" "$ALMACEN"; then
             ok "Clonado en $ALMACEN"
         else
-            aviso "No he podido clonarlo: revisa el usuario, el token y que el repo se llame DAM-almacen."
+            aviso "No he podido clonarlo. Si pone «Repository not found»: el usuario está mal, el token no vale"
+            aviso "o el repo no se llama DAM-almacen (GitHub esconde así los repos privados)."
+            aviso "Puedes repetir  bash instalar.sh : lo que ya está hecho se salta."
         fi
     else
         aviso "Saltado. Luego: git clone https://github.com/TU_USUARIO/DAM-almacen.git ~/DAM-almacen"
