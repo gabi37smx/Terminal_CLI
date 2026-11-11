@@ -1,5 +1,7 @@
 """Pruebas de la ayuda principal y de la ayuda de cada subcomando."""
 
+from pathlib import Path
+
 from typer.testing import CliRunner
 
 from tareas.cli import app
@@ -34,15 +36,19 @@ def test_version_con_los_dos_nombres(monkeypatch):
     from tareas import __version__
 
     assert __version__ == "1.0.0"
-    monkeypatch.setattr("sys.argv", ["/home/alumno/.local/bin/dam"])
-    assert runner.invoke(app, ["version"]).output.strip() == "dam 1.0.0"
-    monkeypatch.setattr("sys.argv", [r"C:\Users\alumno\.local\bin\tareas.exe"])
-    assert runner.invoke(app, ["version"]).output.strip() == "tareas 1.0.0"
+    bin_ = Path.home() / ".local" / "bin"  # rutas del sistema donde corre la prueba
+    for argv0, esperado in [
+        (bin_ / "dam", "dam 1.0.0"),
+        (bin_ / "tareas", "tareas 1.0.0"),
+        (bin_ / "tareas.exe", "tareas 1.0.0"),  # así lo llama Windows
+        ("tareas", "tareas 1.0.0"),
+    ]:
+        monkeypatch.setattr("sys.argv", [str(argv0)])
+        assert runner.invoke(app, ["version"]).output.strip() == esperado, argv0
 
 
 def test_pyproject_y_paquete_tienen_la_misma_version():
     import tomllib
-    from pathlib import Path
 
     from tareas import __version__
 
