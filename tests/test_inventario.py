@@ -139,7 +139,7 @@ def test_no_cambia_nada(pc):
 def test_carpeta_que_no_existe(tmp_path):
     r = run.invoke(app, ["inventario", str(tmp_path / "no-existe")])
     assert r.exit_code == 1
-    assert "no existe" in r.output
+    assert "no existe" in " ".join(r.output.split())  # Rich puede partir la línea
 
 
 def test_cli_enseña_el_resumen(pc):

@@ -1,0 +1,25 @@
+# Pasa los tests en cada push y en cada PR, en Linux (como el PC de clase) y en Windows.
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Instalar Python y dependencias
+        run: uv sync --locked
+      - name: Tests
+        run: uv run pytest -q
+        env:
+          # Typer fuerza los colores si ve GITHUB_ACTIONS, y los códigos de color
+          # parten el texto que buscan los tests de la ayuda. Así sale como en local.
+          _TYPER_FORCE_DISABLE_TERMINAL: "1"
