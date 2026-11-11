@@ -132,7 +132,43 @@ if ($nombre -and $correo) {
 
 # 6. Almacén de apuntes ----------------------------------------------------
 Paso "Almacén de apuntes"
-if ($env:DAM_ALMACEN) { $Almacen = $env:DAM_ALMACEN } else { $Almacen = Join-Path $HOME "DAM-almacen" }
+$Almacen = $env:DAM_ALMACEN
+if (-not $Almacen) { $Almacen = [Environment]::GetEnvironmentVariable('DAM_ALMACEN', 'User') }
+if (-not $Almacen) {
+    # ¿Ya está clonado en otro sitio (por ejemplo en Documentos)? Se busca hasta 3 niveles dentro de
+    # tu carpeta personal un repo git cuyo remoto sea DAM-almacen, se llame como se llame la carpeta.
+    # No entra en carpetas ocultas, AppData, node_modules, enlaces ni dentro de otros repos.
+    function Buscar-Almacen($carpeta, $nivel) {
+        Get-ChildItem -LiteralPath $carpeta -Directory -Force -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -notmatch '^\.' -and $_.Name -notin 'AppData', 'node_modules' -and
+                           -not ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) } |
+            ForEach-Object {
+                if (Test-Path (Join-Path $_.FullName '.git')) {
+                    $remoto = git -C $_.FullName remote get-url origin 2>$null
+                    if ($remoto -match '/dam-almacen') { $_.FullName }
+                } elseif ($nivel -lt 3) {
+                    Buscar-Almacen $_.FullName ($nivel + 1)
+                }
+            }
+    }
+    $Encontrados = @(Buscar-Almacen $HOME 1 | Sort-Object)
+    if ($Encontrados.Count -gt 0) {
+        $Almacen = $Encontrados[0]
+        if ($Encontrados.Count -gt 1) {
+            Aviso "Hay $($Encontrados.Count) copias del almacén: $($Encontrados -join ', ')"
+            Aviso "Uso la primera. Para usar otra, cambia la variable DAM_ALMACEN de tu usuario."
+        }
+        if ($Almacen -ne (Join-Path $HOME "DAM-almacen")) {
+            # dam lo busca en ~/DAM-almacen (acciones.json): si está en otro sitio, se lo digo con
+            # DAM_ALMACEN como variable de tu usuario (la ven PowerShell, cmd y Git Bash)
+            [Environment]::SetEnvironmentVariable('DAM_ALMACEN', $Almacen, 'User')
+            Ok "Guardado DAM_ALMACEN=$Almacen en las variables de tu usuario"
+        }
+    } else {
+        $Almacen = Join-Path $HOME "DAM-almacen"
+    }
+}
+$env:DAM_ALMACEN = $Almacen
 if (Test-Path (Join-Path $Almacen ".git")) {
     Ok "Ya está clonado en $Almacen"
 } elseif (Test-Path $Almacen) {
