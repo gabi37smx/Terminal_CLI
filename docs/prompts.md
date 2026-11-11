@@ -306,5 +306,12 @@ Las pruebas ya pasaban de 28 (las que pide la página): ahora son 405.
 **`bash scripts/revisar.sh` de verdad:** [COMPLETAR] (veredicto, segundos y si lo que señaló era cierto)
 **Actions en macOS:** [COMPLETAR] (¿verde a la primera? si no, qué falló)
 **Release:** PR de `release-1.0` fusionada, `git tag -a v1.0.0`, `git push --tags` y `gh release create`: [COMPLETAR]
-**Instalación cruzada:** quién la hizo, en qué sistema, qué issues abrió y cómo los contesté: [COMPLETAR]
+**Ensayo en un ordenador limpio (hecho el 11-nov):** en mi portátil viejo con Ubuntu 24.04.4 recién instalado, siguiendo solo el README, mientras Claude Code me guiaba y arreglaba desde el PC de casa. Lo que salió, cada cosa con su issue (abiertos con `gh issue create`) y arreglado en la **1.0.1** con «Closes #N»:
+- **#17:** Ubuntu no traía ni `git` ni `curl`, y al escribir `uv` sin tenerlo, Ubuntu sugiere el de snap. → Apartado «Antes de empezar» en el README.
+- **#18:** con la orden única no hay `acciones.json`, y el error decía «Créalo» sin decir cómo. → El mensaje dice de dónde bajar el ejemplo y dónde guardarlo. Una prueba comprueba que ese ejemplo es válido.
+- **#19:** `comprobar-ia` mandaba a `.env.example`, que sin clonar no existe. → El mensaje explica cómo definir las variables en la terminal o en un `.env`.
+- **#20:** errores de uso en inglés dentro de un panel en español, ayuda que solo habla de `dam` y TAB que pedía `instalar.sh`. → Traduzco los mensajes de Click antes de que Typer los pinte (sin tocar la librería). La línea `Usage:` se queda en inglés.
+
+También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instaló pypdf 7.0.1 y en casa tengo la 6.21.3.
+**Instalación cruzada con otra persona:** quién la hizo, en qué sistema, qué issues abrió y cómo los contesté: [COMPLETAR]
 **Qué aprendí:** [COMPLETAR]

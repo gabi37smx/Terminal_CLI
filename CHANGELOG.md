@@ -8,6 +8,26 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+## [1.0.1] - 2026-11-11
+
+Arreglos que salieron al instalar la 1.0.0 en un portátil con Ubuntu 24.04 recién instalado,
+siguiendo solo el README.
+
+### Corregido
+
+- El README no decía que hacen falta `git` y `curl`, ni cómo instalar uv: nuevo apartado «Antes de
+  empezar» para Ubuntu/Debian, Fedora, macOS y Windows, y aviso de no usar el uv de snap (#17).
+- Quien instalaba con la orden única no tenía `acciones.json` ni sabía cómo hacerlo. Ahora el
+  mensaje de error y el README dicen de dónde bajar el ejemplo, dónde guardarlo y dónde está el
+  esquema (#18).
+- `comprobar-ia` sin clave mandaba a `.env.example`, que no existe si no has clonado. Ahora explica
+  las dos formas: variables de la terminal (Linux, macOS y PowerShell) o un `.env` en la carpeta
+  desde la que ejecutas `dam` (#19).
+- La ayuda dice que `tareas` es el mismo programa, y cómo activar el TAB si no has clonado (#20).
+- Los errores de uso salían en inglés dentro de un panel en español («No such command…»). Ahora se
+  traducen los de Click antes de pintarlos: «No existe el comando «versiones». ¿Querías decir
+  'version'?». La línea `Usage:` sigue en inglés (#20).
+
 ## [1.0.0] - 2026-11-11
 
 Primera versión estable: lo de las semanas 1 a 4 del proyecto de 1º DAM.
@@ -77,5 +97,6 @@ Primera versión estable: lo de las semanas 1 a 4 del proyecto de 1º DAM.
   - El documento va entre `<documento>` para frenar la inyección de prompt.
 - `comprobar-ia` nunca enseña la clave (solo dice «clave: definida»), y OpenCode no puede leer `*.env`.
 
-[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.0...HEAD
+[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/gabi37smx/Terminal_CLI/releases/tag/v1.0.0
