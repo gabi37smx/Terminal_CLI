@@ -313,6 +313,15 @@ Las pruebas ya pasaban de 28 (las que pide la página): ahora son 405.
 - **#20:** errores de uso en inglés dentro de un panel en español, ayuda que solo habla de `dam` y TAB que pedía `instalar.sh`. → Traduzco los mensajes de Click antes de que Typer los pinte (sin tocar la librería). La línea `Usage:` se queda en inglés.
 - **#22 (en la Fase B, con `bash instalar.sh`):** en «Tu usuario de GitHub» puse `gabi`, el del portátil, y dejé vacíos el *Username* y el *Password* que pidió git → «Repository not found». → Los dos instaladores explican qué usuario es, qué poner en cada línea (Password = token) y qué significa ese error.
 
-También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instaló pypdf 7.0.1 y en casa tengo la 6.21.3.
+También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instaló pypdf 7.0.1 y en casa tengo la 6.21.3. Las pruebas de IA y de acciones pasan también con pypdf 7.0.1.
+
+**Resultado final en el portátil con la 1.0.1** (tras `git pull` y `bash instalar.sh`):
+- `dam version` → `dam 1.0.1`.
+- `dam -status` → «No existe la opción -s», en español.
+- `dam ejecutar listar` → «No hay ninguna acción «listar». Mira la lista con: dam acciones», sin traceback.
+- `dam status` → avisa de que el almacén no existe en este equipo (no lo cloné en el portátil).
+- El TAB funciona: `dam ej` + tecla Tab → `dam ejecutar`. La primera vez escribí `<TAB>` tal cual, sin entender que había que pulsar la tecla, y bash dio un error de sintaxis por el `<`. No era un fallo de `dam`.
+- `uv run pytest -q` → **418 passed, 1 skipped** en Ubuntu 24.04.
+- Release `v1.0.1` publicada con los arreglos de los issues #17-#22, todos cerrados.
 **Instalación cruzada con otra persona:** quién la hizo, en qué sistema, qué issues abrió y cómo los contesté: [COMPLETAR]
 **Qué aprendí:** [COMPLETAR]
