@@ -186,7 +186,7 @@ def test_huella_entera_y_del_principio(tmp_path):
 def test_cli_carpeta_que_no_existe(tmp_path):
     r = run.invoke(app, ["duplicados", str(tmp_path / "no-existe")])
     assert r.exit_code == 1
-    assert "no existe" in r.output
+    assert "no existe" in " ".join(r.output.split())  # Rich puede partir la línea
 
 
 def test_cli_ensena_carpetas_y_grupos(datos):

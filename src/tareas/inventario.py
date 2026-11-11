@@ -11,6 +11,7 @@ ficheros grandes.
 from __future__ import annotations
 
 import os
+import stat
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -179,6 +180,8 @@ def tamano_carpeta(carpeta: Path, ignorar: frozenset[str] = frozenset()) -> Medi
                 datos = (raiz / nombre).stat(follow_symlinks=False)
             except OSError:
                 continue
+            if stat.S_ISLNK(datos.st_mode):  # en Linux, walk() pone aquí los enlaces a carpetas
+                continue
             medida.ficheros += 1
             if esta_en_la_nube(datos):
                 medida.nube += datos.st_size
@@ -254,6 +257,9 @@ def revisar(carpeta: Path) -> Informe:
                 datos = ruta.stat(follow_symlinks=False)
             except OSError:
                 informe.sin_acceso.append(rel(ruta))
+                continue
+            if stat.S_ISLNK(datos.st_mode):  # en Linux, walk() pone aquí los enlaces a carpetas
+                informe.saltadas.append(rel(ruta))
                 continue
             nube = esta_en_la_nube(datos)
             bytes_ = datos.st_size
