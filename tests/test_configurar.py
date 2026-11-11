@@ -259,3 +259,48 @@ def test_vocabulario_de_1_de_smx(tmp_path, fichero, asignatura):
     ruta = tmp_path / fichero
     ruta.write_text("x", encoding="utf-8")
     assert ordenar.clasificar(ruta) == asignatura
+
+
+# ---------- la segunda vez, con un vocabulario que ha aprendido palabras (12-nov) ----------
+def test_la_ultima_vez_trae_las_palabras_nuevas_del_vocabulario_y_respeta_las_tuyas(entorno):
+    primera = lanzar(entorno, "--ciclo", "smx", "--curso", "1", "--nueva", "fol=fol", "--si")
+    assert primera.exit_code == 0, primera.output
+    # Simula un acciones.json guardado con un vocabulario viejo: montaje sin «discos» y con una palabra tuya
+    datos = guardado(entorno)
+    ordenar = next(a for a in datos["acciones"] if a["tipo"] == "ordenar")
+    ordenar["carpetas"]["montaje-equipos"] = ["montaje", "torre"]
+    entorno["destino"].write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
+
+    segunda = lanzar(entorno, "--si")
+    assert segunda.exit_code == 0, segunda.output
+    assert "palabras clave nuevas del vocabulario" in segunda.output
+    carpetas = configurar.asignaturas_actuales(guardado(entorno))
+    assert "discos" in carpetas["montaje-equipos"]  # la aprendió ciclos.py
+    assert "torre" in carpetas["montaje-equipos"]  # la tuya se queda
+    assert carpetas["montaje-equipos"].count("montaje") == 1  # sin repetir
+    assert carpetas["fol"] == ["fol"]  # tu asignatura no cambia
+
+
+def test_palabras_al_dia_no_cambia_lo_que_ya_esta_al_dia():
+    actuales = ciclos.asignaturas_de("dam", [1])
+    assert configurar.palabras_al_dia(actuales) == actuales
+
+
+def test_ordenar_al_almacen_sin_git_no_ofrece_sync(tmp_path, monkeypatch):
+    almacen = tmp_path / "almacen"
+    (almacen / "asignaturas" / "redes-locales").mkdir(parents=True)
+    origen = tmp_path / "descargas"
+    origen.mkdir()
+    (origen / "practica.pka").write_text("x", encoding="utf-8")
+    acciones = {"version": 1, "acciones": [{
+        "nombre": "ordenar", "descripcion": "o", "tipo": "ordenar", "al_almacen": True,
+        "carpetas": {"redes-locales": ["redes"]}, "por_extension": {".pka": "redes-locales"}}]}
+    ruta = tmp_path / "acciones.json"
+    ruta.write_text(json.dumps(acciones), encoding="utf-8")
+    monkeypatch.setenv("DAM_ALMACEN", str(almacen))
+    r = runner.invoke(app, ["--config", str(ruta), "ejecutar", "ordenar", str(origen)], input="s\n")
+    assert r.exit_code == 0, r.output
+    assert (almacen / "asignaturas" / "redes-locales" / "practica.pka").is_file()
+    salida = " ".join(r.output.split())  # sin los saltos de línea de la consola
+    assert "no es un repositorio git" in salida
+    assert "¿Hago ahora dam sync" not in salida

@@ -35,6 +35,19 @@ def asignaturas_actuales(datos: dict) -> dict[str, list[str]]:
     return {}
 
 
+def palabras_al_dia(asignaturas: dict[str, list[str]]) -> dict[str, list[str]]:
+    """Las asignaturas de la última vez con las palabras clave del vocabulario de AHORA.
+
+    Si ciclos.py ha aprendido palabras nuevas desde entonces, se añaden; las que pusiste tú se quedan.
+    Las asignaturas tuyas (las que no están en el vocabulario) no cambian.
+    """
+    resultado = {}
+    for nombre, palabras in asignaturas.items():
+        vocabulario = list(ciclos.ASIGNATURAS[nombre].palabras) if nombre in ciclos.ASIGNATURAS else []
+        resultado[nombre] = vocabulario + [p for p in palabras if p not in vocabulario]
+    return resultado
+
+
 def _cambiar_curso(texto: str, etiqueta: str) -> str:
     """'...por asignatura del DAM...' -> '...por asignatura de 1º de SMX...'."""
     return _CURSO_EN_TEXTO.sub(lambda m: (f"de {etiqueta}" if m.group(1) else etiqueta), texto)

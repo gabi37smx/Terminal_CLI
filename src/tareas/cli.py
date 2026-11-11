@@ -634,7 +634,10 @@ def ejecutar(
     # solo cuenta lo que ha entrado en el almacén (lo de «por_tipo» no se sube)
     hechos = sum(1 for r in resultados if r.estado == "hecho" and r.nota != "por tipo")
     if almacen is not None and hechos:
-        if si:
+        if not (almacen.ruta / ".git").exists():  # p. ej. un almacén de prueba: los apuntes se quedan ahí
+            consola.print(f"[yellow]Tu almacén ({escape(str(almacen.ruta))}) no es un repositorio git:[/yellow] "
+                          "los apuntes ya están en él, pero dam sync no puede subirlos. Para eso, clónalo de GitHub.")
+        elif si:
             consola.print("Para subir los apuntes a GitHub: [bold]dam sync[/bold]")
         elif preguntar(f"¿Hago ahora dam sync para subir {hechos} apunte(s) nuevo(s) a GitHub?"):
             _pintar_sync(almacen.sincronizar(None, f"ordenar: {hechos} apunte(s) nuevo(s)"))
@@ -822,8 +825,11 @@ def configurar(
 
     # 2. Asignaturas: las de la última vez si repites ciclo y curso; si no, las del ciclo
     if mismo_ciclo and anterior.get("cursos") == cursos and configurar_mod.asignaturas_actuales(actual):
-        asignaturas = configurar_mod.asignaturas_actuales(actual)
-        consola.print(f"\nTus asignaturas de la última vez ({escape(ciclos.etiqueta(ciclo, cursos))}):")
+        guardadas = configurar_mod.asignaturas_actuales(actual)
+        asignaturas = configurar_mod.palabras_al_dia(guardadas)  # lo que haya aprendido ciclos.py desde entonces
+        nuevas = sum(len(asignaturas[a]) - len(guardadas[a]) for a in asignaturas)
+        consola.print(f"\nTus asignaturas de la última vez ({escape(ciclos.etiqueta(ciclo, cursos))})"
+                      + (f", con {nuevas} palabras clave nuevas del vocabulario:" if nuevas else ":"))
     else:
         asignaturas = ciclos.asignaturas_de(ciclo, cursos)
         if asignaturas:
