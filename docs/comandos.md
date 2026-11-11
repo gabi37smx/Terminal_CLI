@@ -135,6 +135,8 @@ Ruta del almacén, por prioridad:
 2. Variable `DAM_ALMACEN`
 3. `almacen.ruta` de `acciones.json`
 
+Normalmente no hace falta definirla a mano: `instalar.sh` e `instalar.ps1` buscan el almacén hasta 3 niveles dentro de tu carpeta personal (un repo cuyo remoto sea DAM-almacen, se llame como se llame la carpeta). Si no está en `~/DAM-almacen`, guardan `DAM_ALMACEN`: en `.bashrc`/`.zshrc` (Linux/macOS) o como variable de tu usuario (Windows).
+
 ```powershell
 # Windows: solo esta sesión
 $env:DAM_ALMACEN = "$HOME\DAM-almacen"
