@@ -4,7 +4,8 @@ Mi herramienta de línea de órdenes para automatizar tareas repetitivas con fic
 mis apuntes de 1º DAM sincronizados entre el PC de clase, el de casa y el USB.
 
 > Nota: en la spec v0 el comando se llamaba `tareas`; ahora se llama **`dam`** (el paquete
-> Python sigue siendo `tareas`).
+> Python sigue siendo `tareas`). Desde la 1.0.0 se instalan los dos nombres para el mismo programa:
+> `tareas version` → `tareas 1.0.0` y `dam version` → `dam 1.0.0`. Cambios en [CHANGELOG.md](CHANGELOG.md).
 
 ## Spec (versión 0 · 26/10/2026)
 
@@ -20,6 +21,17 @@ mis apuntes de 1º DAM sincronizados entre el PC de clase, el de casa y el USB.
 10. **Instalación:** `uv tool install --editable .` (lo completo en la semana 4).
 
 ## Instalación
+
+### En una orden (si ya tienes uv)
+
+```bash
+uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.0
+dam --help          # o «tareas --help»: es el mismo programa
+```
+
+Así instalas solo el comando: `dam` buscará tus acciones en `./acciones.json` o en
+`~/.config/dam/acciones.json`. Para dejarlo todo listo (uv, acciones, TAB, git y almacén), usa el
+script de abajo.
 
 ### Lo rápido: un script que lo hace todo
 
@@ -79,11 +91,38 @@ En Windows necesita que PowerShell pueda cargar scripts: si el instalador avisa,
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. No uses `dam --install-completion` en
 Windows: cambia la política a `Unrestricted` y repite el script en el perfil cada vez.
 
+### Desinstalación
+
+Primero quita el hook de cada repo donde lo instalaste y después el programa:
+
+```bash
+dam instalar-hook --quitar      # en cada repo con el hook (solo quita el de dam)
+uv tool uninstall tareas        # quita «dam» y «tareas»
+rm -rf ~/.config/dam            # tus acciones y el script del TAB (guarda antes acciones.json si lo quieres)
+```
+
+Después, borra a mano en `~/.bashrc` o `~/.zshrc` las dos líneas que empiezan por
+`# Autocompletado de dam (lo añadió instalar.sh)`.
+
+En Windows (PowerShell):
+
+```powershell
+dam instalar-hook --quitar
+uv tool uninstall tareas
+Remove-Item -Recurse -Force "$HOME\.config\dam"
+[Environment]::SetEnvironmentVariable('DAM_ALMACEN', $null, 'User')   # si el instalador la guardó
+notepad $PROFILE.CurrentUserAllHosts    # borra la línea «# autocompletado de dam»
+```
+
+Si definiste `CENTRO_IA_URL`, `CENTRO_IA_KEY`, `CENTRO_IA_CA` o `CENTRO_IA_MODELO` como variables
+de tu usuario, quítalas igual que `DAM_ALMACEN`. La carpeta del repo y tu `DAM-almacen` no se tocan:
+bórralas tú si ya no las quieres (antes, `dam status` para no perder nada sin subir).
+
 ## Órdenes
 
 | Orden | Qué hace |
 |---|---|
-| `dam version` | Muestra la versión. |
+| `dam version` | Muestra la versión (`tareas version` hace lo mismo). |
 | `dam listar [CARPETA]` | Tabla con nombre, tipo, tamaño y fecha. |
 | `dam validar` | Comprueba `acciones.json`. Sale con 3 si está mal. |
 | `dam acciones` | Lista las acciones configuradas. |
@@ -258,12 +297,19 @@ Para tu web: `dam test-links` encuentra enlaces, imágenes y anclas rotas (tambi
 ## Pruebas
 
 ```bash
-uv run pytest        # config, acciones, motor, IA, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes, entregar, inventario, duplicados y readme
+uv run pytest -v               # config, acciones, motor, IA, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes, entregar, inventario, duplicados y readme
+uv run pytest --cov=tareas     # lo mismo, diciendo qué porcentaje del código pasa por las pruebas (93 %)
+bash scripts/revisar.sh        # antes de un commit: el agente revisor de OpenCode mira lo que tienes con «git add»
 ```
 
 Ejecútalo desde la raíz del repositorio. Los tests de red usan un servidor local de mentira: no necesitan internet.
 Las acciones con IA se prueban con un `ProveedorFalso` (`tests/conftest.py`): ninguna prueba llama
-al servidor del centro ni lee tu `.env`. GitHub Actions las pasa en Linux y Windows en cada push.
+al servidor del centro ni lee tu `.env`. GitHub Actions las pasa en Ubuntu, Windows y macOS en cada
+push y en cada PR (`.github/workflows/pruebas.yml`).
+
+`scripts/revisar.sh` sale con 0 si el revisor dice `VEREDICTO: OK`, con 1 si dice `CAMBIAR` (o no
+da veredicto) y con 2 si no se pudo revisar (sin opencode o más de 180 s sin respuesta). El
+revisor no puede editar ni navegar, y en bash solo puede `git diff/log/status`.
 
 ## Ideas futuras
 

@@ -102,7 +102,21 @@ Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes p
    - De verdad: `dam ejecutar resumir-tema`, `nombrar-descargas` y `clasificar-asignatura` sobre `~/pruebas-tareas/apuntes-ia` y `descargas-ia` (hay que copiarlas al PC de clase o crear otras). Si algo sale mal, se arregla en las `instrucciones` del JSON, con su commit.
    - Rellenar los **[COMPLETAR]** de la entrada «Sesión 3 · context7...» de `docs/prompts.md` y repasar el ADR-0002 (que diga lo que yo diría).
 
-Después (semana 4, entrega el 20-nov): CHANGELOG y versión 1.0.0, Actions también en macOS, `scripts/revisar.sh`, rama `release-1.0` con su PR, etiqueta `v1.0.0` y release, e instalación cruzada con un compañero.
+14. **Semana 4 (entrega el 20-nov).** Hecho el 11-nov en la rama `release-1.0`:
+   - `CHANGELOG.md`, la versión 1.0.0 en `pyproject.toml` y `__init__.py`, y el alias `tareas` (`tareas version` → `tareas 1.0.0`).
+   - `pruebas.yml` en Ubuntu, Windows y macOS, y `pytest-cov` (93 %).
+   - `scripts/revisar.sh`, con el revisor en `mode: all`.
+   - En el README, la instalación en una orden y la desinstalación.
+   - La prueba de mutación de `--simular`.
+
+   Me queda:
+   - Fusionar la PR de `capa-ia` y luego la de `release-1.0`.
+   - Después, en `main`: `git pull`, `git tag -a v1.0.0 -m "tareas 1.0.0"`, `git push --tags` y `gh release create v1.0.0 --title "tareas 1.0.0" --notes-file CHANGELOG.md`. Si la release no es hoy, antes cambia la fecha de `[1.0.0]` en el CHANGELOG.
+   - En clase, con el modelo:
+     - `opencode run --agent plan` para sacar `docs/changelog-borrador.md` y apuntar en qué se equivocó comparado con mi `CHANGELOG.md`.
+     - `bash scripts/revisar.sh` con algo en `git add`.
+   - Instalación cruzada: un compañero instala con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.0` siguiendo solo el README y abre issues (`gh issue create`). Las contesto, y si hay arreglo sale como 1.0.1 en el CHANGELOG.
+   - Rellenar los **[COMPLETAR]** de la entrada «Sesión 4 · ...» de `docs/prompts.md`.
 
 ## Cómo retomar
 
