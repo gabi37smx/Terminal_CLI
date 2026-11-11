@@ -105,3 +105,25 @@ def test_cli_validar_sale_con_3_sin_traza(tmp_path):
 def test_cli_validar_ok(tmp_path):
     r = CliRunner().invoke(app, ["--config", str(escribir(tmp_path, BASE)), "validar"])
     assert r.exit_code == 0 and "1 acciones válidas" in r.output
+
+
+def test_sin_acciones_json_dice_de_donde_bajar_el_ejemplo(tmp_path, monkeypatch):  # issue #18
+    from tareas import URL_EJEMPLO_ACCIONES
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(config.Path, "home", lambda: tmp_path / "casa")
+    with pytest.raises(ConfigError) as error:
+        config.buscar(None)
+    mensaje = str(error.value)
+    assert URL_EJEMPLO_ACCIONES in mensaje
+    assert str(tmp_path / "casa" / ".config" / "dam" / "acciones.json") in mensaje
+    assert "#esquema-de-accionesjson" in mensaje and "--config RUTA" in mensaje
+
+
+def test_el_ejemplo_del_mensaje_es_el_acciones_json_del_repo():
+    from tareas import URL_EJEMPLO_ACCIONES
+
+    # Lo que se baja de esa URL es este fichero (rama main): tiene que ser válido
+    assert URL_EJEMPLO_ACCIONES.endswith("/main/acciones.json")
+    raiz = Path(__file__).parent.parent
+    assert config.cargar(raiz / "acciones.json")
