@@ -1,6 +1,6 @@
 [project]
 name = "tareas"
-version = "0.1.0"
+version = "1.0.0"
 description = "Automatiza tareas repetitivas con ficheros desde la terminal"
 readme = "README.md"
 authors = [
@@ -17,6 +17,8 @@ dependencies = [
 
 [project.scripts]
 dam = "tareas.cli:app"
+# El mismo programa con el nombre de la spec v0: «tareas version» → tareas 1.0.0
+tareas = "tareas.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]

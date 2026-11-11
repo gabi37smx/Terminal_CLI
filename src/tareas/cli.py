@@ -315,7 +315,9 @@ def comando(funcion=None, *, nombre: Optional[str] = None):
 @comando
 def version() -> None:
     """Muestra la versión instalada."""
-    consola.print(f"dam {__version__}")
+    # El mismo programa se instala como «dam» y como «tareas» (el nombre de la spec v0)
+    nombre = "tareas" if Path(sys.argv[0]).stem.lower() == "tareas" else "dam"
+    consola.print(f"{nombre} {__version__}")
 
 
 @comando(nombre="help")

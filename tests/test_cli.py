@@ -28,3 +28,25 @@ def test_los_subcomandos_conservan_su_ayuda():
         r = runner.invoke(app, [comando, "--help"])
         assert r.exit_code == 0, f"{comando} no muestra ayuda"
         assert "Usage:" in r.output
+
+
+def test_version_con_los_dos_nombres(monkeypatch):
+    from tareas import __version__
+
+    assert __version__ == "1.0.0"
+    monkeypatch.setattr("sys.argv", ["/home/alumno/.local/bin/dam"])
+    assert runner.invoke(app, ["version"]).output.strip() == "dam 1.0.0"
+    monkeypatch.setattr("sys.argv", [r"C:\Users\alumno\.local\bin\tareas.exe"])
+    assert runner.invoke(app, ["version"]).output.strip() == "tareas 1.0.0"
+
+
+def test_pyproject_y_paquete_tienen_la_misma_version():
+    import tomllib
+    from pathlib import Path
+
+    from tareas import __version__
+
+    pyproject = Path(__file__).parent.parent / "pyproject.toml"
+    datos = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    assert datos["project"]["version"] == __version__
+    assert datos["project"]["scripts"]["tareas"] == datos["project"]["scripts"]["dam"]
