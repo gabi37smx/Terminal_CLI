@@ -270,3 +270,41 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 **Un fallo real del modelo y cómo lo arreglé en el JSON (no en Python):** [COMPLETAR]
 **Rómpelo a propósito en clase:** sin clave, con una URL que no existe, con una clave mala (401) y sin `CENTRO_IA_CA`; `echo $?` → 4 en los cuatro casos: [COMPLETAR]
 **Qué aprendí:** [COMPLETAR]
+
+---
+
+## 2026-11-11 · Sesión 4: pruebas, CI en tres sistemas, revisar.sh y versión 1.0.0 (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows).
+**Prompt:** «Sí, súbela y sigue con la sesión 4» (después de subir la rama `capa-ia`, PR #15).
+**Cómo se hizo:** rama `release-1.0` y un commit por pieza: `revisar.sh` → `pruebas.yml` → versión 1.0.0 → README → CHANGELOG y documentación.
+
+**Qué había ya de antes:**
+- `tests/` con `conftest.py`, `ProveedorFalso` y pruebas de los códigos de salida del 0 al 4 con `CliRunner`.
+- GitHub Actions en Ubuntu y Windows.
+
+Las pruebas ya pasaban de 28 (las que pide la página): ahora son 405.
+
+**Qué se hizo:**
+- `scripts/revisar.sh`:
+  - Le pasa `git diff --staged` por la entrada estándar a `opencode run --agent revisor`, con `timeout 180` (en macOS, `gtimeout`).
+  - Sale con 0 si el veredicto es `VEREDICTO: OK`, con 1 si es `CAMBIAR` o no hay veredicto, y con 2 si no se pudo revisar.
+  - Probado con un `opencode` de mentira: OK → 0, CAMBIAR → 1, sin veredicto → 1, y más lento que el límite → 2.
+- **Un fallo que encontré antes de que pasara:** el revisor era `mode: subagent`, y al buscarlo en el ejecutable de OpenCode sale el aviso «is a subagent, not a primary agent. Falling back to default agent». Es decir, `opencode run --agent revisor` habría usado el agente por defecto, que **sí puede editar**, y los permisos de solo lectura no habrían servido. Lo cambié a `mode: all` (sigue funcionando como `@revisor`) y le pedí la línea de veredicto.
+- `.github/workflows/tests.yml` → `pruebas.yml`, con macOS, `fail-fast: false` y `pytest -v`.
+- `pytest-cov`: `uv run pytest --cov=tareas` da 93 %. `.coverage` va a `.gitignore`.
+- Versión 1.0.0 en `pyproject.toml` y `__init__.py`. Una prueba comprueba que las dos coinciden.
+- Alias `tareas` del mismo programa, porque la spec v0 y la página usan `tareas version`: `tareas version` → `tareas 1.0.0` y `dam version` → `dam 1.0.0`.
+- README: instalación en una orden (`uv tool install git+...@v1.0.0`) y desinstalación en Linux, macOS y Windows (hook, programa, `~/.config/dam`, línea del TAB y variables).
+- `CHANGELOG.md` en formato Keep a Changelog, hecho a partir de `git log` y revisado contra el código.
+
+**Roto a propósito (`--simular`):** en `Mover.aplicar` cambié `if not simular:` por `if True:`. Falla `test_simular_no_toca_nada_ni_crea_carpetas`, que encuentra la carpeta `NoExiste` creada. Con `git restore` vuelve a pasar todo (405 pasan, 1 saltado).
+
+---
+
+## Sesión 4 · borrador del CHANGELOG, release e instalación cruzada — [COMPLETAR]
+**`opencode run --agent plan` → `docs/changelog-borrador.md` (en clase):** [COMPLETAR] (qué se inventó o qué se dejó comparado con `CHANGELOG.md`)
+**`bash scripts/revisar.sh` de verdad:** [COMPLETAR] (veredicto, segundos y si lo que señaló era cierto)
+**Actions en macOS:** [COMPLETAR] (¿verde a la primera? si no, qué falló)
+**Release:** PR de `release-1.0` fusionada, `git tag -a v1.0.0`, `git push --tags` y `gh release create`: [COMPLETAR]
+**Instalación cruzada:** quién la hizo, en qué sistema, qué issues abrió y cómo los contesté: [COMPLETAR]
+**Qué aprendí:** [COMPLETAR]
