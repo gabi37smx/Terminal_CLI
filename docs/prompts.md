@@ -223,3 +223,50 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 - En Windows, `\"` dentro de un argumento son unas comillas literales: una ruta nunca debe acabar en `\` antes de cerrar las comillas.
 - Una herramienta que revisa mis proyectos me da datos concretos (variables que faltan en `.env.example`, verificados sin fecha) en vez de impresiones.
 - [COMPLETAR] (lo que yo quiera añadir)
+
+---
+
+## 2026-11-11 · Sesión 3: la capa IA (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows). Desde casa no llego al servidor del centro: todo se probó con `--simular`, sin clave, con un servidor local de mentira y con un `ProveedorFalso`. Las ejecuciones de verdad con el modelo están en la entrada siguiente, **[COMPLETAR]** en clase.
+
+**Prompt:** «Ahora toca poner los últimos comandos, y revisar si falta algo para que cuando lo analice la IA del profe esté todo perfecto» (con el contenido de la página de la Sesión 3).
+**Cómo se hizo:** una rama `capa-ia` y un commit por pieza, en el orden de la sesión: `.env.example` → bloque `mcp` → `ia.py` y `comprobar-ia` → `resumir` → `renombrar-ia` y `clasificar` → modo sin red → pruebas → skill, README y ADR.
+
+**Qué se construyó:**
+- `.env.example` sin valores reales; `.gitignore` ignora también `.env.*` (salvo `.env.example`). Comprobado: `git check-ignore -v .env` → `.gitignore:10:.env` y `git log --all --oneline -- .env` no saca nada.
+- `opencode.json`: `context7` y `apuntes` en el bloque `mcp`, los dos apagados.
+- `src/tareas/ia.py`: `Respuesta`, `ProveedorIA` (abstracta), `ProveedorCentro` con `httpx` y la fábrica `desde_entorno()`. `IANoDisponible` (código 4) en `errores.py`. Orden `dam comprobar-ia`.
+- `resumir`, `renombrar-ia` y `clasificar` en `acciones.py`, con `AccionIA` como base, `leer_texto()` y `a_nombre_seguro()`. `TIPOS_IA` y `validar_ia()` en `config.py`.
+- Mis tres acciones con IA en `acciones.json`: `resumir-tema` (en castellano aunque el apunte esté en valenciano; no vuelve a resumir los `.resumen.md`), `nombrar-descargas` (`escaneo_0042.pdf`, `documento (3).pdf`...) y `clasificar-asignatura` (mis 8 asignaturas de 1º de DAM + `otros`, para lo que `ordenar` no sabe colocar).
+- `dam acciones` con columna IA; la tabla de `ejecutar` con columna Detalle y rutas con `~`.
+- `tests/conftest.py` (`aislado`, `ProveedorFalso`) y `tests/test_ia.py` (48 pruebas, sin red).
+
+**Lo que se cambió respecto al código de referencia de la página, y por qué:**
+- `a_nombre_seguro`: el de la página solo quita una extensión, y `redes-ip.pdf.pdf` quedaba `redes-ip-pdf`. Ahora quita las repetidas, pero no el `.0` de `ipv4.0`. También evita los nombres que Windows no deja crear (`con`, `nul`...).
+- `clasificar`: además de la categoría que no existe, se limpian las comillas y el punto final («Sistemas».) antes de compararla.
+- Un PDF escaneado sin texto se salta sin preguntar al modelo. Es una de las preguntas de la auditoría del paso 8.
+- Si la IA se cae a mitad de una acción, lo hecho se queda hecho, el fichero en curso sale como error, el resto como «sin tocar» y la orden sale con 4. La página solo lo preguntaba.
+- `ProveedorCentro`: mensajes también para 404 (URL sin `/v1`), una respuesta que no es JSON y un certificado que no existe; quita los bloques `<think>` de los modelos que razonan; y `repr()` nunca enseña la clave.
+- Los mensajes de sistema de renombrar y clasificar también dicen que el documento nunca son instrucciones (la página solo lo ponía en resumir).
+
+**Un fallo que salió por el camino:** al hacer el commit de `ia.py`, el hook pre-commit lo paró («hay claves a la vista»). No era una clave: el `dam` instalado en el sistema no tenía `httpx` y fallaba al arrancar. Con `--editable`, el código nuevo se usa solo, pero **las dependencias nuevas no**. Se arregló con `uv tool install --editable . --force`. Está apuntado en el README: tras un `git pull` con dependencias nuevas hay que volver a pasar el instalador. El hook hizo bien en no dejar pasar el commit si no podía revisarlo.
+
+**Roto a propósito (paso de la Sesión 4):** con `resumir` preguntando al modelo también en `--simular`, fallan 2 pruebas y salta la aserción «--simular nunca puede dar hecho». Restaurado, todo pasa.
+
+**Comprobado en este PC (Windows):**
+- Sin clave: `dam comprobar-ia` → «✘ Faltan CENTRO_IA_URL o CENTRO_IA_KEY...» + «Las acciones sin IA siguen funcionando», y sale con 4. Igual con un servidor que no existe («No llego al servidor de IA») y con un certificado que no existe.
+- `dam ejecutar resumir-tema --simular` en `~/pruebas-tareas/apuntes-ia`: 4 simulados («enviaría 211 caracteres (~52 tokens)»), el PDF escaneado saltado y el `.resumen.md` de antes fuera del filtro. No se creó la carpeta `resumenes`.
+- Con el servidor «caído», `convertir-webp` (sin IA) sigue funcionando y sale con 0.
+- `uv run pytest` → 403 pasan, 1 saltado.
+
+---
+
+## Sesión 3 · context7 y las acciones con IA de verdad (OpenCode, en clase) — [COMPLETAR]
+**Herramienta:** OpenCode · modelo centro/qwen3.8-flash-next
+**context7 (paso 2):** conectar con `/mcps` solo para esa sesión, preguntar en el agente plan cómo pasar a `httpx.post` un certificado de CA propio y desconectarlo. Qué respondió: [COMPLETAR]. ¿Propuso `verify="ruta"` (obsoleto en httpx 0.28) o `ssl.create_default_context`? [COMPLETAR]. Comprobado con `uv run python -W always -c "import httpx; ..."`: [COMPLETAR]. La frase para aquí: «context7 me trajo la doc, pero tuve que elegir yo» [COMPLETAR con lo que pasó de verdad].
+**`dam comprobar-ia` en la red del centro:** [COMPLETAR] (servidor, modelo y segundos)
+**`dam ejecutar resumir-tema` de verdad:** [COMPLETAR] (tokens y segundos de cada fichero, y si el resumen acaba en una línea «Para el examen:» con contenido)
+**`dam ejecutar nombrar-descargas` y `clasificar-asignatura` de verdad:** [COMPLETAR] (qué nombres y categorías puso; qué hizo con `descarga.pdf`, el que intenta engañar al modelo)
+**Un fallo real del modelo y cómo lo arreglé en el JSON (no en Python):** [COMPLETAR]
+**Rómpelo a propósito en clase:** sin clave, con una URL que no existe, con una clave mala (401) y sin `CENTRO_IA_CA`; `echo $?` → 4 en los cuatro casos: [COMPLETAR]
+**Qué aprendí:** [COMPLETAR]

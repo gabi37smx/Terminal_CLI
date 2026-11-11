@@ -23,6 +23,7 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `dam validar` | Comprueba `acciones.json` | `uv run dam validar` |
 | `dam acciones` | Lista tus acciones | `uv run dam acciones` |
 | `dam ejecutar NOMBRE [CARPETA] [--simular] [--si]` | Ejecuta una acción | `uv run dam ejecutar ordenar --simular` |
+| `dam comprobar-ia` | ¿Llego al servidor de IA del centro? (nunca enseña la clave) | `uv run dam comprobar-ia` |
 | `dam status [ASIGNATURA]` | Qué hay pendiente (no toca nada) | `uv run dam status programacion` |
 | `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves y contraseñas expuestas | `uv run dam scan-secrets --staged` |
 | `dam instalar-hook [REPO] [--quitar] [--forzar]` | Revisa claves en cada `git commit` | `uv run dam instalar-hook` |
@@ -36,18 +37,33 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `dam check-headers URL [--timeout S]` | Cabeceras de seguridad de tu web o API | `uv run dam check-headers https://tu-web.com` |
 | `dam sync [ASIGNATURA] [-m MENSAJE] [--integrar] [--simular]` | Sincroniza con GitHub | `uv run dam sync programacion -m "tema 3"` |
 
-## 2. Tus 6 acciones
+## 2. Tus 9 acciones
 
-| Nombre | Tipo | Qué hace |
-|---|---|---|
-| `ordenar` | ordenar | Reparte apuntes por asignatura |
-| `limpiar-temporales` | borrar | Borra temporales de más de 30 días |
-| `convertir-webp` | convertir | JPEG/PNG a WebP sin tocar el original |
-| `renombrar-capturas` | renombrar | Renombra capturas con fecha y número |
-| `copiar-entregas` | copiar | Copia entregas y prácticas a una carpeta de seguridad |
-| `mover-zips` | mover | Mueve los `.zip` a la subcarpeta `comprimidos` |
+| Nombre | Tipo | IA | Qué hace |
+|---|---|---|---|
+| `ordenar` | ordenar | — | Reparte apuntes por asignatura |
+| `limpiar-temporales` | borrar | — | Borra temporales de más de 30 días |
+| `convertir-webp` | convertir | — | JPEG/PNG a WebP sin tocar el original |
+| `renombrar-capturas` | renombrar | — | Renombra capturas con fecha y número |
+| `copiar-entregas` | copiar | — | Copia entregas y prácticas a una carpeta de seguridad |
+| `mover-zips` | mover | — | Mueve los `.zip` a la subcarpeta `comprimidos` |
+| `resumir-tema` | resumir | sí | Resume cada tema en un `.resumen.md` (en castellano aunque el apunte esté en valenciano) |
+| `nombrar-descargas` | renombrar-ia | sí | Pone nombre por su contenido a `escaneo_0042.pdf`, `documento (3).pdf`... |
+| `clasificar-asignatura` | clasificar | sí | Lleva cada apunte a la carpeta de su asignatura (o a `otros`) |
 
-Sin `CARPETA`, usan el `origen` de `acciones.json` (ahora `~/pruebas-tareas/prueba-final`).
+Sin `CARPETA`, usan el `origen` de `acciones.json`: `~/pruebas-tareas/prueba-final` las seis sin IA,
+`~/pruebas-tareas/apuntes-ia` y `~/pruebas-tareas/descargas-ia` las de IA.
+
+Las de IA necesitan el servidor del centro (`CENTRO_IA_URL`, `CENTRO_IA_KEY` y `CENTRO_IA_CA`, en tu
+terminal o en un `.env`: mira `.env.example`). Con `--simular` no llaman al modelo: dicen cuántos
+caracteres mandarían. Sin red o sin clave salen con 4 y las demás acciones siguen funcionando.
+
+```powershell
+uv run dam comprobar-ia                                   # ¿llego al servidor?
+uv run dam ejecutar resumir-tema --simular                # cuánto mandaría, sin gastar nada
+uv run dam ejecutar resumir-tema                          # de verdad: tokens y segundos en «Detalle»
+uv run dam ejecutar nombrar-descargas                     # pregunta s/N antes de renombrar
+```
 
 `mover-zips` no comprime: solo mueve los `.zip`. Con otra `CARPETA`, los lleva igualmente a `prueba-final/comprimidos`, y no hay que ejecutarla sobre `comprimidos`, porque renombraría los ficheros. Si quieres guardar antes las entregas, ejecuta `copiar-entregas` primero: después ya no verá los `.zip` que se hayan movido.
 
@@ -258,6 +274,10 @@ Luego: `uv run dam ejecutar limpiar`.
 | `Conflicto real` | `dam sync --integrar` o resuélvelo a mano |
 | `No existe la asignatura` | `dam status` te dice las que hay. Si querías poner un mensaje, usa `-m` |
 | `Una ruta lleva unas comillas metidas` | Quita la `\` del final: `"C:\carpeta\"` → `"C:\carpeta"` (en Windows, `\"` se come las comillas; el TAB de PowerShell la añade) |
+| `ModuleNotFoundError: No module named 'httpx'` al arrancar | Tras un `git pull` con dependencias nuevas: vuelve a pasar el instalador (o `uv tool install --editable . --force`) |
+| `Faltan CENTRO_IA_URL o CENTRO_IA_KEY` | Ponlas en tu terminal o en un `.env` (copia `.env.example`). Las acciones sin IA no las necesitan |
+| `No llego al servidor de IA` | Solo responde desde la red del centro. En casa: `--simular` o acciones sin IA |
+| `No me fío del servidor` | Falta `CENTRO_IA_CA` con la ruta del certificado del instituto |
 | `dam` solo imprime una línea en blanco (PowerShell) | El script del TAB antiguo se atascaba al completar rutas. Vuelve a lanzar `instalar.cmd` (genera el arreglado) y abre otra ventana |
 
 ## 10. Códigos de salida
@@ -268,3 +288,4 @@ Luego: `uv run dam ejecutar limpiar`.
 | `1` | Falló al ejecutar, `scan-secrets`, `test-links` o `check-headers` encontraron problemas, `entregar` encontró un secreto, o `doctor` encontró un fallo básico |
 | `2` | Uso incorrecto del comando |
 | `3` | `acciones.json` inválido |
+| `4` | Sin IA: sin clave, sin red, sin certificado o el servidor no responde (las acciones sin IA siguen funcionando) |

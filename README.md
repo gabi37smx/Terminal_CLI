@@ -39,6 +39,10 @@ El script instala uv si no está (y uv baja Python 3.12), instala el comando `da
 Al terminar, abre una terminal nueva. Si git te pide contraseña al clonar o al hacer `sync`, pega un
 **token de GitHub**, porque la contraseña normal no vale.
 
+**Si ya lo tenías instalado y haces `git pull`, vuelve a pasar el instalador.** Con `--editable` el código
+nuevo se usa solo, pero las dependencias nuevas no se instalan (en la semana 3 llegaron `httpx` y
+`python-dotenv`): sin reinstalar, `dam` falla al arrancar con `ModuleNotFoundError`.
+
 ### A mano
 
 Necesitas [uv](https://docs.astral.sh/uv/) y git.
@@ -83,6 +87,7 @@ Windows: cambia la política a `Unrestricted` y repite el script en el perfil ca
 | `dam listar [CARPETA]` | Tabla con nombre, tipo, tamaño y fecha. |
 | `dam validar` | Comprueba `acciones.json`. Sale con 3 si está mal. |
 | `dam acciones` | Lista las acciones configuradas. |
+| `dam comprobar-ia` | ¿Llego al servidor de IA del centro? Enseña servidor y modelo (nunca la clave) y hace una pregunta mínima. Sale con 4 si no hay clave, red o certificado. |
 | `dam ejecutar NOMBRE [CARPETA] [--simular] [--si]` | Ejecuta una acción. `--simular` enseña qué haría sin tocar nada; borrar pide confirmación salvo `--si`. `ordenar` (con `al_almacen`) mete los apuntes en el almacén y luego ofrece `dam sync`; con `por_tipo`, lo demás va a `~/Datos/POR-TIPO`. Nunca mueve `desktop.ini`, temporales ni descargas a medias. |
 | `dam status [ASIGNATURA]` | Qué has cambiado en local y qué hay nuevo en GitHub. No modifica nada. |
 | `dam sync [ASIGNATURA] [MENSAJE] [-m TEXTO] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
@@ -100,7 +105,7 @@ Windows: cambia la política a `Unrestricted` y repite el script en el perfil ca
 Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto busca
 `./acciones.json` y después `~/.config/dam/acciones.json`.
 
-**Códigos de salida:** 0 bien · 1 fallo al ejecutar (carpeta inexistente, permiso denegado, sync pendiente, claves, enlaces rotos o cabeceras básicas que faltan...) · 2 error de uso (lo pone Typer) · 3 configuración inválida.
+**Códigos de salida:** 0 bien · 1 fallo al ejecutar (carpeta inexistente, permiso denegado, sync pendiente, claves, enlaces rotos o cabeceras básicas que faltan...) · 2 error de uso (lo pone Typer) · 3 configuración inválida · 4 sin IA (sin clave, sin red o el servidor no responde: las acciones sin IA siguen funcionando).
 
 `dam` (o `dam -h` o `dam help`) muestra el manual completo con todos los comandos, opciones y ejemplos; `dam COMANDO -h` (o `dam help COMANDO`) explica uno.
 
@@ -119,9 +124,9 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 | `almacen.ruta` | no (raíz) | Carpeta del almacén git para `status` y `sync`. |
 | `nombre` | sí | Único; minúsculas, números y guiones. Es lo que escribes en `dam ejecutar NOMBRE`. |
 | `descripcion` | sí | Lo que muestra `dam acciones`. |
-| `tipo` | sí | `mover`, `copiar`, `renombrar`, `borrar`, `ordenar` o `convertir`. |
+| `tipo` | sí | Sin IA: `mover`, `copiar`, `renombrar`, `borrar`, `ordenar` o `convertir`. Con IA: `resumir`, `renombrar-ia` o `clasificar`. |
 | `origen` | no | Carpeta por defecto si no pasas CARPETA. `~` se expande en los tres sistemas. |
-| `destino` | mover / copiar | Dónde van los ficheros (se crea si no existe). |
+| `destino` | mover / copiar / clasificar | Dónde van los ficheros (se crea si no existe). En `resumir` es opcional: dónde se escribe cada `.resumen.md` (si no, junto al fichero). |
 | `plantilla` | renombrar | Nombre nuevo: `{fecha:%Y-%m-%d}`, `{n:03}`, `{ext}`, `{nombre}`. |
 | `filtro` | no (borrar: sí) | `extensiones`, `patron` (regex), `mas_antiguo_que_dias`, `mayor_que_mb`; se cumplen todos. |
 | `carpetas` | ordenar | `{"asignatura": ["palabra clave", ...]}`. Se comparan palabras completas, sin tildes ni mayúsculas. |
@@ -129,13 +134,20 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 | `al_almacen` | no (ordenar) | `true` = cada fichero va a `asignaturas/ASIGNATURA` de tu almacén (no a una subcarpeta del origen). Si la asignatura no existe en el almacén, se salta. Al acabar pregunta si haces `dam sync` (con `--si` solo te lo recuerda). No se puede usar junto a `destino`. |
 | `por_tipo` | no (ordenar) | `"~/Datos/POR-TIPO"`: lo que no es de ninguna asignatura va a `POR-TIPO/DOCUMENTOS`, `IMAGENES`, `VIDEO`, `AUDIO`, `COMPRIMIDOS`, `INSTALADORES`, `CODIGO`, `REDES` u `OTROS` (no se sube con `dam sync`). Sin esta clave, se queda donde está. |
 | `calidad` | no (convertir) | 1-100, por defecto 80. |
-| `confirmar` | no | `true` = pide confirmación antes de actuar (salvo `--si`). |
+| `confirmar` | no | `true` = pide confirmación antes de actuar (salvo `--si`). En las acciones con IA que cambian tus ficheros, ponlo siempre. |
+| `instrucciones` | no (con IA) | Lo que le pides al modelo, en tu idioma. Es configuración: se cambia sin tocar Python. |
+| `max_caracteres` | no (con IA) | Tope de texto que se manda al modelo: 500-50000, por defecto 12000. |
+| `categorias` | clasificar | Las únicas respuestas válidas. Si el modelo dice otra cosa, el fichero va a `sin-clasificar`. Pon siempre una salida tipo `otros`. |
 
-**Mis 6 acciones:** `ordenar` (reparte apuntes por asignatura, mirando nombre, extensión y las
+**Mis 9 acciones.** Sin IA (funcionan sin red): `ordenar` (reparte apuntes por asignatura, mirando nombre, extensión y las
 páginas de los PDF), `limpiar-temporales` (borra `.tmp/.bak/.part` de más de 30 días, con
 confirmación), `convertir-webp` (JPEG/PNG a WebP sin tocar el original), `renombrar-capturas`
 (capturas con fecha y número), `copiar-entregas` (copia entregas y prácticas a una carpeta de
 seguridad) y `mover-zips` (mueve los `.zip` a la subcarpeta `comprimidos`).
+Con IA: `resumir-tema` (resume cada tema en un `.md`, en castellano aunque el apunte esté en
+valenciano), `nombrar-descargas` (pone nombre por su contenido a los `escaneo_0042.pdf` o
+`documento (3).pdf`) y `clasificar-asignatura` (lee los apuntes que `ordenar` no sabe colocar y los
+lleva a la carpeta de su asignatura).
 
 Garantías: nunca sobrescribe (añade « (1)»), `--simular` no toca el disco ni crea carpetas y
 la configuración se valida entera antes de mover un solo fichero.
@@ -175,6 +187,57 @@ Ruta del almacén en cada equipo, por orden de prioridad: `--almacen RUTA` > var
 equipos, así que usa la variable de entorno. Si Git protesta por «dubious ownership» en un USB
 exFAT/FAT32: `git config --global --add safe.directory RUTA`.
 
+## IA (opcional): acciones con los modelos del centro
+
+Las reglas (extensión, fecha, nombre) no saben de qué trata `escaneo_0042.pdf`: para eso hay que
+leerlo. Las acciones `resumir`, `renombrar-ia` y `clasificar` mandan el texto del fichero al
+servidor de IA del centro (el mismo que usa OpenCode) y usan lo que responde. **La IA, solo donde
+aporta:** lo que una regla resuelve (mover los `.pdf`, borrar los `.tmp` viejos) se hace sin IA:
+es instantáneo, gratis y funciona sin red.
+
+**1. La clave, fuera del repo.** Las variables se leen de tu terminal o de un `.env` en la carpeta
+desde la que lanzas `dam`. `.env` está en `.gitignore` y nunca se sube; `.env.example` es la plantilla:
+
+```bash
+cp .env.example .env      # y rellénalo (o exporta las variables en ~/.bashrc / setx)
+dam comprobar-ia          # Servidor: ... · modelo: qwen3.8-flash-next · clave: definida
+```
+
+| Variable | Para qué |
+|---|---|
+| `CENTRO_IA_URL` | Dirección del servidor (acaba en `/v1`). |
+| `CENTRO_IA_KEY` | Tu clave personal. Nunca se imprime: `comprobar-ia` solo dice «definida». |
+| `CENTRO_IA_CA` | Ruta del certificado del instituto (`ca-ies-simarro.crt`). Python no lee el `NODE_EXTRA_CA_CERTS` de OpenCode. |
+| `CENTRO_IA_MODELO` | Opcional: otro modelo del servidor. |
+
+**2. Primero, siempre `--simular`.** No llama al modelo ni gasta nada: dice cuánto mandaría
+(«enviaría 338 caracteres (~84 tokens)»). Un PDF escaneado sin texto se salta: no se pregunta por nada.
+
+```bash
+dam ejecutar resumir-tema ~/pruebas-tareas/apuntes-ia --simular
+dam ejecutar resumir-tema ~/pruebas-tareas/apuntes-ia        # de verdad: tokens y segundos en «Detalle»
+```
+
+**3. Lo que dice el modelo nunca se usa tal cual.** Un nombre propuesto pasa por
+`a_nombre_seguro()` (solo `a-z`, `0-9` y `-`; `../../.bashrc` queda `bashrc`, dentro de su carpeta) y una
+categoría que no está en `categorias` va a `sin-clasificar`. El modelo de `dam` no tiene herramientas:
+solo devuelve texto, y lo que pasa en tu disco lo decide el código. El documento va entre
+`<documento>` y `</documento>` y el mensaje de sistema avisa de que eso nunca son instrucciones.
+
+**4. Sin red, sin clave o con el servidor caído:** un mensaje en una línea, sale con **4** y las
+acciones sin IA siguen funcionando (`dam acciones` tiene una columna IA). Si se corta a mitad, lo
+hecho se queda hecho y el resto, sin tocar.
+
+| Qué pasa | Mensaje |
+|---|---|
+| Falta la URL o la clave | Faltan CENTRO_IA_URL o CENTRO_IA_KEY: ponlas en .env (mira .env.example) |
+| Sin red | No llego al servidor de IA: ¿estás en la red del centro? |
+| Sin certificado | No me fío del servidor: falta el certificado del centro (CENTRO_IA_CA) |
+| Tarda más de 60 s | El servidor de IA no ha respondido a tiempo |
+| HTTP 401 / 404 / 429 | La clave no es válida / revisa CENTRO_IA_URL / demasiadas peticiones, espera un minuto |
+
+Por qué la IA va detrás de una interfaz (`ProveedorIA`): [`docs/adr/0002-proveedor-ia.md`](docs/adr/0002-proveedor-ia.md).
+
 ## Seguridad: claves y web
 
 Ninguna clave en el repositorio ni en su historial. `dam scan-secrets` lo comprueba:
@@ -195,14 +258,15 @@ Para tu web: `dam test-links` encuentra enlaces, imágenes y anclas rotas (tambi
 ## Pruebas
 
 ```bash
-uv run pytest        # config, acciones, motor, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes, entregar, inventario, duplicados y readme
+uv run pytest        # config, acciones, motor, IA, sync, ayuda, scan-secrets, test-links, check-headers, hook, doctor, pendientes, entregar, inventario, duplicados y readme
 ```
 
 Ejecútalo desde la raíz del repositorio. Los tests de red usan un servidor local de mentira: no necesitan internet.
+Las acciones con IA se prueban con un `ProveedorFalso` (`tests/conftest.py`): ninguna prueba llama
+al servidor del centro ni lee tu `.env`. GitHub Actions las pasa en Linux y Windows en cada push.
 
 ## Ideas futuras
 
 - Ayudarme a proponer el mensaje de commit según los cambios hechos.
 - Más comandos para la web del portfolio (ideas en `docs/ideas/`).
-- La capa de IA (semana 3): acciones que usen los modelos del centro, con la clave fuera del repo y un modo sin red.
 - Más acciones de limpieza y organización conforme las vaya necesitando.

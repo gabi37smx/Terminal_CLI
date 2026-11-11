@@ -70,7 +70,7 @@ Plan en 5 fases: 1 `dam inventario` → 2 `dam duplicados` (solo informa, nunca 
 ## Qué falta (por orden)
 
 1. **⚠ AL LLEGAR A CLASE (Linux), lo primero:**
-   - `which dam`. Si sale una ruta, `dam` sigue instalado: `cd ~/Terminal_CLI && git pull` y listo. No hace falta reinstalar: está en modo editable y el PR #3 no cambió dependencias ni instaladores.
+   - `which dam`. Si sale una ruta, `dam` sigue instalado: `cd ~/Terminal_CLI && git pull` y **vuelve a pasar `bash instalar.sh`**: la capa IA (semana 3) trae dependencias nuevas (`httpx`, `python-dotenv`) y el modo editable no las instala solo; sin reinstalar, `dam` falla con `ModuleNotFoundError`.
    - Si no sale nada (el PC se restauró u otro usuario): `git clone https://github.com/gabi37smx/Terminal_CLI.git`, `cd Terminal_CLI`, `bash instalar.sh` (con el token a mano) y abrir otra terminal.
    - Comprobar: `dam help` (deben salir `doctor`, `pendientes` y `entregar`), `dam doc<TAB>`, `dam status` y `dam sync --simular`.
    - Apuntar qué pasó en `docs/prompts.md` (los **[COMPLETAR]** de la entrada del 3-nov): así se sabe por fin si el PC de clase guarda la carpeta personal.
@@ -96,7 +96,13 @@ Plan en 5 fases: 1 `dam inventario` → 2 `dam duplicados` (solo informa, nunca 
 
 Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes pesadas y `alt` en el portfolio), `informe` (juntar `scan-secrets`, `doctor`, `test-links` y `check-headers` en un `.md` con fecha) y `despertar` (despertar el backend de Render antes de una demo).
 
-Después (semanas 3 y 4): capa IA y modo sin red (las 5 o más acciones propias ya están: hay 6), pruebas en GitHub Actions, release v1.0.
+13. **Semana 3 (capa IA), en clase con el servidor del centro** (el código está hecho el 11-nov, PR `capa-ia`; mira la entrada de `docs/prompts.md`):
+   - `CENTRO_IA_URL`, `CENTRO_IA_KEY` y `CENTRO_IA_CA` en la terminal (o un `.env` copiado de `.env.example`, que nunca se sube) y `dam comprobar-ia`.
+   - context7 con `/mcps` en OpenCode, una vez: la pregunta del certificado en `httpx` (paso 2 de la sesión).
+   - De verdad: `dam ejecutar resumir-tema`, `nombrar-descargas` y `clasificar-asignatura` sobre `~/pruebas-tareas/apuntes-ia` y `descargas-ia` (hay que copiarlas al PC de clase o crear otras). Si algo sale mal, se arregla en las `instrucciones` del JSON, con su commit.
+   - Rellenar los **[COMPLETAR]** de la entrada «Sesión 3 · context7...» de `docs/prompts.md` y repasar el ADR-0002 (que diga lo que yo diría).
+
+Después (semana 4, entrega el 20-nov): CHANGELOG y versión 1.0.0, Actions también en macOS, `scripts/revisar.sh`, rama `release-1.0` con su PR, etiqueta `v1.0.0` y release, e instalación cruzada con un compañero.
 
 ## Cómo retomar
 
