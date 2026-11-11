@@ -19,6 +19,7 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 |---|---|---|
 | `dam --help` | Ayuda general | `uv run dam --help` |
 | `dam version` | Versión instalada | `uv run dam version` |
+| `dam configurar [--ciclo C] [--curso N] [--simular] [--si]` | Pregunta tu ciclo y curso y pone tus asignaturas en `acciones.json` | `uv run dam configurar --ciclo smx --curso 1 --simular` |
 | `dam listar [CARPETA]` | Lista ficheros en una tabla | `uv run dam listar "C:\Users\HP\Desktop\DAM\SISTEMES"` |
 | `dam validar` | Comprueba `acciones.json` | `uv run dam validar` |
 | `dam acciones` | Lista tus acciones | `uv run dam acciones` |
