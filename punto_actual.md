@@ -83,7 +83,11 @@ Plan en 5 fases: 1 `dam inventario` → 2 `dam duplicados` (solo informa, nunca 
 4. **Crear el token de GitHub** (Settings → Developer settings → Fine-grained tokens; solo `DAM-almacen`, permiso *Contents: Read and write*). No guardarlo en ningún fichero.
 5. (El PC de clase está ahora en el punto 1.)
 6. En Ubuntu (WSL): `git pull` en `~/Terminal_CLI` y `bash instalar.sh` otra vez para tener el TAB y clonar `DAM-almacen` con el token.
-7. Probar de verdad (sin `--simular`) en `~/pruebas-tareas` las 3 acciones antiguas (`ordenar`, `limpiar-temporales`, `convertir-webp`) y apuntar el resultado. (`renombrar-capturas`, `copiar-entregas` y `mover-zips` ya están probadas de verdad.)
+7. ~~Probar de verdad (sin `--simular`) en `~/pruebas-tareas` las 3 acciones antiguas (`ordenar`, `limpiar-temporales`, `convertir-webp`).~~ HECHO (11-nov), en `~/pruebas-tareas/prueba-11nov` con 19 ficheros creados para la prueba, respondiendo `s` a la pregunta como una persona. Para no tocar el almacén real ni `~/Datos`: `DAM_ALMACEN` apuntando a `~/pruebas-tareas/almacen-prueba` y una copia de `acciones.json` con `por_tipo` en `~/pruebas-tareas/prueba-11nov-POR-TIPO` (`dam --config`).
+   - `limpiar-temporales`: 3 hechos (`.tmp` de 40 días, `.bak` de 60 y `.crdownload` de 45). Se quedan un `.tmp` de 1 día y un `.txt` de 90 días (no es temporal). Bien.
+   - `convertir-webp`: 3 hechos (JPEG 30.630 B → WebP 3.496 B; PNG con transparencia → WebP RGBA; `LOGO.PNG` con mayúsculas también). Los originales siguen. La segunda vez: 3 saltados («ya existe el .webp»), no pisa nada. Bien.
+   - `ordenar`: 18 hechos y 1 saltado (el `.tmp` reciente). 8 al almacén en su asignatura (`.py`, `.sh` y `.html` por extensión; un PDF sin pistas en el nombre fue a `bases-datos` por su **contenido**) y 10 a POR-TIPO (`DOCUMENTOS`, `IMAGENES`). Al acabar preguntó si hacía `dam sync` (respondí `n`). Comprobado por hash: los 19 ficheros están y no ha cambiado ninguno. Bien.
+   - Ya están probadas de verdad las 6 acciones.
 8. Pasar `@revisor` sobre `renombrar-capturas` y `copiar-entregas` (en `mover-zips` ya está), pasar `/review` y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
 9. ~~`dam instalar-hook` en `DAM-almacen`~~ HECHO (11-nov, en este PC; en el de clase y en WSL hay que instalarlo otra vez porque los hooks no se suben con git).
 10. ~~Pendiente del portfolio: borrar o excluir `_backup_mejoras/`.~~ HECHO (11-nov, PR #12 de mi-web): borrada y `.gitignore` arreglado (estaba en UTF-16); `dam test-links` da 0 rotos.
