@@ -54,8 +54,21 @@ esac
 # 4. Configuración ---------------------------------------------------------
 paso "Configuración de acciones"
 CONFIG="$HOME/.config/dam/acciones.json"
-if [ -f "$CONFIG" ]; then
-    ok "Ya tienes $CONFIG (no la toco)"
+if [ -f "$CONFIG" ] && cmp -s acciones.json "$CONFIG"; then
+    ok "Ya tienes $CONFIG y está al día"
+elif [ -f "$CONFIG" ]; then
+    # Si es de una instalación vieja, dam seguiría usando las acciones viejas
+    aviso "Tu $CONFIG no es igual que la del repo (puede que sea de una instalación vieja)."
+    respuesta=""
+    read -rp "    ¿La cambio por la nueva? Guardo una copia de la tuya [s/N]: " respuesta || true
+    if [ "$respuesta" = "s" ] || [ "$respuesta" = "S" ]; then
+        copia="$CONFIG.antes-$(date +%Y%m%d-%H%M%S)"
+        cp "$CONFIG" "$copia"
+        cp acciones.json "$CONFIG"
+        ok "Puesta la nueva. La tuya está en $copia"
+    else
+        aviso "No la toco: dam seguirá usando la tuya."
+    fi
 else
     mkdir -p "$(dirname "$CONFIG")"
     cp acciones.json "$CONFIG"
@@ -124,7 +137,38 @@ fi
 
 # 6. Almacén de apuntes ----------------------------------------------------
 paso "Almacén de apuntes"
-ALMACEN="${DAM_ALMACEN:-$HOME/DAM-almacen}"
+ALMACEN="${DAM_ALMACEN:-}"
+if [ -z "$ALMACEN" ]; then
+    # ¿Ya está clonado en otro sitio (por ejemplo en ~/Documents o ~/Documentos)? Se busca hasta
+    # 3 niveles un repo git cuyo remoto sea DAM-almacen, se llame como se llame la carpeta.
+    encontrados=()
+    while IFS= read -r git_dir; do
+        carpeta="$(dirname "$git_dir")"
+        if git -C "$carpeta" remote get-url origin 2>/dev/null | grep -qi "/dam-almacen"; then
+            encontrados+=("$carpeta")
+        fi
+    done < <(find "$HOME" -maxdepth 4 \( -path "$HOME/.*" -o -name node_modules \) -prune \
+                  -o -type d -name .git -print 2>/dev/null | sort || true)
+    if [ "${#encontrados[@]}" -gt 0 ]; then
+        ALMACEN="${encontrados[0]}"
+        if [ "${#encontrados[@]}" -gt 1 ]; then
+            aviso "Hay ${#encontrados[@]} copias del almacén: ${encontrados[*]}"
+            aviso "Uso la primera. Para usar otra: export DAM_ALMACEN=RUTA en $RC"
+        fi
+        if [ "$ALMACEN" != "$HOME/DAM-almacen" ] && [ -n "${RC:-}" ]; then
+            # dam lo busca en ~/DAM-almacen (acciones.json): si está en otro sitio, se lo digo con DAM_ALMACEN
+            if ! grep -q "DAM_ALMACEN=" "$RC" 2>/dev/null; then
+                printf '\n# Dónde está el almacén de apuntes (lo añadió instalar.sh)\nexport DAM_ALMACEN="%s"\n' "$ALMACEN" >> "$RC"
+                ok "Guardado DAM_ALMACEN=$ALMACEN en $RC"
+            elif ! grep -qF "DAM_ALMACEN=\"$ALMACEN\"" "$RC"; then
+                aviso "En $RC ya hay otro DAM_ALMACEN: revísalo a mano (aquí lo he encontrado en $ALMACEN)."
+            fi
+        fi
+        export DAM_ALMACEN="$ALMACEN"
+    else
+        ALMACEN="$HOME/DAM-almacen"
+    fi
+fi
 if [ -d "$ALMACEN/.git" ]; then
     ok "Ya está clonado en $ALMACEN"
 elif [ -e "$ALMACEN" ]; then
