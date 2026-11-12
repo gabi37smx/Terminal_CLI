@@ -248,11 +248,16 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
     ],
     "acciones": [
         ("dam acciones", "Tabla con el nombre, tipo y descripción de cada acción"),
+        ("dam --config ~/prueba-smx/acciones.json acciones", "Las de otro acciones.json (--config va ANTES del comando)"),
+        ("dam ejecutar convertir-webp ~/Descargas --simular", "Después, usa una por su nombre: primero simulando"),
+        ("dam ejecutar convertir-webp ~/Descargas/portada.png", "Solo un fichero, no toda la carpeta"),
+        ("dam ejecutar -h", "Todas las opciones de ejecutar"),
     ],
     "ejecutar": [
         ("dam ejecutar ordenar --simular", "Enseña cómo ordenaría, sin tocar nada"),
         ("dam ejecutar ordenar", "Lo hace de verdad: enseña la tabla y pregunta s/N"),
         ("dam ejecutar limpiar-temporales ~/pruebas-tareas", "Usa otra carpeta en vez del origen de la acción"),
+        ("dam ejecutar convertir-webp ~/Descargas/portada.png", "Solo ese fichero, no toda la carpeta"),
         ("dam ejecutar convertir-webp --si", "Sin preguntar (solo si estás seguro)"),
     ],
     "comprobar-ia": [
@@ -469,6 +474,8 @@ def acciones(ctx: typer.Context) -> None:
         ia = "[magenta]sí[/magenta]" if a["tipo"] in config.TIPOS_IA else "—"
         tabla.add_row(escape(a["nombre"]), a["tipo"], ia, escape(a["descripcion"]))
     consola.print(tabla)
+    consola.print("Para usar una: [bold]dam ejecutar NOMBRE CARPETA --simular[/bold] (o un solo fichero en vez de "
+                  "la carpeta). Ejemplos: [bold]dam acciones -h[/bold]")
 
 
 # ---------- Autocompletado con TAB ----------
@@ -587,13 +594,13 @@ def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
 def ejecutar(
     ctx: typer.Context,
     nombre: Annotated[str, typer.Argument(metavar="NOMBRE", help="Nombre de la acción (ver: dam acciones)", autocompletion=completar_acciones)],
-    carpeta: Annotated[Optional[Path], typer.Argument(metavar="CARPETA", help="Carpeta sobre la que actuar (por defecto, el origen de la acción).")] = None,
+    carpeta: Annotated[Optional[Path], typer.Argument(metavar="CARPETA|FICHERO", help="Carpeta sobre la que actuar, o un solo fichero (por defecto, el origen de la acción).")] = None,
     simular: Annotated[bool, typer.Option("--simular", help="Enseña qué haría sin tocar nada.")] = False,
     si: Annotated[bool, typer.Option("--si", help="No pregunta antes de actuar (solo si estás seguro).")] = False,
 ) -> None:
-    """Ejecuta una acción de acciones.json sobre una carpeta.
+    """Ejecuta una acción de acciones.json sobre una carpeta (o un solo fichero).
 
-    Sin CARPETA usa el «origen» de la acción. Empieza SIEMPRE con --simular: enseña una tabla fichero → destino sin tocar nada.
+    Sin CARPETA usa el «origen» de la acción. Con un FICHERO actúa solo sobre él, si cumple el filtro de la acción (si no, dice por qué y no hace nada). Empieza SIEMPRE con --simular: enseña una tabla fichero → destino sin tocar nada.
 
     Sin --simular, las acciones que borran (o que tienen «confirmar») enseñan primero la tabla y preguntan s/N; --si se salta la pregunta.
 

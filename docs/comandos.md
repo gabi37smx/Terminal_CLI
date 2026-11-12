@@ -23,7 +23,7 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `dam listar [CARPETA]` | Lista ficheros en una tabla | `uv run dam listar "C:\Users\HP\Desktop\DAM\SISTEMES"` |
 | `dam validar` | Comprueba `acciones.json` | `uv run dam validar` |
 | `dam acciones` | Lista tus acciones | `uv run dam acciones` |
-| `dam ejecutar NOMBRE [CARPETA] [--simular] [--si]` | Ejecuta una acción | `uv run dam ejecutar ordenar --simular` |
+| `dam ejecutar NOMBRE [CARPETA\|FICHERO] [--simular] [--si]` | Ejecuta una acción sobre una carpeta o un solo fichero | `uv run dam ejecutar convertir-webp ~/Descargas/portada.png` |
 | `dam comprobar-ia` | ¿Llego al servidor de IA del centro? (nunca enseña la clave) | `uv run dam comprobar-ia` |
 | `dam status [ASIGNATURA]` | Qué hay pendiente (no toca nada) | `uv run dam status programacion` |
 | `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves y contraseñas expuestas | `uv run dam scan-secrets --staged` |

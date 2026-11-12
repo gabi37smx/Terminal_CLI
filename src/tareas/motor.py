@@ -11,6 +11,20 @@ from .errores import TareasError
 from .ia import ProveedorIA
 
 
+def describir_filtro(filtro: dict) -> str:
+    """{"extensiones": [".jpg", ".png"]} -> 'solo .jpg, .png'. Para explicar por qué no entra un fichero."""
+    partes = []
+    if filtro.get("extensiones"):
+        partes.append("solo " + ", ".join(filtro["extensiones"]))
+    if "patron" in filtro:
+        partes.append(f"nombre que encaje con {filtro['patron']}")
+    if "mas_antiguo_que_dias" in filtro:
+        partes.append(f"de más de {filtro['mas_antiguo_que_dias']} días")
+    if "mayor_que_mb" in filtro:
+        partes.append(f"de más de {filtro['mayor_que_mb']} MB")
+    return "; ".join(partes) or "sin filtro"
+
+
 class Motor:
     def __init__(self, acciones: list[dict], proveedor: ProveedorIA | None = None):
         self.acciones = {a["nombre"]: Accion.desde_config(a) for a in acciones}
@@ -55,11 +69,19 @@ class Motor:
         if origen is None:
             raise TareasError("Indica una CARPETA o define «origen» en la acción")
         origen = Path(origen).expanduser()
-        if not origen.is_dir():
-            raise TareasError(f"La carpeta {origen} no existe")
+        filtro = accion.config.get("filtro", {})
+        if origen.is_file():  # un fichero suelto: solo ese, y solo si cumple el filtro (borrar no se salta nada)
+            ficheros = [f for f in self.seleccionar(origen.parent, filtro) if f.name == origen.name]
+            if not ficheros:
+                raise TareasError(f"«{origen.name}» no cumple el filtro de «{nombre}» ({describir_filtro(filtro)}): "
+                                  "no hago nada")
+        elif origen.is_dir():
+            ficheros = self.seleccionar(origen, filtro)
+        else:
+            raise TareasError(f"{origen} no existe (ni como carpeta ni como fichero)")
         if accion.necesita_ia:
             accion.proveedor = self.proveedor
-        return accion, self.seleccionar(origen, accion.config.get("filtro", {}))
+        return accion, ficheros
 
     def ejecutar(self, nombre: str, carpeta: Path | None, simular: bool) -> list[Resultado]:
         accion, ficheros = self.preparar(nombre, carpeta)

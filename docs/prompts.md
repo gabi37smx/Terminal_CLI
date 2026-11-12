@@ -325,3 +325,50 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - Release `v1.0.1` publicada con los arreglos de los issues #17-#22, todos cerrados.
 **Instalación cruzada con otra persona:** quién la hizo, en qué sistema, qué issues abrió y cómo los contesté: [COMPLETAR]
 **Qué aprendí:** [COMPLETAR]
+
+---
+
+## 2026-11-11 y 12 · `dam configurar`: mi idea del «adduser» (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows), y mi Ubuntu de WSL para probarlo como si fuera otro alumno.
+**Prompt 1 (la idea):** «Cuando instalamos el terminal CLI, ¿no podríamos hacer que, como en Linux cuando creas un usuario, pregunte datos y que en base a esos datos se configure? Lo digo porque ahora solo vale lo de las carpetas y asignaturas para alumnos de DAM. ¿Y si pudieras definir las asignaturas y ya en base a ello se ordenaran los archivos, PDF y demás?»
+**Prompt 2 (el alcance):** «Yo cogería para empezar el medio de SMX, DAM que ya tenemos, DAW que es casi igual que DAM, y ASIR o ASIX (castellano o valenciano). Así tenemos la rama de informática; más adelante ya ampliaremos.»
+**Por qué se me ocurrió:** [COMPLETAR] (en primera persona: qué te hizo pensar en `adduser` y a quién querías que le sirviera)
+
+**Qué se hizo (PR #25):**
+- `ciclos.py`: el vocabulario. Las asignaturas de 1º y 2º de SMX, DAM, DAW y ASIR, con su nombre en castellano y en valenciano, palabras clave en los dos idiomas y extensiones propias (`.pkt` → redes, `.php` → servidor...).
+- `dam configurar`:
+  - Pregunta ciclo y curso, enseña las asignaturas y deja quitar y añadir.
+  - Reescribe solo `ordenar` y `clasificar`.
+  - Valida antes de guardar y guarda una copia del anterior.
+  - Apunta lo elegido en `perfil` y ofrece crear las carpetas en el almacén.
+- 1º de DAM es exactamente mi `acciones.json` de antes, y una prueba lo vigila. Si eliges las mismas asignaturas, esas acciones no cambian.
+- Los instaladores lanzan `dam configurar` después de clonar el almacén.
+
+**Cómo lo probé:**
+- En WSL hice como si fuera un alumno de 1º de SMX: 15 apuntes reales míos en `~/Descargas`.
+- Usé un `acciones.json` y un almacén de prueba (`dam --config ~/prueba-smx/acciones.json` y `DAM_ALMACEN=~/prueba-smx/almacen`).
+- Primero `--simular` y después de verdad.
+
+**Lo que salió al probar (cada cosa, arreglada en su PR):**
+- **El `dam` de WSL no arrancaba** (`ModuleNotFoundError: httpx`). Claude Code me dijo que no hacía falta instalar nada, pero ese `dam` era de antes de la semana 3. Se arregló con `uv tool install --editable . --force`. Es el aviso del README: después de un `git pull` con dependencias nuevas, hay que reinstalar.
+- **#26 · La pregunta confundía:** en «asignaturas que añades» escribí los números de las que me quedaba (`3,4,5,6,7`), y el programa empezó a crear asignaturas llamadas «3», «4»... Ahora:
+  - La pregunta dice NUEVAS y por nombre.
+  - Enseña con cuáles te quedas.
+  - Si escribes un número, lo explica y vuelve a preguntar.
+- **#26 · El vocabulario de SMX se quedaba corto:** solo colocaba 7 de 15. Se añadieron `.pka` y `.odb`, discos y cajas, las siglas MME y SOX, cambio climático y contraseñas.
+  - `som` no se añadió, aunque es la sigla de Sistemes Operatius Monolloc: en valenciano «som» es «somos», y al leer el texto de los PDF mandaría cualquier apunte a esa asignatura.
+  - `.odt` y `.ods` tampoco, porque los usan todas las asignaturas.
+- **#27 · Las palabras nuevas no llegaban:** al repetir `dam configurar`, «tus asignaturas de la última vez» traían las palabras clave viejas. Solo se recalculaban las extensiones, por eso el `.odb` sí funcionó y «discos durs» no. Ahora se juntan las del vocabulario con las tuyas.
+- **#27 · `dam sync` con un almacén que no es git:** al acabar, `ordenar` ofrecía `dam sync` con mi almacén de prueba (una carpeta normal) y fallaba. Ahora avisa y no lo ofrece.
+- **#27 · GitHub en rojo en los 3 sistemas:** allí la consola mide 80 columnas y Rich partía la frase que buscaba una prueba. Ahora las pruebas de `configurar` comparan sin saltos de línea; pasan con 40, 60, 80 y 120 columnas.
+- **Un error de Claude Code:** en una de sus pruebas creó 7 carpetas vacías en mi almacén de verdad, porque en este PC `DAM_ALMACEN` apunta a él. Se dio cuenta, comprobó que solo tenían el `.gitkeep`, las borró y `git status` del almacén quedó limpio. Desde entonces, las pruebas usan un almacén temporal.
+
+**Resultado:** con la #27, **11 de 15** apuntes a su asignatura y 4 a POR-TIPO. Los 4 que faltan son el Examen_SOM, un `.ods` sin pistas en el nombre y dos que son de 2º (cambio climático y John the Ripper).
+
+**El instalador, probado de verdad en Linux (WSL, 12-nov):** con `bash instalar.sh` el TAB funciona (`dam ej` + Tab). A «¿La rehago con las acciones del repo?» respondí N para no tocar mi configuración de WSL.
+
+**#28 · Un solo fichero:** quise convertir solo `portada.png` con `dam ejecutar convertir-webp ~/Descargas/portada.png`, y `dam` decía «La carpeta … no existe», aunque el fichero sí existía. Ahora:
+- Acepta un fichero suelto, solo si cumple el filtro de la acción (si no, dice por qué). Así, `borrar` no se salta los días.
+- `dam acciones -h` trae ejemplos de cómo usar las acciones.
+
+**Qué aprendí:** [COMPLETAR]
