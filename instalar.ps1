@@ -198,6 +198,36 @@ if (-not (Test-Path $Config)) {
     }
 }
 
+# 6c. IA para las acciones que la usan --------------------------------------
+# Modelos gratis con OpenCode: funcionan en casa y no piden clave (ADR-0004). Se instala la misma
+# versión de OpenCode que usamos en clase: con ella está probado el agente de dam.
+Paso "IA para las acciones que la usan (dam configurar-ia)"
+$VersionOpenCode = "1.18.35"
+if (Test-Path (Join-Path $HOME ".config\dam\ia.json")) {
+    Ok "Ya elegiste el modelo (para cambiarlo: dam configurar-ia)"
+} else {
+    if (-not (Tiene opencode)) {
+        $respuesta = Read-Host "    Para usar modelos de IA gratis hace falta OpenCode. ¿Lo instalo? [S/n]"
+        if ($respuesta -ne 'n') {
+            if (Tiene npm) {
+                npm install -g "opencode-ai@$VersionOpenCode"
+                if ($LASTEXITCODE -ne 0) { Aviso "npm no ha podido instalar OpenCode." }
+                $env:Path = "$env:APPDATA\npm;$env:Path"   # ahí deja npm sus comandos: que esta ventana lo vea ya
+            } else {
+                Aviso "Para instalar OpenCode necesito npm (Node.js): winget install OpenJS.NodeJS.LTS"
+                Aviso "Después, cierra esta ventana y repite el instalador: lo que ya está hecho se salta."
+            }
+        }
+    }
+    if (Tiene opencode) {
+        # Sin función: así se ven las preguntas (como en el paso 6b)
+        uv run dam configurar-ia
+        if ($LASTEXITCODE -ne 0) { Aviso "Sin IA de momento. Cuando quieras: dam configurar-ia" }
+    } else {
+        Aviso "Sin OpenCode, las acciones con IA usan el servidor del centro (o elige con: dam configurar-ia)."
+    }
+}
+
 # 7. Comprobación final ----------------------------------------------------
 Paso "Compruebo que todo funciona"
 uv run dam --config "$Config" validar

@@ -199,6 +199,41 @@ else
     fi
 fi
 
+# 6c. IA para las acciones que la usan --------------------------------------
+# Modelos gratis con OpenCode: funcionan en casa y no piden clave (ADR-0004). Se instala la misma
+# versión de OpenCode que usamos en clase: con ella está probado el agente de dam.
+paso "IA para las acciones que la usan (dam configurar-ia)"
+VERSION_OPENCODE="1.18.35"
+# En WSL se ven los programas de Windows (/mnt/c/...): ese npm instalaría OpenCode en Windows y
+# ese opencode no entiende las rutas de Linux. Solo cuentan los de Linux.
+de_linux() {
+    local ruta
+    ruta="$(command -v "$1" 2>/dev/null)" || return 1
+    case "$ruta" in /mnt/*) return 1 ;; esac
+}
+if [ -f "$HOME/.config/dam/ia.json" ]; then
+    ok "Ya elegiste el modelo (para cambiarlo: dam configurar-ia)"
+else
+    if ! de_linux opencode; then
+        respuesta=""
+        read -rp "    Para usar modelos de IA gratis hace falta OpenCode. ¿Lo instalo? [S/n]: " respuesta || true
+        if [ "$respuesta" != "n" ] && [ "$respuesta" != "N" ]; then
+            if de_linux npm; then
+                npm install -g "opencode-ai@$VERSION_OPENCODE" \
+                    || aviso "npm no ha podido instalarlo. Si pone EACCES: sudo npm install -g opencode-ai@$VERSION_OPENCODE"
+            else
+                aviso "Para instalar OpenCode necesito npm (Node.js): Ubuntu/Debian: sudo apt install npm · macOS: brew install node"
+                aviso "Después, repite  bash instalar.sh : lo que ya está hecho se salta."
+            fi
+        fi
+    fi
+    if de_linux opencode; then
+        uv run dam configurar-ia || aviso "Sin IA de momento. Cuando quieras: dam configurar-ia"
+    else
+        aviso "Sin OpenCode, las acciones con IA usan el servidor del centro (o elige con: dam configurar-ia)."
+    fi
+fi
+
 # 7. Comprobación final ----------------------------------------------------
 paso "Compruebo que todo funciona"
 uv run dam --config "$CONFIG" validar

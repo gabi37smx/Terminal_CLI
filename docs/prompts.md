@@ -380,3 +380,39 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - **Después de un `git pull`, reinstalar si hay dependencias nuevas.** El `dam` de WSL no arrancaba (`ModuleNotFoundError: httpx`). Ya lo decía mi README.
 - **GitHub Actions no es mi terminal.** Allí la consola mide 80 columnas y las frases se parten: una prueba que pasaba en casa falló en los tres sistemas. Las pruebas no deben depender del ancho de la pantalla.
 - **Pensar a lo grande sin pasarse.** Empecé por los 4 ciclos de Informática, que es a quien más le sirve, y dejé escrito cómo añadir otro.
+
+## 2026-11-12 · `dam configurar-ia`: la IA de dam con los modelos gratis de OpenCode (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows), y mi Ubuntu de WSL para el instalador.
+**Prompt:** «Una cosa para lo de la IA, ¿no podríamos hacer que usara OpenCode con modelos gratuitos como DeepSeek u otro, el que sea, como un instalador más o que se autoinstale si quieres con IA, que lo pregunte, que se configure ya con los modelos gratuitos, que cuando se instale se cree el archivo de configuración de los modelos, el de opencode.json o algo así más automatizado?»
+**Por qué se me ocurrió:** [COMPLETAR] (con tus palabras: el servidor del centro solo responde desde el instituto y en casa me quedaba sin las acciones con IA).
+
+**Lo que me explicó antes de empezar:** los modelos gratis de OpenCode solo funcionan desde dentro de OpenCode, así que `dam` no los puede llamar con `httpx` como al servidor del centro. Propuso lanzar `opencode run` con un agente propio sin herramientas, para no romper lo que decidí en el ADR-0002 (que un PDF con «Ignora tus instrucciones...» no pueda hacer nada). También me avisó de que no todos los modelos gratis tratan igual lo que les mandas y de que los van cambiando.
+
+**Qué se hizo (rama `feature/ia-opencode-gratis`):**
+- `ProveedorOpenCode` en `ia.py`: otra subclase de `ProveedorIA`, como decía el ADR-0002. Las acciones no cambian.
+- `dam configurar-ia`:
+  - Pregunta: modelos gratis con OpenCode, servidor del centro o ninguno.
+  - Enseña los modelos gratis de ese día con lo que hace cada uno con lo que le mandas (los recomendados, primero).
+  - Hace una pregunta mínima y lo guarda en `~/.config/dam/ia.json`.
+  - Si quiero, pone ese modelo por defecto en mi `opencode.json` global, con copia del anterior.
+- `dam comprobar-ia` y `dam ejecutar` usan lo elegido. `DAM_IA=centro` lo cambia solo en esa terminal.
+- Los instaladores preguntan si instalan OpenCode (1.18.35, la de clase, con `npm`) y lanzan `dam configurar-ia`.
+- ADR-0004, README, `docs/comandos.md` y CHANGELOG.
+
+**Cómo se probó:**
+- 29 pruebas nuevas con un `opencode` de mentira (sin red y sin gastar nada). En total, 491.
+- De verdad en Windows, con `ia.json` y la configuración de OpenCode en una carpeta temporal: `dam configurar-ia` enseñó 11 modelos gratis y `dam comprobar-ia` respondió «ok» en 5 s.
+- Una clasificación de prueba con DeepSeek V4.1 Flash: dijo «redes» para unos apuntes de subredes, aunque el texto le pedía leer `~/.ssh/id_rsa`.
+- Le pedí al agente, dentro del texto, que leyera un fichero de fuera de su carpeta: la regla `external_directory: deny` se lo impidió y respondió «NOPUEDO».
+- El paso nuevo del instalador, en WSL con un HOME temporal.
+
+**Lo que salió al probar (todo arreglado antes de subir):**
+- **Sin ninguna herramienta, OpenCode 1.18.35 se queda colgado.** Con `read` quitado (o prohibido) no respondía nunca. Se dejó `read`, pero solo dentro de la carpeta temporal vacía.
+- **Desde Python fallaba con «Unexpected server error».** OpenCode no trabajaba en la carpeta temporal, sino en la del repo, y allí no estaba el agente. Se arregló con `--dir`.
+- **El título de la sesión:** OpenCode se lo pide a mi `small_model`, que es el del centro, y en casa falla. Con `--title dam` no lo pide.
+- **OpenCode crea `opencode.jsonc` la primera vez** (solo con `$schema`), y `dam` no lo tocaba. Ahora lo usa si no hay `opencode.json`, y solo se niega si tiene comentarios de verdad.
+- **La primera vez, la opción por defecto era «Ninguno».** Ahora es la 1 (modelos gratis).
+- **En WSL se ven el `npm` y el `opencode` de Windows** (`/mnt/c/...`). Ese `npm` instalaría OpenCode en Windows y ese `opencode` no entiende las rutas de Linux. Ahora el instalador y `dam` solo usan los de Linux.
+- **Al leer la web de OpenCode:** ya documenta la versión 2, que cambia el formato de los agentes. Por eso el instalador pone la 1.18.35, la de clase.
+
+**Qué aprendí:** [COMPLETAR]

@@ -88,8 +88,10 @@ En Windows: doble clic en `instalar.cmd` (o `powershell -ExecutionPolicy Bypass 
 El script instala uv si no está (y uv baja Python 3.12), instala el comando `dam`, te pide nombre y
 correo para git si faltan, clona tu `DAM-almacen` en `~/DAM-almacen` y, como `adduser` en Linux,
 **te pregunta qué estudias** (`dam configurar`): con tu ciclo y curso deja `~/.config/dam/acciones.json`
-con tus asignaturas y ofrece crear sus carpetas en el almacén. Se puede repetir sin miedo: lo que ya
-está hecho se salta.
+con tus asignaturas y ofrece crear sus carpetas en el almacén. Por último, **te pregunta con qué IA
+quieres trabajar** (`dam configurar-ia`): si eliges los modelos gratis, instala OpenCode si no lo tienes
+y lo deja configurado (mira [IA gratis con OpenCode](#ia-gratis-con-opencode)). Se puede repetir sin
+miedo: lo que ya está hecho se salta.
 Al terminar, abre una terminal nueva. Si git te pide contraseña al clonar o al hacer `sync`, pega un
 **token de GitHub**, porque la contraseña normal no vale.
 
@@ -157,7 +159,9 @@ notepad $PROFILE.CurrentUserAllHosts    # borra la línea «# autocompletado de 
 ```
 
 Si definiste `CENTRO_IA_URL`, `CENTRO_IA_KEY`, `CENTRO_IA_CA` o `CENTRO_IA_MODELO` como variables
-de tu usuario, quítalas igual que `DAM_ALMACEN`. La carpeta del repo y tu `DAM-almacen` no se tocan:
+de tu usuario, quítalas igual que `DAM_ALMACEN`. Si el instalador te puso OpenCode y ya no lo quieres:
+`npm uninstall -g opencode-ai`. Si `dam configurar-ia` cambió tu `~/.config/opencode/opencode.json`,
+al lado está la copia de antes (`opencode.json.antes-FECHA`). La carpeta del repo y tu `DAM-almacen` no se tocan:
 bórralas tú si ya no las quieres (antes, `dam status` para no perder nada sin subir).
 
 ## Órdenes
@@ -169,7 +173,8 @@ bórralas tú si ya no las quieres (antes, `dam status` para no perder nada sin 
 | `dam listar [CARPETA]` | Tabla con nombre, tipo, tamaño y fecha. |
 | `dam validar` | Comprueba `acciones.json`. Sale con 3 si está mal. |
 | `dam acciones` | Lista las acciones configuradas. |
-| `dam comprobar-ia` | ¿Llego al servidor de IA del centro? Enseña servidor y modelo (nunca la clave) y hace una pregunta mínima. Sale con 4 si no hay clave, red o certificado. |
+| `dam configurar-ia [--proveedor opencode\|centro] [--modelo M] [--si]` | Elige el modelo de las acciones con IA: los gratis de OpenCode (en casa, sin clave) o el servidor del centro. Mira [IA gratis con OpenCode](#ia-gratis-con-opencode). |
+| `dam comprobar-ia` | ¿Responde el modelo que usa `dam`? Enseña cuál es (nunca la clave) y hace una pregunta mínima. Sale con 4 si no responde: sin clave, red, certificado u `opencode`. |
 | `dam ejecutar NOMBRE [CARPETA\|FICHERO] [--simular] [--si]` | Ejecuta una acción sobre una carpeta o un solo fichero (si cumple el filtro de la acción). `--simular` enseña qué haría sin tocar nada; borrar pide confirmación salvo `--si`. `ordenar` (con `al_almacen`) mete los apuntes en el almacén y luego ofrece `dam sync`; con `por_tipo`, lo demás va a `~/Datos/POR-TIPO`. Nunca mueve `desktop.ini`, temporales ni descargas a medias. |
 | `dam status [ASIGNATURA]` | Qué has cambiado en local y qué hay nuevo en GitHub. No modifica nada. |
 | `dam sync [ASIGNATURA] [MENSAJE] [-m TEXTO] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
@@ -310,11 +315,51 @@ Ruta del almacén en cada equipo, por orden de prioridad: `--almacen RUTA` > var
 equipos, así que usa la variable de entorno. Si Git protesta por «dubious ownership» en un USB
 exFAT/FAT32: `git config --global --add safe.directory RUTA`.
 
+## IA gratis con OpenCode
+
+El servidor del centro solo responde desde la red del instituto. Para usar las acciones con IA en
+casa, `dam` puede usar los **modelos gratis de OpenCode**: no piden cuenta ni clave.
+
+```bash
+dam configurar-ia         # 1 = modelos gratis con OpenCode; luego eliges el modelo de la lista
+dam comprobar-ia          # OpenCode · modelo: opencode/deepseek-v4.1-flash-free → ✔ El modelo responde «ok»
+```
+
+`dam configurar-ia`:
+
+1. Busca `opencode` (el instalador lo instala con `npm install -g opencode-ai@1.18.35`, la versión de clase).
+2. Enseña los modelos gratis que hay **ese día** (OpenCode los va cambiando) y qué hace cada uno con lo
+   que le mandas. Los recomendados (DeepSeek V4.1 Flash, GLM-5.3-Flash y MiniMax M3.1 Flash) no lo
+   guardan ni entrenan con ello; otros sí, y de los Nemotron dicen que no les mandes datos personales.
+3. Hace una pregunta mínima y lo guarda en `~/.config/dam/ia.json`.
+4. Si quieres, pone ese modelo por defecto en OpenCode (`model` y `small_model` de
+   `~/.config/opencode/opencode.json`), con copia del fichero anterior. Lo demás del fichero no se toca;
+   si tiene comentarios, no lo toca y te dice qué cambiar.
+
+**Cómo lo usa `dam`:** los modelos gratis solo se pueden usar desde OpenCode (no tienen una API para
+llamar con `httpx`), así que `dam` lanza `opencode run` con un agente propio, `dam-ia`, en una carpeta
+temporal vacía que se borra al acabar. Ese agente **no tiene herramientas**: no puede editar, ejecutar
+ni navegar, y solo puede leer dentro de esa carpeta vacía. El texto del fichero va por la entrada
+estándar, y lo que responde el modelo pasa por las mismas comprobaciones que con el servidor del centro.
+Por qué así: [`docs/adr/0004-ia-gratis-opencode.md`](docs/adr/0004-ia-gratis-opencode.md).
+
+**En clase, con el servidor del centro:** `dam configurar-ia --proveedor centro`, o solo en esa
+terminal: `DAM_IA=centro dam ejecutar ...` (en PowerShell, `$env:DAM_IA="centro"`). `DAM_IA_MODELO`
+cambia el modelo de OpenCode solo esa vez.
+
+| Qué pasa | Mensaje |
+|---|---|
+| No tienes OpenCode | No encuentro opencode. Vuelve a pasar el instalador de dam (te lo instala)... |
+| En WSL solo está el de Windows | El opencode que encuentro (/mnt/c/...) es el de Windows y desde WSL no funciona |
+| El modelo gratis falla o ya no existe | OpenCode dice: ... (elige otro con `dam configurar-ia`) |
+| Tarda más de 180 s | El modelo de OpenCode no ha respondido en 180 s |
+
 ## IA (opcional): acciones con los modelos del centro
 
 Las reglas (extensión, fecha, nombre) no saben de qué trata `escaneo_0042.pdf`: para eso hay que
 leerlo. Las acciones `resumir`, `renombrar-ia` y `clasificar` mandan el texto del fichero al
-servidor de IA del centro (el mismo que usa OpenCode) y usan lo que responde. **La IA, solo donde
+modelo que elegiste con `dam configurar-ia`: el servidor de IA del centro (el mismo que usa OpenCode
+en clase) o [uno gratis de OpenCode](#ia-gratis-con-opencode), y usan lo que responde. **La IA, solo donde
 aporta:** lo que una regla resuelve (mover los `.pdf`, borrar los `.tmp` viejos) se hace sin IA:
 es instantáneo, gratis y funciona sin red.
 
