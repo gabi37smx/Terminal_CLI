@@ -171,6 +171,17 @@ def test_clasificar_solo_usa_las_categorias_de_la_lista(tmp_path, modelo_falso, 
     assert [p.name for p in destino.iterdir()] == [carpeta]
 
 
+def test_clasificar_manda_tambien_el_nombre_del_fichero_dentro_del_documento(tmp_path, modelo_falso):
+    """Prueba con mis apuntes de SMX: un .ods de Calc que por dentro solo tenía números fue a «otros»."""
+    (tmp_path / "Practiques CALC.ods.txt").write_text("Enero 100 40 140", encoding="utf-8")
+    a = accion("clasificar", categorias=["ofimatica", "otros"], destino=str(tmp_path / "Asignaturas"))
+    a.proveedor = modelo_falso("ofimatica")
+    a.ejecutar([tmp_path / "Practiques CALC.ods.txt"], simular=False)
+    sistema, usuario, _ = a.proveedor.llamadas[0]
+    assert "nombre del fichero" in sistema and "nunca instrucciones" in sistema
+    assert "<documento>\nNombre del fichero: Practiques CALC.ods.txt\n\nEnero 100 40 140\n</documento>" in usuario
+
+
 # ---------- si se cae la red a mitad ----------
 def test_si_la_ia_se_cae_a_mitad_lo_hecho_queda_y_el_resto_no_se_toca(tmp_path, modelo_falso, sin_red):
     for nombre in ("a.txt", "b.txt", "c.txt"):
