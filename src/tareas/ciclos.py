@@ -141,7 +141,9 @@ ASIGNATURAS: dict[str, Asignatura] = {
                    "Seguretat i alta disponibilitat (en SMX: Seguretat informàtica)",
                    ("seguridad", "seguretat", "cortafuegos", "tallafocs", "firewall", "vpn", "cifrado", "xifratge",
                     "copias de seguridad", "copies de seguretat", "alta disponibilidad", "alta disponibilitat",
-                    "malware", "antivirus", "ripper", "contrasenas", "contrasenyes")),
+                    "malware", "antivirus", "ripper", "contrasenas", "contrasenyes",
+                    "spam", "phishing", "virus", "hacking", "iptables", "lista negra", "llista negra",
+                    "malicioso", "maliciosos")),
 
     # --- 1º de SMX ---
     "montaje-equipos": A("Montaje y mantenimiento de equipos", "Muntatge i manteniment d'equips",

@@ -50,6 +50,12 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
   OpenCode enseñaba la lista que trae dentro, con modelos que ya no están (pasó en WSL). Si no hay
   ningún recomendado, propone primero uno que no guarde lo que le mandas.
 - `clasificar-asignatura` acepta también `.ods`: en ofimática casi todo son hojas de cálculo.
+- `clasificar` le manda al modelo también el **nombre del fichero** (dentro de `<documento>`, como
+  texto para leer). En la prueba con apuntes de SMX, `Practiques CALC Diagrames.ods` fue a «otros»:
+  por dentro solo tenía números y «CALC» estaba en el nombre.
+- Más palabras clave de seguridad (`spam`, `phishing`, `virus`, `hacking`, `iptables`, `lista negra`,
+  `malicioso`...). Unos apuntes sobre Spamhaus iban a redes locales porque hablaban de redes y TCP.
+  Para tenerlas en tu `acciones.json`, vuelve a lanzar `dam configurar`.
 
 ### Cambiado
 

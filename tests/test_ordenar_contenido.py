@@ -75,6 +75,19 @@ def test_documento_roto_da_vacio(tmp_path, contenido):
     assert texto_ofimatica(f) == ""
 
 
+def test_unos_apuntes_de_spam_van_a_seguridad_aunque_hablen_de_redes(tmp_path):
+    """12-nov, con mis apuntes de SMX: «Spamhause.odt» iba a redes-locales (redes, red, tcp) en vez
+    de a seguridad (solo encontraba firewall)."""
+    from tareas import ciclos
+
+    ordenar = Ordenar({"nombre": "o", "descripcion": "o", "tipo": "ordenar",
+                       "carpetas": ciclos.asignaturas_de("smx", [1, 2])})
+    f = odt(tmp_path / "Spamhause.odt", "",
+            "Spamhaus publica una lista negra de redes y servidores que envían spam por TCP. "
+            "Con iptables y un firewall puedes bloquear las direcciones maliciosas en tu red.")
+    assert ordenar.clasificar(f) == "seguridad"
+
+
 def test_leer_texto_de_un_odt_no_es_basura(tmp_path):
     """Antes, «clasificar» leía el .odt como texto: le mandaba al modelo el zip tal cual."""
     f = odt(tmp_path / "apuntes.odt", "Sistemes Informàtics", "La CPU i la memòria")

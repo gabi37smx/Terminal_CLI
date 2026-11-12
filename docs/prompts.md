@@ -442,3 +442,36 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 **Lo que no hace:** entrar en `unitat 1/Examen recuperacion`. Llega hasta la carpeta de la unidad y las subcarpetas de dentro las elijo yo.
 
 **Qué aprendí:** [COMPLETAR]
+
+## 2026-11-12 · Prueba de verdad: mis apuntes de 1º de SMX, con IA y sin IA (Claude Code y WSL)
+**Herramienta:** Claude Code, en casa (Windows), y mi Ubuntu de WSL para ejecutar `dam`.
+**Prompt:** «Ahora, si quisiera probar en el Linux de Windows el ordenar usando la IA, ¿cómo lo haría para que los archivos de ayer de SMX los ordene en sus carpetas respectivas? Aunque ahora el ordenar es más efectivo, pero para probarlo con IA, ¿cómo sería? ¿Es posible?» Y después: «Si tienes que crear o modificar para poder hacer la prueba, lo haces y luego me dejas los comandos para probarlo con IA».
+
+**La prueba:** 17 ficheros de `SMX/SMX1`, dos o tres de cada asignatura (`.odt`, `.ods`, `.docx` y `.pdf`), copiados a WSL (los originales no se tocan). Un almacén de prueba con las 13 carpetas de SMX (`dam configurar --ciclo smx --curso 1 --curso 2`) y una lista con la asignatura que toca a cada uno (`esperado.txt`), para comparar con `diff`. Modelo: DeepSeek V4.1 Flash (gratis, con OpenCode). Nada de `SMX1/DOCUMENTOS`: ahí hay papeles personales.
+
+**Lo que salió al prepararla (arreglado en la rama `arreglo/ia-lista-al-dia`, PR #32):**
+- `dam configurar-ia`, recién instalado OpenCode en WSL, enseñaba una lista de modelos vieja: OpenCode trae una dentro. Ahora la pide al día (`opencode models opencode --refresh`) y pone primero los que no guardan lo que les mandas.
+- `clasificar-asignatura` no aceptaba `.ods` («Ningún fichero cumple el filtro»). Ahora sí.
+- Copié también una línea de explicación como si fuera un comando («Pongo: command not found»): no hizo nada.
+
+**Prueba A · solo la IA (`clasificar-asignatura` con los 17): acertó 15.**
+- Entre 5 y 11 s por fichero y unos 2.000 tokens cada uno (le llegan como mucho 4.000 caracteres).
+- `module5.pdf` (de ciberseguridad) → `ipo`. Por dentro solo es un diagrama de ética («¿Es legal?», «¿Me sentiría cómodo si lo leyera en la portada del periódico?»): leyendo solo eso, IPO tiene sentido. Que es de ciberseguridad lo dice la carpeta de donde lo saqué, y eso la IA no lo ve.
+- `Practiques CALC Diagrames.ods` (de ofimática) → `otros`. Por dentro solo hay una tabla de ventas con números. «CALC» está en el nombre, y a la IA solo se le manda el contenido, no el nombre.
+
+**Prueba B · `ordenar` primero y la IA para lo que quede: acertó 14 de 17.**
+- `ordenar` (sin IA) colocó 16 en su asignatura en menos de un segundo. `module5.pdf` no tenía nada que lo delatara y fue a `POR-TIPO/DOCUMENTOS`.
+- Falló dos, porque cuando el nombre no dice nada suma una vez cada palabra clave que encuentra en el texto:
+  - `A2_UD2_SOMsmx.odt` (sistemas monopuesto) → `montaje-equipos`. En el nombre «SOM» va pegado a «smx» y no cuenta como «so»; en el texto solo encontró «cpu».
+  - `Spamhause.odt` (seguridad) → `redes-locales`. Encontró «redes», «red» y «tcp» (3) contra «firewall» (1). La lista de seguridad no tiene «spam».
+- Después, `clasificar-asignatura` con lo que quedó en `POR-TIPO/DOCUMENTOS`: solo `module5.pdf`, y otra vez → `ipo`.
+
+**Conclusión:** fallan en ficheros distintos. La IA entiende de qué va un texto aunque no tenga las palabras de la lista (acertó los dos que `ordenar` falla), pero no ve el nombre del fichero. `ordenar` es instantáneo y no gasta nada, pero cuenta palabras sin entenderlas. `module5.pdf` no lo acierta ninguno: no hay forma de saberlo con lo que tiene el fichero.
+
+**Qué se cambió después (prompt: «Sí, haz las dos en esta rama y abre la PR»; rama `docs/prueba-ia-smx`):**
+- `clasificar` le manda a la IA también el nombre del fichero, en la primera línea y dentro de `<documento>`. El nombre lo pone quien te pasa el fichero, así que es texto para leer, igual que el contenido.
+- Más palabras clave de seguridad: `spam`, `phishing`, `virus`, `hacking`, `iptables`, `lista negra` y `malicioso(s)`. Con solo las cuatro primeras no bastaba: `Spamhause` habría empatado a 3 con redes, y en un empate gana la que va antes en la lista (redes).
+- Comprobado con los ficheros de verdad, sin moverlos: `Spamhause.odt` va ahora a seguridad y los de redes siguen en redes. `A2_UD2_SOMsmx.odt` sigue yendo a montaje: ahí ayuda la IA.
+- 2 pruebas nuevas, que fallan sin el cambio. En total, 526.
+
+**Qué aprendí:** [COMPLETAR]
