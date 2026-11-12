@@ -6,7 +6,7 @@
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
 **Estado:** `main` en GitHub hasta `2f59e1d` (6-nov): los tres comandos nuevos (`doctor`, `pendientes` y `entregar`) y los arreglos del TAB entraron con el **PR #3** (rama `feature/doctor-entregar-pendientes`, commit `0893964`, subida por Claude Code porque se lo pedí; la fusión la hice yo). Antes: instalador (`40ff2e5`), `dam help` (`7e62593`) y TAB (`1f34747`), del 3-nov; la rama `feature/seguridad-y-web` entró con el PR #2 (1-nov). Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
-**Tests:** `uv run pytest -q` → **520 passed, 1 skipped** (12-nov, con la rama de ordenar por unidad; desde la raíz; también en GitHub Actions con Ubuntu, Windows y macOS).
+**Tests:** `uv run pytest -q` → **527 passed, 1 skipped** (12-nov, también en el Linux de clase; desde la raíz; también en GitHub Actions con Ubuntu, Windows y macOS).
 **Estado (11-nov):** `main` al día con `dam inventario` (PR #4), `dam duplicados` (PR #5) las palabras de arquitectura en `sistemas` para `ordenar` (PR #6: «UD-01-ARQUITECTURA VON NEUMANN.pdf» iba a programación por la palabra «funció»), `dam readme` (PR #7), la ayuda en tabla + `ordenar` al almacén con `dam sync` al acabar (PR #8) y el plan B de `ordenar` a `POR-TIPO` (PR #9).
 **Estado (12-nov):** release 1.0.1 publicada (11-nov). Después, `dam configurar` (PR #25) y sus arreglos tras probarlo como alumno de SMX en WSL (#26 y #27), y `dam ejecutar` con un solo fichero (#28). Todo eso va en la **1.1.0**, sin publicar todavía. Rama `feature/ia-opencode-gratis` (12-nov): `dam configurar-ia` y los modelos gratis de OpenCode para la IA en casa (ADR-0004), fusionada (#30). Rama `feature/ordenar-dentro-y-unidad` (12-nov): `ordenar` lee los `.odt`/`.docx` por dentro y mete cada fichero en la carpeta de su unidad.
 **Carpeta nueva (10-nov):** el repo está ahora en `C:\Users\HP\Datos\REPOS\TERMINAL_CLI` (antes en el Escritorio). `dam` se reinstaló desde aquí con `uv tool install --editable . --force`.
@@ -74,6 +74,7 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
 - [x] Probado en WSL como alumno de 1º de SMX con 15 apuntes reales: de 7 a **11 de 15** colocados tras la #26 (vocabulario de SMX y pregunta más clara) y la #27 (palabras clave al día al repetir; no ofrece `dam sync` sin git; pruebas que no dependen del ancho de la consola).
 - [x] `bash instalar.sh` probado de verdad en WSL: el TAB funciona.
 - [x] **`dam ejecutar ACCIÓN FICHERO`** (PR #28): un solo fichero, solo si cumple el filtro de la acción. `dam acciones -h` trae ejemplos.
+- [x] **Instalación desde cero en un Linux de clase** (12-nov, un PC del aula que no es el mío): `git clone` + `bash instalar.sh` sin `uv` instalado. `dam` no se encontraba en terminales nuevas (el PATH no se guardaba): arreglado en la PR #34 y comprobado allí mismo. Después: 527 pruebas, `doctor` 11 de 11, IA con OpenCode y las acciones (`resumir-tema`, `nombrar-descargas`, `limpiar-temporales`, `ordenar`) de verdad. Detalle en `docs/prompts.md`.
 
 ## Qué falta (por orden)
 
@@ -82,6 +83,7 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
    - Si no sale nada (el PC se restauró u otro usuario): `git clone https://github.com/gabi37smx/Terminal_CLI.git`, `cd Terminal_CLI`, `bash instalar.sh` (con el token a mano) y abrir otra terminal.
    - Comprobar: `dam help` (deben salir `doctor`, `pendientes` y `entregar`), `dam doc<TAB>`, `dam status` y `dam sync --simular`.
    - Apuntar qué pasó en `docs/prompts.md` (los **[COMPLETAR]** de la entrada del 3-nov): así se sabe por fin si el PC de clase guarda la carpeta personal.
+   - **12-nov:** instalado desde cero en un PC del aula (no salía `dam`: arreglado en la #34 y probado allí). Falta: **13-nov, en el mismo PC, `which dam`** (¿guarda la carpeta personal?) y `dam status` / `dam sync --simular` con el almacén clonado.
 2. **En otros equipos Windows:** después del `pull`, `instalar.cmd` otra vez para tener el TAB arreglado. En Linux/WSL no hace falta (el fallo era solo de PowerShell).
 3. **Lo que han encontrado los comandos nuevos:**
    - ~~`portfolio-backend`: añadir a `.env.example`, con el valor vacío, `GITHUB_TOKEN`, `GNEWS_API_KEY` y `Gemini_API_Key`.~~ HECHO (11-nov, PR #4 de portfolio-backend): con el nombre `GEMINI_API_KEY`, que es el que el código mira primero.
@@ -126,7 +128,7 @@ Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes p
    - ~~Ensayo de instalación en un ordenador limpio~~ HECHO (11-nov): en el portátil con Ubuntu 24.04 recién instalado, siguiendo solo el README. Salieron los issues #17-#20 y, en la Fase B, el #22; todos arreglados en la 1.0.1.
    - Instalación cruzada con **otra persona** (lo pide la lista): un compañero instala con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.1` siguiendo solo el README y abre issues (`gh issue create`). Los contesto, y si hay arreglo sale como 1.0.2.
    - Rellenar los **[COMPLETAR]** de la entrada «Sesión 4 · ...» de `docs/prompts.md`.
-   - **Instalación cruzada, mejor con alguien de SMX o ASIR, y con `git clone` + `bash instalar.sh`:** así prueba también `dam configurar` en una instalación desde cero, lo único del instalador que no se ha probado.
+   - **Instalación cruzada, mejor con alguien de SMX o ASIR, y con `git clone` + `bash instalar.sh`.** La instalación desde cero con `dam configurar` ya la probé yo el 12-nov en un PC de clase (PR #34); falta que la haga **otra persona**, que es lo que pide la lista.
    - **Publicar la 1.1.0** (`dam configurar` es una función nueva) cuando esté lo de clase. Antes: la versión en `pyproject.toml` y `__init__.py`, y la fecha en el CHANGELOG. Etiquetar y publicar lo hago yo.
    - Leer y corregir lo que Claude Code escribió en primera persona el 12-nov: «Por qué se me ocurrió» y «Qué aprendí» de la entrada «`dam configurar`» de `docs/prompts.md`, y el ADR-0003.
 
