@@ -54,27 +54,33 @@ esac
 # recién instalado: «dam» no se encontraba ni abriendo otra terminal. Por eso miro el PATH que
 # tenías al empezar y lo apunto yo en tu fichero de arranque.
 MARCA_PATH="# Para que la terminal encuentre dam (lo añadió instalar.sh)"
-case ":$PATH_ORIGINAL:" in
-    *":$CARPETA_BIN:"*) ok "Tu terminal ya encuentra los comandos de $CARPETA_BIN" ;;
-    *)
-        if [ -n "$TERMINAL" ]; then
-            if ! grep -qF "$MARCA_PATH" "$RC" 2>/dev/null; then
-                {
-                    echo ""
-                    echo "$MARCA_PATH"
-                    echo "case \":\$PATH:\" in *\":$CARPETA_BIN:\"*) ;; *) export PATH=\"$CARPETA_BIN:\$PATH\" ;; esac"
-                } >> "$RC"
-            fi
-            ok "Añadido $CARPETA_BIN al PATH en $RC"
-            aviso "Al terminar, cierra esta terminal y abre otra (o en esta misma:  source $RC )."
-        else
+# Con bash o zsh lo apunto SIEMPRE (una vez): un «export PATH=...» escrito a mano solo dura en esa
+# terminal, y si mirara solo el PATH de ahora me lo saltaría y en la siguiente terminal no estaría.
+if [ -n "$TERMINAL" ]; then
+    if grep -qF "$MARCA_PATH" "$RC" 2>/dev/null; then
+        ok "$RC ya pone $CARPETA_BIN en el PATH"
+    else
+        {
+            echo ""
+            echo "$MARCA_PATH"
+            echo "case \":\$PATH:\" in *\":$CARPETA_BIN:\"*) ;; *) export PATH=\"$CARPETA_BIN:\$PATH\" ;; esac"
+        } >> "$RC"
+        ok "Añadido $CARPETA_BIN al PATH en $RC"
+    fi
+    case ":$PATH_ORIGINAL:" in
+        *":$CARPETA_BIN:"*) ;;
+        *) aviso "Al terminar, cierra esta terminal y abre otra (o en esta misma:  source $RC )." ;;
+    esac
+else
+    case ":$PATH_ORIGINAL:" in
+        *":$CARPETA_BIN:"*) ok "Tu terminal ya encuentra los comandos de $CARPETA_BIN" ;;
+        *)
             # Otra terminal: que lo haga uv, pero con el PATH de antes para que no se lo salte
-            PATH="$PATH_ORIGINAL" "$(command -v uv)" tool update-shell \
-                || aviso "Añade tú $CARPETA_BIN al PATH de tu terminal."
+            PATH="$PATH_ORIGINAL" "$(command -v uv)" tool update-shell                 || aviso "Añade tú $CARPETA_BIN al PATH de tu terminal."
             aviso "Al terminar, cierra esta terminal y abre otra para que «dam» funcione."
-        fi
-        ;;
-esac
+            ;;
+    esac
+fi
 
 # 4. Dónde van tus acciones (las configura el paso 6b, con el almacén ya clonado)
 CONFIG="$HOME/.config/dam/acciones.json"
