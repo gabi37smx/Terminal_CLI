@@ -613,7 +613,7 @@ def ejecutar(
 
     Nunca sobrescribe: si el destino ya existe, añade « (1)». Sale con 1 si algún fichero falla.
 
-    Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén y, al acabar, pregunta si quieres hacer dam sync (con --si no lo hace: te lo recuerda).
+    Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén (y dentro, a la carpeta de su unidad si ya existe: «unitat 1», «UD01», «Tema 1»...) y, al acabar, pregunta si quieres hacer dam sync (con --si no lo hace: te lo recuerda).
 
     Con «por_tipo»: "~/Datos/POR-TIPO", lo que no es de ninguna asignatura va a POR-TIPO/DOCUMENTOS, IMAGENES, COMPRIMIDOS... Los ficheros del sistema, temporales y descargas a medias (desktop.ini, .crdownload, .part...) no se mueven nunca.
     """

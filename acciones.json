@@ -6,7 +6,7 @@
   "acciones": [
     {
       "nombre": "ordenar",
-      "descripcion": "Ordena los ficheros por asignatura del DAM y los mete en tu almacén; lo demás, a ~/Datos/POR-TIPO (por nombre, extensión y contenido del PDF)",
+      "descripcion": "Ordena los ficheros por asignatura del DAM y los mete en tu almacén; lo demás, a ~/Datos/POR-TIPO (por nombre, extensión y contenido del PDF, .odt o .docx; dentro, a la carpeta de su unidad si existe)",
       "tipo": "ordenar",
       "origen": "~/pruebas-tareas/prueba-final",
       "carpetas": {
@@ -194,6 +194,10 @@
       "filtro": {
         "extensiones": [
           ".pdf",
+          ".odt",
+          ".docx",
+          ".odp",
+          ".pptx",
           ".txt",
           ".md"
         ],
@@ -227,6 +231,10 @@
       "filtro": {
         "extensiones": [
           ".pdf",
+          ".odt",
+          ".docx",
+          ".odp",
+          ".pptx",
           ".txt",
           ".md"
         ],

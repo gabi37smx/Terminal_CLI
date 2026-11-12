@@ -175,7 +175,7 @@ bórralas tú si ya no las quieres (antes, `dam status` para no perder nada sin 
 | `dam acciones` | Lista las acciones configuradas. |
 | `dam configurar-ia [--proveedor opencode\|centro] [--modelo M] [--si]` | Elige el modelo de las acciones con IA: los gratis de OpenCode (en casa, sin clave) o el servidor del centro. Mira [IA gratis con OpenCode](#ia-gratis-con-opencode). |
 | `dam comprobar-ia` | ¿Responde el modelo que usa `dam`? Enseña cuál es (nunca la clave) y hace una pregunta mínima. Sale con 4 si no responde: sin clave, red, certificado u `opencode`. |
-| `dam ejecutar NOMBRE [CARPETA\|FICHERO] [--simular] [--si]` | Ejecuta una acción sobre una carpeta o un solo fichero (si cumple el filtro de la acción). `--simular` enseña qué haría sin tocar nada; borrar pide confirmación salvo `--si`. `ordenar` (con `al_almacen`) mete los apuntes en el almacén y luego ofrece `dam sync`; con `por_tipo`, lo demás va a `~/Datos/POR-TIPO`. Nunca mueve `desktop.ini`, temporales ni descargas a medias. |
+| `dam ejecutar NOMBRE [CARPETA\|FICHERO] [--simular] [--si]` | Ejecuta una acción sobre una carpeta o un solo fichero (si cumple el filtro de la acción). `--simular` enseña qué haría sin tocar nada; borrar pide confirmación salvo `--si`. `ordenar` (con `al_almacen`) mete los apuntes en el almacén, en la carpeta de su unidad si ya existe, y luego ofrece `dam sync`; con `por_tipo`, lo demás va a `~/Datos/POR-TIPO`. Nunca mueve `desktop.ini`, temporales ni descargas a medias. |
 | `dam status [ASIGNATURA]` | Qué has cambiado en local y qué hay nuevo en GitHub. No modifica nada. |
 | `dam sync [ASIGNATURA] [MENSAJE] [-m TEXTO] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
 | `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves, tokens y contraseñas expuestas. Sale con 1 si encuentra algo. |
@@ -220,6 +220,7 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 | `carpetas` | ordenar | `{"asignatura": ["palabra clave", ...]}`. Se comparan palabras completas, sin tildes ni mayúsculas. |
 | `por_extension` | no (ordenar) | `{".sql": "bases-datos"}`: pista extra por extensión. |
 | `al_almacen` | no (ordenar) | `true` = cada fichero va a `asignaturas/ASIGNATURA` de tu almacén (no a una subcarpeta del origen). Si la asignatura no existe en el almacén, se salta. Al acabar pregunta si haces `dam sync` (con `--si` solo te lo recuerda). No se puede usar junto a `destino`. |
+| `unidades` | no (ordenar) | Por defecto `true`: si el nombre (o, si no, el principio del contenido) dice de qué unidad es —«UD1», «UD-01», «Unitat 1», «Unidad 01», «Tema 1»— y la asignatura ya tiene esa carpeta (hasta 3 niveles: `1 Avaluacio/unitat 1`), va dentro. La carpeta nunca se crea. `false` = siempre a la carpeta de la asignatura. |
 | `por_tipo` | no (ordenar) | `"~/Datos/POR-TIPO"`: lo que no es de ninguna asignatura va a `POR-TIPO/DOCUMENTOS`, `IMAGENES`, `VIDEO`, `AUDIO`, `COMPRIMIDOS`, `INSTALADORES`, `CODIGO`, `REDES` u `OTROS` (no se sube con `dam sync`). Sin esta clave, se queda donde está. |
 | `calidad` | no (convertir) | 1-100, por defecto 80. |
 | `confirmar` | no | `true` = pide confirmación antes de actuar (salvo `--si`). En las acciones con IA que cambian tus ficheros, ponlo siempre. |
@@ -227,8 +228,8 @@ Opción global: `dam --config RUTA ORDEN` usa otro `acciones.json`. Por defecto 
 | `max_caracteres` | no (con IA) | Tope de texto que se manda al modelo: 500-50000, por defecto 12000. |
 | `categorias` | clasificar | Las únicas respuestas válidas. Si el modelo dice otra cosa, el fichero va a `sin-clasificar`. Pon siempre una salida tipo `otros`. |
 
-**Mis 9 acciones.** Sin IA (funcionan sin red): `ordenar` (reparte apuntes por asignatura, mirando nombre, extensión y las
-páginas de los PDF), `limpiar-temporales` (borra `.tmp/.bak/.part` de más de 30 días, con
+**Mis 9 acciones.** Sin IA (funcionan sin red): `ordenar` (reparte apuntes por asignatura y por unidad, mirando nombre, extensión y, si hace falta,
+el contenido de los PDF y de los `.odt`, `.docx`, `.pptx`... con su cabecera y pie), `limpiar-temporales` (borra `.tmp/.bak/.part` de más de 30 días, con
 confirmación), `convertir-webp` (JPEG/PNG a WebP sin tocar el original), `renombrar-capturas`
 (capturas con fecha y número), `copiar-entregas` (copia entregas y prácticas a una carpeta de
 seguridad) y `mover-zips` (mueve los `.zip` a la subcarpeta `comprimidos`).
