@@ -185,6 +185,39 @@ def test_modelos_gratis_recomendados_primero(opencode):
     ]  # big-pickle no acaba en -free y otro/de-pago no es de OpenCode
 
 
+def test_modelos_gratis_pide_la_lista_al_dia(opencode):
+    falso = opencode()
+    configurar_ia_mod.modelos_gratis("/usr/bin/opencode")
+    assert falso.llamadas[0]["orden"][-1] == "--refresh"
+
+
+def test_modelos_gratis_sin_internet_usa_la_lista_guardada(monkeypatch):
+    llamadas = []
+
+    def falso(orden, **kw):
+        llamadas.append(orden)
+        if "--refresh" in orden:
+            return subprocess.CompletedProcess(orden, 1, b"", b"Failed to fetch models.dev")
+        return subprocess.CompletedProcess(orden, 0, b"opencode/beam-free\n", b"")
+
+    monkeypatch.setattr(subprocess, "run", falso)
+    assert configurar_ia_mod.modelos_gratis("/usr/bin/opencode") == ["opencode/beam-free"]
+    assert len(llamadas) == 2
+
+
+def test_modelos_gratis_ninguno(monkeypatch):
+    monkeypatch.setattr(subprocess, "run", lambda orden, **kw: subprocess.CompletedProcess(orden, 0, b"", b""))
+    with pytest.raises(ConfigError, match="ningún modelo gratis"):
+        configurar_ia_mod.modelos_gratis("/usr/bin/opencode")
+
+
+def test_sin_recomendados_propone_uno_que_no_guarda_tus_datos():
+    """Caso real (12-nov, WSL recién instalado): no salía ningún recomendado y proponía el primero
+    por orden alfabético, uno del que no se sabe qué hace con lo que le mandas."""
+    modelos = ["opencode/fledge-alpha-free", "opencode/nemotron-3.5-lightning-free", "opencode/longcat-2.5-free"]
+    assert configurar_ia_mod.ordenar(modelos)[0] == "opencode/longcat-2.5-free"
+
+
 def test_nota_de_cada_modelo():
     assert "no guarda" in configurar_ia_mod.nota("opencode/deepseek-v4.1-flash-free")
     assert "opencode.ai/docs/zen" in configurar_ia_mod.nota("opencode/uno-nuevo-free")

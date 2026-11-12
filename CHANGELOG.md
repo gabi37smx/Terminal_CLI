@@ -44,6 +44,13 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
   castellano y en valenciano.
 - Campo opcional `perfil` en `acciones.json`.
 
+### Arreglado
+
+- `dam configurar-ia` pide a OpenCode la lista de modelos al día (`--refresh`). Recién instalado,
+  OpenCode enseñaba la lista que trae dentro, con modelos que ya no están (pasó en WSL). Si no hay
+  ningún recomendado, propone primero uno que no guarde lo que le mandas.
+- `clasificar-asignatura` acepta también `.ods`: en ofimática casi todo son hojas de cálculo.
+
 ### Cambiado
 
 - `dam comprobar-ia` y las acciones con IA usan el proveedor que elegiste (sin elegir nada, el
