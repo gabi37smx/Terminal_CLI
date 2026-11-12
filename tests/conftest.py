@@ -4,18 +4,25 @@ from __future__ import annotations
 
 import pytest
 
-from tareas import ia
+from tareas import configurar_ia, ia
 from tareas.errores import IANoDisponible
 from tareas.ia import ProveedorIA, Respuesta
 
 
 @pytest.fixture(autouse=True)
-def aislado(monkeypatch):
+def aislado(monkeypatch, tmp_path_factory):
     """Sin variables del servidor del centro y sin leer el .env de la carpeta: aunque tengas
-    tu clave puesta en este equipo, ninguna prueba la ve ni gasta un solo token."""
-    for variable in ("CENTRO_IA_URL", "CENTRO_IA_KEY", "CENTRO_IA_CA", "CENTRO_IA_MODELO"):
+    tu clave puesta en este equipo, ninguna prueba la ve ni gasta un solo token.
+
+    Tampoco ven tu ~/.config/dam/ia.json (lo que elegiste con dam configurar-ia) ni tu
+    configuración de OpenCode: las dos van a una carpeta temporal."""
+    for variable in ("CENTRO_IA_URL", "CENTRO_IA_KEY", "CENTRO_IA_CA", "CENTRO_IA_MODELO", "DAM_IA", "DAM_IA_MODELO"):
         monkeypatch.delenv(variable, raising=False)
     monkeypatch.setattr(ia, "_leer_dotenv", lambda: None)
+    temporal = tmp_path_factory.mktemp("config-ia")
+    monkeypatch.setenv("DAM_IA_CONFIG", str(temporal / "ia.json"))
+    # No XDG_CONFIG_HOME: en Linux git también la lee y las pruebas de sync perderían tu identidad
+    monkeypatch.setattr(configurar_ia, "_base_config", lambda: temporal / "config")
 
 
 class ProveedorFalso(ProveedorIA):

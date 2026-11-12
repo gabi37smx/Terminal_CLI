@@ -27,7 +27,7 @@ def test_ayuda_general_lista_todo(args, monkeypatch):
         assert texto in r.output
     # La ayuda general es corta: las opciones y los ejemplos van en dam help COMANDO
     assert "--integrar" not in r.output
-    assert len(r.output.splitlines()) < 42  # 40 con dam configurar (11-nov)
+    assert len(r.output.splitlines()) < 42  # 41 con dam configurar-ia (12-nov)
     assert "Traceback" not in r.output
 
 

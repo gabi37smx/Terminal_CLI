@@ -24,7 +24,8 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `dam validar` | Comprueba `acciones.json` | `uv run dam validar` |
 | `dam acciones` | Lista tus acciones | `uv run dam acciones` |
 | `dam ejecutar NOMBRE [CARPETA\|FICHERO] [--simular] [--si]` | Ejecuta una acción sobre una carpeta o un solo fichero | `uv run dam ejecutar convertir-webp ~/Descargas/portada.png` |
-| `dam comprobar-ia` | ¿Llego al servidor de IA del centro? (nunca enseña la clave) | `uv run dam comprobar-ia` |
+| `dam configurar-ia [--proveedor opencode\|centro] [--modelo M]` | Elige el modelo de IA: gratis con OpenCode o el del centro | `uv run dam configurar-ia` |
+| `dam comprobar-ia` | ¿Responde el modelo de IA que usa `dam`? (nunca enseña la clave) | `uv run dam comprobar-ia` |
 | `dam status [ASIGNATURA]` | Qué hay pendiente (no toca nada) | `uv run dam status programacion` |
 | `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves y contraseñas expuestas | `uv run dam scan-secrets --staged` |
 | `dam instalar-hook [REPO] [--quitar] [--forzar]` | Revisa claves en cada `git commit` | `uv run dam instalar-hook` |
@@ -55,12 +56,14 @@ dam sync -h      # ayuda detallada de un comando, con sus ejemplos
 Sin `CARPETA`, usan el `origen` de `acciones.json`: `~/pruebas-tareas/prueba-final` las seis sin IA,
 `~/pruebas-tareas/apuntes-ia` y `~/pruebas-tareas/descargas-ia` las de IA.
 
-Las de IA necesitan el servidor del centro (`CENTRO_IA_URL`, `CENTRO_IA_KEY` y `CENTRO_IA_CA`, en tu
+Las de IA usan el modelo que elegiste con `dam configurar-ia`: uno gratis de OpenCode (también en
+casa, sin clave) o el servidor del centro (`CENTRO_IA_URL`, `CENTRO_IA_KEY` y `CENTRO_IA_CA`, en tu
 terminal o en un `.env`: mira `.env.example`). Con `--simular` no llaman al modelo: dicen cuántos
 caracteres mandarían. Sin red o sin clave salen con 4 y las demás acciones siguen funcionando.
 
 ```powershell
-uv run dam comprobar-ia                                   # ¿llego al servidor?
+uv run dam configurar-ia                                  # modelos gratis de OpenCode o servidor del centro
+uv run dam comprobar-ia                                   # ¿responde el modelo?
 uv run dam ejecutar resumir-tema --simular                # cuánto mandaría, sin gastar nada
 uv run dam ejecutar resumir-tema                          # de verdad: tokens y segundos en «Detalle»
 uv run dam ejecutar nombrar-descargas                     # pregunta s/N antes de renombrar
@@ -277,7 +280,9 @@ Luego: `uv run dam ejecutar limpiar`.
 | `Una ruta lleva unas comillas metidas` | Quita la `\` del final: `"C:\carpeta\"` → `"C:\carpeta"` (en Windows, `\"` se come las comillas; el TAB de PowerShell la añade) |
 | `ModuleNotFoundError: No module named 'httpx'` al arrancar | Tras un `git pull` con dependencias nuevas: vuelve a pasar el instalador (o `uv tool install --editable . --force`) |
 | `Faltan CENTRO_IA_URL o CENTRO_IA_KEY` | Ponlas en tu terminal o en un `.env` (copia `.env.example`). Las acciones sin IA no las necesitan |
-| `No llego al servidor de IA` | Solo responde desde la red del centro. En casa: `--simular` o acciones sin IA |
+| `No llego al servidor de IA` | Solo responde desde la red del centro. En casa: `dam configurar-ia` (modelos gratis de OpenCode), `--simular` o acciones sin IA |
+| `No encuentro opencode` | Vuelve a pasar el instalador (lo instala con `npm`) o elige el servidor del centro con `dam configurar-ia --proveedor centro` |
+| `OpenCode dice: ...` | El modelo gratis falla o ya no existe (OpenCode los va cambiando): elige otro con `dam configurar-ia` |
 | `No me fío del servidor` | Falta `CENTRO_IA_CA` con la ruta del certificado del instituto |
 | `dam` solo imprime una línea en blanco (PowerShell) | El script del TAB antiguo se atascaba al completar rutas. Vuelve a lanzar `instalar.cmd` (genera el arreglado) y abre otra ventana |
 

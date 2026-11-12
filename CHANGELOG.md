@@ -10,6 +10,15 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Añadido
 
+- `dam configurar-ia`: elige con qué modelo trabajan las acciones con IA. Con los **modelos gratis de
+  OpenCode** (sin cuenta ni clave) también funcionan en casa: enseña los que hay ese día y qué hace
+  cada uno con lo que le mandas, hace una pregunta mínima y lo guarda en `~/.config/dam/ia.json`. Si
+  quieres, pone ese modelo por defecto en tu `~/.config/opencode/opencode.json` (con copia). Lo lanzan
+  los instaladores, que instalan OpenCode 1.18.35 con `npm` si no lo tienes (ADR-0004).
+- `ProveedorOpenCode`: usa `opencode run` con un agente propio sin herramientas, en una carpeta
+  temporal vacía; el texto va por la entrada estándar. `DAM_IA=centro|opencode` y `DAM_IA_MODELO`
+  cambian el proveedor o el modelo solo en esa terminal.
+
 - `dam ejecutar ACCIÓN FICHERO`: una acción sobre un solo fichero (por ejemplo, convertir solo
   `portada.png`), siempre que cumpla el filtro de la acción; si no, dice por qué y no hace nada.
   Antes solo aceptaba carpetas y decía «La carpeta … no existe» aunque el fichero existiera.
@@ -26,6 +35,8 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Cambiado
 
+- `dam comprobar-ia` y las acciones con IA usan el proveedor que elegiste (sin elegir nada, el
+  servidor del centro, como antes). Sin clave del centro, el mensaje recuerda `dam configurar-ia`.
 - Los instaladores ya no copian `acciones.json` tal cual: después de clonar el almacén lanzan
   `dam configurar`. Si lo cancelas, copian el de 1º de DAM como antes.
 

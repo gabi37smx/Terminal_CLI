@@ -16,6 +16,8 @@ from rich.table import Table
 
 from tareas import URL_EJEMPLO_ACCIONES, __version__, ciclos, config, escanear, hook, sincronizar, web
 from tareas import configurar as configurar_mod  # «configurar» ya es el nombre del comando
+from tareas import configurar_ia as configurar_ia_mod
+from tareas import ia
 from tareas import doctor as doctor_mod  # «doctor», «entregar» y «pendientes» ya son nombres de comandos
 from tareas import duplicados as duplicados_mod
 from tareas import entregar as entregar_mod
@@ -23,7 +25,6 @@ from tareas import inventario as inventario_mod
 from tareas import pendientes as pendientes_mod
 from tareas import readme as readme_mod
 from tareas.errores import ConfigError, IANoDisponible, TareasError
-from tareas.ia import ProveedorCentro
 from tareas.inventario import tamano_legible
 from tareas.motor import Motor
 from typer import _completion_classes, _completion_shared, rich_utils
@@ -260,8 +261,14 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam ejecutar convertir-webp ~/Descargas/portada.png", "Solo ese fichero, no toda la carpeta"),
         ("dam ejecutar convertir-webp --si", "Sin preguntar (solo si estás seguro)"),
     ],
+    "configurar-ia": [
+        ("dam configurar-ia", "Te pregunta: modelos gratis de OpenCode o el servidor del centro"),
+        ("dam configurar-ia --proveedor opencode --modelo opencode/glm-5.3-flash-free", "Ese modelo gratis, sin elegir de la lista"),
+        ("dam configurar-ia --proveedor centro", "Vuelve al servidor del centro"),
+    ],
     "comprobar-ia": [
-        ("dam comprobar-ia", "¿Llego al servidor de IA del centro? Enseña servidor y modelo, nunca la clave"),
+        ("dam comprobar-ia", "¿Responde el modelo que usa dam? Enseña cuál es, nunca la clave"),
+        ("DAM_IA=centro dam comprobar-ia", "Solo esta vez, con el servidor del centro (en PowerShell: $env:DAM_IA=\"centro\")"),
     ],
     "status": [
         ("dam status", "Qué has cambiado y qué hay nuevo en GitHub (no modifica nada)"),
@@ -280,7 +287,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
 # (tema, para qué, comandos): el tema y el «para qué» salen en la primera columna de la tabla de ayuda
 GRUPOS = [
     ("Ficheros", "ordenar y limpiar", ["configurar", "listar", "validar", "acciones", "ejecutar"]),
-    ("IA", "modelos del centro", ["comprobar-ia"]),
+    ("IA", "gratis o del centro", ["configurar-ia", "comprobar-ia"]),
     ("Almacén (git)", "clase, casa y USB", ["status", "sync"]),
     ("Seguridad", "claves expuestas", ["scan-secrets", "instalar-hook"]),
     ("Tus proyectos", "revisar y entregar", ["doctor", "pendientes", "entregar"]),
@@ -462,7 +469,7 @@ def acciones(ctx: typer.Context) -> None:
 
     Tipos sin IA: mover, copiar, renombrar, borrar, ordenar (por asignatura) y convertir (a WebP).
 
-    Tipos con IA (columna IA): resumir, renombrar-ia y clasificar. Necesitan el servidor del centro (mira dam comprobar-ia); las demás funcionan sin red.
+    Tipos con IA (columna IA): resumir, renombrar-ia y clasificar. Necesitan un modelo: los gratis de OpenCode o el servidor del centro (elige con dam configurar-ia y compruébalo con dam comprobar-ia); las demás funcionan sin red.
     """
     lista = config.cargar(config.buscar(ctx.obj))
     tabla = Table(title="Acciones disponibles")
@@ -613,7 +620,7 @@ def ejecutar(
     motor = Motor(config.cargar(config.buscar(ctx.obj)))
     previa = motor.acciones.get(nombre)
     if previa is not None and previa.necesita_ia and not simular:
-        motor.proveedor = ProveedorCentro.desde_entorno()  # solo si hace falta: lo demás va sin red
+        motor.proveedor = ia.crear_proveedor()  # solo si hace falta: lo demás va sin red
     accion, ficheros = motor.preparar(nombre, carpeta)
     almacen = None
     if accion.config.get("al_almacen"):
@@ -659,16 +666,134 @@ def ejecutar(
 @comando(nombre="comprobar-ia")
 @controlar_errores
 def comprobar_ia() -> None:
-    """Comprueba la conexión con el servidor de IA (sin enseñar la clave).
+    """Comprueba que responde el modelo de IA (nunca enseña la clave).
 
-    Lee CENTRO_IA_URL, CENTRO_IA_KEY, CENTRO_IA_CA y CENTRO_IA_MODELO de tu terminal o de un .env (mira .env.example) y hace una pregunta mínima al modelo (5 tokens como mucho).
+    Usa lo que elegiste con dam configurar-ia: los modelos gratis de OpenCode o el servidor del centro. Con el del centro lee CENTRO_IA_URL, CENTRO_IA_KEY, CENTRO_IA_CA y CENTRO_IA_MODELO de tu terminal o de un .env (mira .env.example).
 
-    Sale con 4 si no hay clave, no hay red, falta el certificado o el servidor no responde.
+    Hace una pregunta mínima al modelo. Sale con 4 si no responde: sin clave, sin red, sin certificado, sin opencode...
     """
-    proveedor = ProveedorCentro.desde_entorno()
-    consola.print(f"Servidor: {escape(proveedor.url)}  ·  modelo: {escape(proveedor.modelo)}  ·  clave: definida")
+    proveedor = ia.crear_proveedor()
+    consola.print(escape(proveedor.descripcion()))
     r = proveedor.completar("Responde solo con la palabra: ok", "¿Me oyes?", max_tokens=5)
     consola.print(f"[green]✔ El modelo responde «{escape(r.texto)}» en {r.segundos:.1f} s[/green] ({r.resumen()})")
+
+
+def _elegir_numero(pregunta: str, cuantas: int, defecto: int) -> int:
+    """Pide un número entre 1 y cuantas; devuelve el índice (desde 0)."""
+    while True:
+        respuesta = typer.prompt(pregunta, default=str(defecto + 1)).strip()
+        if respuesta.isdigit() and 1 <= int(respuesta) <= cuantas:
+            return int(respuesta) - 1
+        consola.print(f"[yellow]Escribe un número del 1 al {cuantas}.[/yellow]")
+
+
+def _pedir_proveedor(actual: Optional[str]) -> Optional[str]:
+    opciones = [
+        ("opencode", "Modelos gratis con OpenCode: en casa y en clase, sin clave"),
+        ("centro", "Servidor de IA del centro: solo desde la red del instituto, con tu clave"),
+        (None, "Ninguno por ahora: las acciones sin IA funcionan igual"),
+    ]
+    consola.print("\n[bold]¿Con qué modelo trabajan las acciones con IA?[/bold]")
+    for i, (_, texto) in enumerate(opciones, start=1):
+        consola.print(f"  {i}. {texto}")
+    claves = [clave for clave, _ in opciones]
+    # sin nada elegido, la 1 (si actual es None, index(None) daría «Ninguno»)
+    defecto = claves.index(actual) if actual in ia.PROVEEDORES else 0
+    return claves[_elegir_numero("Número", len(opciones), defecto)]
+
+
+def _pedir_modelo(modelos: list[str], actual: Optional[str]) -> str:
+    tabla = Table(box=box.SIMPLE, show_header=True, header_style="bold")
+    tabla.add_column("#", justify="right")
+    tabla.add_column("Modelo gratis")
+    tabla.add_column("Qué hace con lo que le mandas")
+    for i, modelo in enumerate(modelos, start=1):
+        recomendado = " [green](recomendado)[/green]" if modelo in ia.RECOMENDADOS else ""
+        tabla.add_row(str(i), escape(modelo) + recomendado, escape(configurar_ia_mod.nota(modelo)))
+    consola.print(tabla)
+    return modelos[_elegir_numero("Número del modelo", len(modelos), modelos.index(actual) if actual in modelos else 0)]
+
+
+@comando(nombre="configurar-ia")
+@controlar_errores
+def configurar_ia(
+    proveedor: Annotated[Optional[str], typer.Option("--proveedor", metavar="opencode|centro", help="Sin ella, te lo pregunta.")] = None,
+    modelo: Annotated[Optional[str], typer.Option("--modelo", metavar="MODELO", help="Un modelo de OpenCode (opencode/...-free). Sin ella, te enseña los gratis de hoy.")] = None,
+    por_defecto: Annotated[Optional[bool], typer.Option("--opencode-por-defecto/--no-opencode-por-defecto", help="Que OpenCode también use ese modelo por defecto. Sin ella, te lo pregunta.")] = None,
+    probar: Annotated[bool, typer.Option("--probar/--no-probar", help="Hace una pregunta mínima al modelo antes de guardar.")] = True,
+    si: Annotated[bool, typer.Option("--si", help="No pregunta nada: usa las opciones y lo que elegiste la última vez.")] = False,
+) -> None:
+    """Elige el modelo de IA: gratis con OpenCode o el del centro.
+
+    Con OpenCode no hace falta clave y funciona en casa: te enseña los modelos gratis que hay hoy (los recomendados no guardan lo que les mandas), hace una pregunta mínima y lo guarda en ~/.config/dam/ia.json. Si quieres, también lo pone como modelo por defecto de OpenCode (~/.config/opencode/opencode.json, con copia del anterior).
+
+    dam usa OpenCode con un agente propio sin herramientas: el modelo solo devuelve texto y no puede leer, cambiar ni ejecutar nada. Lo lanza el instalador. Para cambiar solo en una terminal: DAM_IA=centro (o opencode).
+    """
+    try:
+        actual = ia.leer_ajustes()
+    except IANoDisponible:
+        actual = {}
+    if proveedor is None:
+        proveedor = (actual.get("proveedor") or "opencode") if si else _pedir_proveedor(actual.get("proveedor"))
+        if proveedor is None:
+            consola.print("No cambio nada. Cuando quieras: [bold]dam configurar-ia[/bold]")
+            return
+    proveedor = proveedor.strip().lower()
+    if proveedor not in ia.PROVEEDORES:
+        raise typer.BadParameter(f"usa {' o '.join(ia.PROVEEDORES)}", param_hint="--proveedor")
+
+    if proveedor == "centro":
+        ruta = ia.guardar_ajustes({"proveedor": "centro"})
+        consola.print(f"[green]✔ Guardado en {escape(str(ruta))}[/green]: las acciones con IA usarán el servidor del centro.")
+        consola.print("Necesita CENTRO_IA_URL, CENTRO_IA_KEY y CENTRO_IA_CA (mira .env.example). "
+                      "Compruébalo desde la red del instituto con: [bold]dam comprobar-ia[/bold]")
+        return
+
+    ejecutable = ia.ProveedorOpenCode().ejecutable()
+    consola.print(f"OpenCode {escape(configurar_ia_mod.version(ejecutable))} en {escape(ejecutable)}")
+    if modelo is None:
+        modelos = configurar_ia_mod.modelos_gratis(ejecutable)
+        if not modelos:
+            raise ConfigError("OpenCode no ofrece ningún modelo gratis ahora mismo (¿tienes internet?). "
+                              "Puedes elegir uno a mano con --modelo")
+        anterior = actual.get("modelo") if actual.get("modelo") in modelos else modelos[0]
+        modelo = anterior if si else _pedir_modelo(modelos, anterior)
+    elif "/" not in modelo:
+        raise typer.BadParameter("va con el proveedor delante: opencode/NOMBRE", param_hint="--modelo")
+
+    if probar:
+        consola.print(f"Pruebo {escape(modelo)} con una pregunta mínima...")
+        try:
+            r = ia.ProveedorOpenCode(modelo, ejecutable).completar("Responde solo con la palabra: ok", "¿Me oyes?", 5)
+            consola.print(f"[green]✔ Responde «{escape(r.texto[:40])}» en {r.segundos:.1f} s[/green]")
+        except IANoDisponible as e:
+            consola.print(f"[yellow]No responde: {escape(str(e))}[/yellow]")
+            if si or not preguntar("¿Lo guardo igualmente?"):
+                raise typer.Exit(4) from None
+    ruta = ia.guardar_ajustes({"proveedor": "opencode", "modelo": modelo})
+    consola.print(f"[green]✔ Guardado en {escape(str(ruta))}[/green]: las acciones con IA usarán {escape(modelo)}.")
+
+    # El modelo por defecto de OpenCode (cuando lo abres tú), en su configuración global
+    global_ = configurar_ia_mod.ruta_opencode_global()
+    ahora = configurar_ia_mod.modelo_global(global_)
+    if ahora == modelo:
+        consola.print(f"[green]✔ OpenCode ya usa {escape(modelo)} por defecto[/green]")
+        return
+    if por_defecto is None:
+        # con --si solo se pone si no tenías ninguno: el que tengas no se cambia sin preguntar
+        por_defecto = ahora is None if si else preguntar(
+            f"¿Quieres que OpenCode también use {modelo} por defecto? (ahora: {ahora or 'ninguno'})")
+    if not por_defecto:
+        consola.print(f"OpenCode sigue con {escape(ahora or 'el suyo')}. Dentro de OpenCode lo cambias con /models.")
+        return
+    try:
+        copia = configurar_ia_mod.poner_modelo_global(global_, modelo)
+    except ConfigError as e:
+        consola.print(f"[yellow]{escape(str(e))}[/yellow]")
+        return
+    consola.print(f"[green]✔ OpenCode usará {escape(modelo)} por defecto[/green] ({escape(str(global_))})")
+    if copia:
+        consola.print(f"  La versión anterior está en {escape(str(copia))}. Cierra y abre OpenCode para que lo lea.")
 
 
 # ---------- configurar: tu ciclo y tus asignaturas ----------
