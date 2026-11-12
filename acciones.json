@@ -235,6 +235,7 @@
           ".docx",
           ".odp",
           ".pptx",
+          ".ods",
           ".txt",
           ".md"
         ],

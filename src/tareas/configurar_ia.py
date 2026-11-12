@@ -43,24 +43,39 @@ def nota(modelo: str) -> str:
     return NOTAS.get(modelo.split("/", 1)[-1], "mira sus condiciones en opencode.ai/docs/zen")
 
 
+def no_guarda(modelo: str) -> bool:
+    """Si según opencode.ai/docs/zen no guarda lo que le mandas ni entrena con ello."""
+    return nota(modelo).startswith("no guarda")
+
+
 def ordenar(modelos: list[str]) -> list[str]:
-    """Los recomendados primero (en su orden) y después el resto por orden alfabético, sin repetir."""
+    """Primero los recomendados (en su orden), después los que no guardan lo que les mandas y al
+    final el resto, por orden alfabético y sin repetir. El primero es el que se propone."""
     unicos = sorted(set(modelos))
     primero = [m for m in RECOMENDADOS if m in unicos]
-    return primero + [m for m in unicos if m not in primero]
+    segundo = [m for m in unicos if m not in primero and no_guarda(m)]
+    return primero + segundo + [m for m in unicos if m not in primero and m not in segundo]
 
 
 def modelos_gratis(ejecutable: str, segundos: int = 60) -> list[str]:
-    """Los modelos gratis de OpenCode hoy («opencode models opencode», los que acaban en -free)."""
-    try:
-        r = subprocess.run([ejecutable, "models", "opencode"], capture_output=True, timeout=segundos,
-                           stdin=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired:
-        raise ConfigError(f"OpenCode no ha dado la lista de modelos en {segundos} s (¿tienes internet?)") from None
-    except OSError as e:
-        raise ConfigError(f"No he podido lanzar opencode ({e.strerror or e})") from None
-    lineas = r.stdout.decode("utf-8", "replace").split()
-    return ordenar([l for l in lineas if l.startswith("opencode/") and l.endswith("-free")])
+    """Los modelos gratis de OpenCode hoy («opencode models opencode --refresh», los que acaban en -free).
+
+    --refresh: recién instalado, OpenCode enseña la lista que trae dentro, que puede ser vieja (12-nov,
+    en WSL salieron modelos que ya no estaban). Si sin internet falla, se usa la que tenga guardada.
+    """
+    for orden in ([ejecutable, "models", "opencode", "--refresh"], [ejecutable, "models", "opencode"]):
+        try:
+            r = subprocess.run(orden, capture_output=True, timeout=segundos, stdin=subprocess.DEVNULL)
+        except subprocess.TimeoutExpired:
+            continue
+        except OSError as e:
+            raise ConfigError(f"No he podido lanzar opencode ({e.strerror or e})") from None
+        lineas = r.stdout.decode("utf-8", "replace").split()
+        modelos = [l for l in lineas if l.startswith("opencode/") and l.endswith("-free")]
+        if r.returncode == 0 and modelos:
+            return ordenar(modelos)
+    raise ConfigError("OpenCode no me ha dado ningún modelo gratis (¿tienes internet?). "
+                      "Puedes elegir uno a mano con --modelo")
 
 
 def version(ejecutable: str) -> str:
