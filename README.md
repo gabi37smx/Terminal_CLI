@@ -276,6 +276,8 @@ Número o nombre: 1
 Dónde cae cada módulo común (inglés, itinerario para la empleabilidad, proyecto intermodular,
 digitalización y sostenibilidad) depende del centro: si no coincide con el tuyo, quítalo o añádelo.
 
+Por qué funciona así (vocabulario en `ciclos.py`, qué no se toca y qué palabras no se usan): [`docs/adr/0003-configurar-por-ciclo.md`](docs/adr/0003-configurar-por-ciclo.md).
+
 ## Almacén de apuntes (status y sync)
 
 Un repositorio git (mejor **privado**) con una carpeta por asignatura (`asignaturas/programacion/`...).
