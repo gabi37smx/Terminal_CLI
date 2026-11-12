@@ -163,6 +163,50 @@ def test_accion_o_carpeta_inexistente(tmp_path):
         m.ejecutar("a", tmp_path / "x", True)
 
 
+def test_un_fichero_suelto_solo_convierte_ese(tmp_path):  # 12-nov: «dam ejecutar convertir-webp portada.png»
+    foto(tmp_path / "portada.png")
+    foto(tmp_path / "otra.jpg", "JPEG")
+    m = motor(tmp_path, tipo="convertir", filtro={"extensiones": [".jpg", ".png"]})
+    r = m.ejecutar("a", tmp_path / "portada.png", simular=False)
+    assert [x.origen.name for x in r] == ["portada.png"] and r[0].estado == "hecho"
+    assert (tmp_path / "portada.webp").exists()
+    assert not (tmp_path / "otra.webp").exists()  # la otra foto de la carpeta no se toca
+
+
+def test_un_fichero_que_no_cumple_el_filtro_dice_por_que(tmp_path):
+    (tmp_path / "apuntes.pdf").write_text("x", encoding="utf-8")
+    m = motor(tmp_path, tipo="convertir", filtro={"extensiones": [".jpg", ".png"]})
+    with pytest.raises(TareasError, match=r"«apuntes.pdf» no cumple el filtro de «a» \(solo .jpg, .png\)"):
+        m.ejecutar("a", tmp_path / "apuntes.pdf", simular=True)
+
+
+def test_borrar_un_fichero_suelto_respeta_los_dias_del_filtro(tmp_path):
+    reciente = tmp_path / "hoy.tmp"
+    reciente.write_text("x", encoding="utf-8")
+    m = motor(tmp_path, tipo="borrar", filtro={"extensiones": [".tmp"], "mas_antiguo_que_dias": 30})
+    with pytest.raises(TareasError, match="de más de 30 días"):
+        m.ejecutar("a", reciente, simular=False)
+    assert reciente.exists()  # señalarlo a mano no se salta el filtro
+
+
+def test_cli_ejecutar_un_fichero_y_ayuda_de_acciones(tmp_path):
+    foto(tmp_path / "portada.png")
+    foto(tmp_path / "otra.png")
+    cfg = tmp_path / "acciones.json"
+    cfg.write_text(json.dumps({"version": 1, "acciones": [{
+        "nombre": "convertir-webp", "descripcion": "d", "tipo": "convertir",
+        "filtro": {"extensiones": [".png"]}}]}), encoding="utf-8")
+    runner = CliRunner()
+    r = runner.invoke(app, ["--config", str(cfg), "ejecutar", "convertir-webp", str(tmp_path / "portada.png")])
+    assert r.exit_code == 0, r.output
+    assert (tmp_path / "portada.webp").exists() and not (tmp_path / "otra.webp").exists()
+    ayuda = " ".join(runner.invoke(app, ["acciones", "-h"]).output.split())
+    assert "dam ejecutar convertir-webp ~/Descargas/portada.png" in ayuda
+    assert "dam ejecutar -h" in ayuda
+    lista = " ".join(runner.invoke(app, ["--config", str(cfg), "acciones"]).output.split())
+    assert "Para usar una: dam ejecutar NOMBRE CARPETA --simular" in lista
+
+
 def test_fabrica_no_usa_if_por_tipo():
     assert {"mover", "copiar", "renombrar", "borrar", "ordenar", "convertir"} <= set(Accion._registro)
 

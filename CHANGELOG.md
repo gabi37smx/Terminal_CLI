@@ -10,6 +10,12 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Añadido
 
+- `dam ejecutar ACCIÓN FICHERO`: una acción sobre un solo fichero (por ejemplo, convertir solo
+  `portada.png`), siempre que cumpla el filtro de la acción; si no, dice por qué y no hace nada.
+  Antes solo aceptaba carpetas y decía «La carpeta … no existe» aunque el fichero existiera.
+- `dam acciones -h` trae ejemplos de cómo usar las acciones, y `dam acciones` recuerda al final cómo
+  ejecutar una.
+
 - `dam configurar`: como `adduser` en Linux, pregunta tu ciclo (SMX, DAM, DAW, ASIR/ASIX u otro) y
   curso, y pone tus asignaturas en `acciones.json` (carpetas y palabras clave de `ordenar`,
   categorías e instrucciones de `clasificar`). Deja quitar y añadir asignaturas, guarda una copia

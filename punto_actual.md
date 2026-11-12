@@ -2,12 +2,13 @@
 
 > **Cambio de nombre (27/10 noche):** el comando ya NO es `gabriel` (chocaba con otra herramienta de tu terminal), ahora es **`dam`**. Variable del almacén: `DAM_ALMACEN`. Config global: `~/.config/dam/acciones.json`.
 
-**Fecha:** 2026-11-06 (en casa, Windows)
+**Fecha:** 2026-11-12 (en casa, Windows, y WSL para probar)
 **Proyecto:** `dam` / paquete `tareas` (carpeta `Terminal_CLI`)
 **Repo:** https://github.com/gabi37smx/Terminal_CLI
 **Estado:** `main` en GitHub hasta `2f59e1d` (6-nov): los tres comandos nuevos (`doctor`, `pendientes` y `entregar`) y los arreglos del TAB entraron con el **PR #3** (rama `feature/doctor-entregar-pendientes`, commit `0893964`, subida por Claude Code porque se lo pedí; la fusión la hice yo). Antes: instalador (`40ff2e5`), `dam help` (`7e62593`) y TAB (`1f34747`), del 3-nov; la rama `feature/seguridad-y-web` entró con el PR #2 (1-nov). Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
-**Tests:** `uv run pytest -q` → **353 passed, 1 skipped** (11-nov, desde la raíz).
+**Tests:** `uv run pytest -q` → **460 passed, 1 skipped** (12-nov, desde la raíz; también en GitHub Actions con Ubuntu, Windows y macOS).
 **Estado (11-nov):** `main` al día con `dam inventario` (PR #4), `dam duplicados` (PR #5) las palabras de arquitectura en `sistemas` para `ordenar` (PR #6: «UD-01-ARQUITECTURA VON NEUMANN.pdf» iba a programación por la palabra «funció»), `dam readme` (PR #7), la ayuda en tabla + `ordenar` al almacén con `dam sync` al acabar (PR #8) y el plan B de `ordenar` a `POR-TIPO` (PR #9).
+**Estado (12-nov):** release 1.0.1 publicada (11-nov). Después, `dam configurar` (PR #25) y sus arreglos tras probarlo como alumno de SMX en WSL (#26 y #27), y `dam ejecutar` con un solo fichero (#28). Todo eso va en la **1.1.0**, sin publicar todavía.
 **Carpeta nueva (10-nov):** el repo está ahora en `C:\Users\HP\Datos\REPOS\TERMINAL_CLI` (antes en el Escritorio). `dam` se reinstaló desde aquí con `uv tool install --editable . --force`.
 
 ## Qué hay hecho
@@ -67,6 +68,13 @@ Plan en 5 fases: 1 `dam inventario` → 2 `dam duplicados` (solo informa, nunca 
 - [x] Fase 4 (2.ª parte) `"por_tipo": "~/Datos/POR-TIPO"`: lo que no es de ninguna asignatura va a `POR-TIPO/<TIPO>` (los tipos de `dam inventario`, en MAYÚSCULAS; máquinas virtuales y lo desconocido a `OTROS`). La nota «por tipo» sale en la tabla y eso no cuenta para el `dam sync`. Nunca mueve `desktop.ini`, `Thumbs.db`, ocultos, temporales ni descargas a medias (`.crdownload`, `.part`), ni con plan B ni sin él.
 - [x] La ayuda general (`dam`) es una tabla: tema (y para qué) · comando · qué hace, con una raya entre temas. 37 líneas; el test la mide a 120 columnas para no depender del terminal.
 
+### Tu ciclo y tus asignaturas: `dam configurar` (11 y 12-nov, Claude Code)
+Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, para que `ordenar` y `clasificar` no sirvan solo para 1º de DAM. Detalle en `docs/prompts.md`.
+- [x] **`dam configurar`** (PR #25): ciclo (SMX, DAM, DAW, ASIR/ASIX u otro) y curso; deja quitar y añadir asignaturas. Reescribe `ordenar` y `clasificar`, valida, guarda copia, recuerda lo elegido (`perfil`) y ofrece crear las carpetas en el almacén. El vocabulario está en `ciclos.py`. Los instaladores lo lanzan después de clonar el almacén.
+- [x] Probado en WSL como alumno de 1º de SMX con 15 apuntes reales: de 7 a **11 de 15** colocados tras la #26 (vocabulario de SMX y pregunta más clara) y la #27 (palabras clave al día al repetir; no ofrece `dam sync` sin git; pruebas que no dependen del ancho de la consola).
+- [x] `bash instalar.sh` probado de verdad en WSL: el TAB funciona.
+- [x] **`dam ejecutar ACCIÓN FICHERO`** (PR #28): un solo fichero, solo si cumple el filtro de la acción. `dam acciones -h` trae ejemplos.
+
 ## Qué falta (por orden)
 
 1. **⚠ AL LLEGAR A CLASE (Linux), lo primero:**
@@ -82,7 +90,7 @@ Plan en 5 fases: 1 `dam inventario` → 2 `dam duplicados` (solo informa, nunca 
    - ~~`Terminal_CLI`: añadir GitHub Actions que pase `uv run pytest` en cada push.~~ HECHO (11-nov, PR #11): en Linux y en Windows; `doctor` da 10 de 10. Antes fallaban 2 tests en Linux (enlaces en `inventario` y un test frágil): arreglados.
 4. **Crear el token de GitHub** (Settings → Developer settings → Fine-grained tokens; solo `DAM-almacen`, permiso *Contents: Read and write*). No guardarlo en ningún fichero.
 5. (El PC de clase está ahora en el punto 1.)
-6. En Ubuntu (WSL): `git pull` en `~/Terminal_CLI` y `bash instalar.sh` otra vez para tener el TAB y clonar `DAM-almacen` con el token.
+6. ~~En Ubuntu (WSL): `bash instalar.sh` otra vez para tener el TAB~~ HECHO (12-nov). Falta clonar `DAM-almacen` con el token (lo salté).
 7. ~~Probar de verdad (sin `--simular`) en `~/pruebas-tareas` las 3 acciones antiguas (`ordenar`, `limpiar-temporales`, `convertir-webp`).~~ HECHO (11-nov), en `~/pruebas-tareas/prueba-11nov` con 19 ficheros creados para la prueba, respondiendo `s` a la pregunta como una persona. Para no tocar el almacén real ni `~/Datos`: `DAM_ALMACEN` apuntando a `~/pruebas-tareas/almacen-prueba` y una copia de `acciones.json` con `por_tipo` en `~/pruebas-tareas/prueba-11nov-POR-TIPO` (`dam --config`).
    - `limpiar-temporales`: 3 hechos (`.tmp` de 40 días, `.bak` de 60 y `.crdownload` de 45). Se quedan un `.tmp` de 1 día y un `.txt` de 90 días (no es temporal). Bien.
    - `convertir-webp`: 3 hechos (JPEG 30.630 B → WebP 3.496 B; PNG con transparencia → WebP RGBA; `LOGO.PNG` con mayúsculas también). Los originales siguen. La segunda vez: 3 saltados («ya existe el .webp»), no pisa nada. Bien.
@@ -118,6 +126,9 @@ Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes p
    - ~~Ensayo de instalación en un ordenador limpio~~ HECHO (11-nov): en el portátil con Ubuntu 24.04 recién instalado, siguiendo solo el README. Salieron los issues #17-#20 y, en la Fase B, el #22; todos arreglados en la 1.0.1.
    - Instalación cruzada con **otra persona** (lo pide la lista): un compañero instala con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.1` siguiendo solo el README y abre issues (`gh issue create`). Los contesto, y si hay arreglo sale como 1.0.2.
    - Rellenar los **[COMPLETAR]** de la entrada «Sesión 4 · ...» de `docs/prompts.md`.
+   - **Instalación cruzada, mejor con alguien de SMX o ASIR, y con `git clone` + `bash instalar.sh`:** así prueba también `dam configurar` en una instalación desde cero, lo único del instalador que no se ha probado.
+   - **Publicar la 1.1.0** (`dam configurar` es una función nueva) cuando esté lo de clase. Antes: la versión en `pyproject.toml` y `__init__.py`, y la fecha en el CHANGELOG. Etiquetar y publicar lo hago yo.
+   - Rellenar los **[COMPLETAR]** de la entrada «`dam configurar`» de `docs/prompts.md` (por qué se me ocurrió y qué aprendí).
 
 ## Cómo retomar
 
