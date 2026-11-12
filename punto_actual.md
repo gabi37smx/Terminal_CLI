@@ -128,7 +128,7 @@ Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes p
    - Rellenar los **[COMPLETAR]** de la entrada «Sesión 4 · ...» de `docs/prompts.md`.
    - **Instalación cruzada, mejor con alguien de SMX o ASIR, y con `git clone` + `bash instalar.sh`:** así prueba también `dam configurar` en una instalación desde cero, lo único del instalador que no se ha probado.
    - **Publicar la 1.1.0** (`dam configurar` es una función nueva) cuando esté lo de clase. Antes: la versión en `pyproject.toml` y `__init__.py`, y la fecha en el CHANGELOG. Etiquetar y publicar lo hago yo.
-   - Rellenar los **[COMPLETAR]** de la entrada «`dam configurar`» de `docs/prompts.md` (por qué se me ocurrió y qué aprendí).
+   - Leer y corregir lo que Claude Code escribió en primera persona el 12-nov: «Por qué se me ocurrió» y «Qué aprendí» de la entrada «`dam configurar`» de `docs/prompts.md`, y el ADR-0003.
 
 ## Cómo retomar
 

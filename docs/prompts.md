@@ -332,7 +332,7 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 **Herramienta:** Claude Code, en casa (Windows), y mi Ubuntu de WSL para probarlo como si fuera otro alumno.
 **Prompt 1 (la idea):** «Cuando instalamos el terminal CLI, ¿no podríamos hacer que, como en Linux cuando creas un usuario, pregunte datos y que en base a esos datos se configure? Lo digo porque ahora solo vale lo de las carpetas y asignaturas para alumnos de DAM. ¿Y si pudieras definir las asignaturas y ya en base a ello se ordenaran los archivos, PDF y demás?»
 **Prompt 2 (el alcance):** «Yo cogería para empezar el medio de SMX, DAM que ya tenemos, DAW que es casi igual que DAM, y ASIR o ASIX (castellano o valenciano). Así tenemos la rama de informática; más adelante ya ampliaremos.»
-**Por qué se me ocurrió:** [COMPLETAR] (en primera persona: qué te hizo pensar en `adduser` y a quién querías que le sirviera)
+**Por qué se me ocurrió:** fue el 11-nov por la tarde, pensando en que más gente pudiera usar esta CLI. Pensé en mi cuñado, que está haciendo ASIR: sus asignaturas no son exactamente las mías (este año se parecen bastante, pero no son las mismas), y tal como estaba, `ordenar` solo le servía a alguien de 1º de DAM. Y pensé: si cogemos DAM y ASIR, ¿por qué no DAW, y también los del grado medio? Me acordé de cuando creas un usuario en Linux con `adduser`, que te pregunta unos datos y con ellos lo deja configurado. Pues lo mismo: que `dam` pregunte qué estudias y se configure solo. Como el profesor dice que pensemos a lo grande, dicho y hecho: empecé por la familia de Informática, que es a quien más le sirve, y más adelante se puede ampliar.
 
 **Qué se hizo (PR #25):**
 - `ciclos.py`: el vocabulario. Las asignaturas de 1º y 2º de SMX, DAM, DAW y ASIR, con su nombre en castellano y en valenciano, palabras clave en los dos idiomas y extensiones propias (`.pkt` → redes, `.php` → servidor...).
@@ -371,4 +371,12 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - Acepta un fichero suelto, solo si cumple el filtro de la acción (si no, dice por qué). Así, `borrar` no se salta los días.
 - `dam acciones -h` trae ejemplos de cómo usar las acciones.
 
-**Qué aprendí:** [COMPLETAR]
+**Qué aprendí:**
+- **Probarlo yo como si fuera otro es lo que más fallos saca.** Las pruebas automáticas pasaban todas y, aun así, haciendo de alumno de SMX en WSL salieron cinco cosas. Ninguna la habría visto sin usarlo de verdad, con mis apuntes y equivocándome como se equivocaría otro, como cuando escribí números donde iban nombres.
+- **Una pregunta clara también es parte del programa.** Lo de «asignaturas que añades» no era un fallo del código, sino de cómo estaba escrita la pregunta.
+- **Una palabra clave tiene que ser rara.** `som` es la sigla de SOM, pero en valenciano es «somos»: como `ordenar` también lee el texto de los PDF, metería en SOM cualquier apunte en valenciano. Por eso hay cosas que es mejor dejar a `clasificar` (la IA) o a POR-TIPO.
+- **Al guardar algo calculado, piensa en cuando cambie la fuente.** Lo que guardaba `configurar` se quedaba con las palabras del vocabulario de aquel día, y las mejoras no llegaban nunca.
+- **Hay que probar en un sitio que no sea el de verdad.** En una prueba se crearon carpetas en mi almacén real, porque `DAM_ALMACEN` apunta a él. Desde entonces pruebo con `--config` y un `DAM_ALMACEN` de prueba.
+- **Después de un `git pull`, reinstalar si hay dependencias nuevas.** El `dam` de WSL no arrancaba (`ModuleNotFoundError: httpx`). Ya lo decía mi README.
+- **GitHub Actions no es mi terminal.** Allí la consola mide 80 columnas y las frases se parten: una prueba que pasaba en casa falló en los tres sistemas. Las pruebas no deben depender del ancho de la pantalla.
+- **Pensar a lo grande sin pasarse.** Empecé por los 4 ciclos de Informática, que es a quien más le sirve, y dejé escrito cómo añadir otro.
