@@ -49,6 +49,16 @@ def test_version_con_los_dos_nombres(monkeypatch):
         assert runner.invoke(app, ["version"]).output.strip() == f"{nombre} {__version__}", argv0
 
 
+def test_version_tambien_como_opcion():
+    """En un Linux de clase lo primero que se probó fue «dam --version» y daba error."""
+    from tareas import __version__
+
+    for opcion in ("--version", "-V"):
+        r = runner.invoke(app, [opcion])
+        assert r.exit_code == 0, opcion
+        assert r.output.strip().endswith(__version__), opcion
+
+
 def test_pyproject_y_paquete_tienen_la_misma_version():
     import tomllib
 

@@ -352,7 +352,14 @@ def principal(
         bool,
         typer.Option("-h", "--help", help="Muestra esta ayuda y sale.", is_eager=True),
     ] = False,
+    ver_version: Annotated[
+        bool,
+        typer.Option("-V", "--version", help="Muestra la versión y sale (lo mismo que dam version).", is_eager=True),
+    ] = False,
 ):
+    if ver_version:
+        version()
+        raise typer.Exit()
     if ayuda or ctx.invoked_subcommand is None:
         mostrar_ayuda()
         raise typer.Exit()
