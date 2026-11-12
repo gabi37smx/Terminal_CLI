@@ -43,13 +43,44 @@ uv sync
 paso "Instalo el comando dam para todo el sistema"
 uv tool install --editable . --force
 CARPETA_BIN="$(uv tool dir --bin)"
-case ":$PATH_ORIGINAL:" in
-    *":$CARPETA_BIN:"*) ok "Tu terminal ya encuentra los comandos de $CARPETA_BIN" ;;
-    *)
-        uv tool update-shell
-        aviso "Al terminar, cierra esta terminal y abre otra para que «dam» funcione."
-        ;;
+# Tu terminal (bash o zsh) y su fichero de arranque: aquí van el PATH, el TAB y DAM_ALMACEN
+case "$(basename "${SHELL:-}")" in
+    bash) TERMINAL=bash; RC="$HOME/.bashrc" ;;
+    zsh)  TERMINAL=zsh;  RC="$HOME/.zshrc" ;;
+    *)    TERMINAL="" ;;
 esac
+# Ojo: arriba añadí ~/.local/bin al PATH de ESTE script, así que «uv tool update-shell» (y el
+# instalador de uv) creen que ya está y no lo apuntan en ningún sitio. Pasó en un Linux de clase
+# recién instalado: «dam» no se encontraba ni abriendo otra terminal. Por eso miro el PATH que
+# tenías al empezar y lo apunto yo en tu fichero de arranque.
+MARCA_PATH="# Para que la terminal encuentre dam (lo añadió instalar.sh)"
+# Con bash o zsh lo apunto SIEMPRE (una vez): un «export PATH=...» escrito a mano solo dura en esa
+# terminal, y si mirara solo el PATH de ahora me lo saltaría y en la siguiente terminal no estaría.
+if [ -n "$TERMINAL" ]; then
+    if grep -qF "$MARCA_PATH" "$RC" 2>/dev/null; then
+        ok "$RC ya pone $CARPETA_BIN en el PATH"
+    else
+        {
+            echo ""
+            echo "$MARCA_PATH"
+            echo "case \":\$PATH:\" in *\":$CARPETA_BIN:\"*) ;; *) export PATH=\"$CARPETA_BIN:\$PATH\" ;; esac"
+        } >> "$RC"
+        ok "Añadido $CARPETA_BIN al PATH en $RC"
+    fi
+    case ":$PATH_ORIGINAL:" in
+        *":$CARPETA_BIN:"*) ;;
+        *) aviso "Al terminar, cierra esta terminal y abre otra (o en esta misma:  source $RC )." ;;
+    esac
+else
+    case ":$PATH_ORIGINAL:" in
+        *":$CARPETA_BIN:"*) ok "Tu terminal ya encuentra los comandos de $CARPETA_BIN" ;;
+        *)
+            # Otra terminal: que lo haga uv, pero con el PATH de antes para que no se lo salte
+            PATH="$PATH_ORIGINAL" "$(command -v uv)" tool update-shell                 || aviso "Añade tú $CARPETA_BIN al PATH de tu terminal."
+            aviso "Al terminar, cierra esta terminal y abre otra para que «dam» funcione."
+            ;;
+    esac
+fi
 
 # 4. Dónde van tus acciones (las configura el paso 6b, con el almacén ya clonado)
 CONFIG="$HOME/.config/dam/acciones.json"
@@ -58,11 +89,6 @@ CONFIG="$HOME/.config/dam/acciones.json"
 # No uso «dam --install-completion»: miraría la terminal de ESTE script (bash), y en macOS la
 # tuya es zsh. Así se mira la tuya ($SHELL) y se puede repetir sin duplicar nada.
 paso "Activo el autocompletado con TAB"
-case "$(basename "${SHELL:-}")" in
-    bash) TERMINAL=bash; RC="$HOME/.bashrc" ;;
-    zsh)  TERMINAL=zsh;  RC="$HOME/.zshrc" ;;
-    *)    TERMINAL="" ;;
-esac
 if [ -z "$TERMINAL" ]; then
     aviso "Tu terminal (${SHELL:-desconocida}) no es bash ni zsh: actívalo a mano con  dam --install-completion"
 else
@@ -95,14 +121,27 @@ if [ -z "$(git config --global user.name || true)" ]; then
         git config --global user.name "$nombre"
     fi
 fi
-if [ -z "$(git config --global user.email || true)" ]; then
-    correo=""
-    read -rp "    Tu correo de GitHub: " correo || true
-    if [ -n "$correo" ]; then
-        git config --global user.email "$correo"
-    fi
-fi
-if [ -n "$(git config --global user.name || true)" ] && [ -n "$(git config --global user.email || true)" ]; then
+# Un correo sin @ (por ejemplo el usuario de GitHub) no vale: GitHub no te reconoce los commits
+correo_actual="$(git config --global user.email || true)"
+case "$correo_actual" in
+    *@*) ;;
+    *)
+        if [ -n "$correo_actual" ]; then
+            aviso "Tu correo de git («$correo_actual») no es un correo: le falta la @."
+        fi
+        echo "    Pon el de tu cuenta de GitHub. Si no quieres que se vea, usa el …@users.noreply.github.com"
+        echo "    que sale en https://github.com/settings/emails"
+        correo=""
+        read -rp "    Tu correo de GitHub: " correo || true
+        case "$correo" in
+            *@*) git config --global user.email "$correo" ;;
+            "")  ;;
+            *)   aviso "«$correo» no es un correo (falta la @): no lo guardo." ;;
+        esac
+        ;;
+esac
+correo_actual="$(git config --global user.email || true)"
+if [ -n "$(git config --global user.name || true)" ] && [[ "$correo_actual" == *@* ]]; then
     ok "git firmará como: $(git config --global user.name) <$(git config --global user.email)>"
 else
     aviso "Sin nombre o correo, git no podrá hacer commits. Vuelve a ejecutar este script."
@@ -164,7 +203,9 @@ else
         if git clone "https://github.com/$usuario/DAM-almacen.git" "$ALMACEN"; then
             ok "Clonado en $ALMACEN"
         else
-            aviso "No he podido clonarlo. Si pone «Repository not found»: el usuario está mal, el token no vale"
+            aviso "No he podido clonarlo. Si pone «Invalid username or token»: en Password pegaste la contraseña"
+            aviso "o un token caducado; el token empieza por ghp_ o github_pat_ (cópialo entero al crearlo)."
+            aviso "Si pone «Repository not found»: el usuario está mal, el token no vale"
             aviso "o el repo no se llama DAM-almacen (GitHub esconde así los repos privados)."
             aviso "Puedes repetir  bash instalar.sh : lo que ya está hecho se salta."
         fi

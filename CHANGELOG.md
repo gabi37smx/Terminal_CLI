@@ -46,6 +46,15 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Arreglado
 
+- `instalar.sh` en un Linux recién instalado: `dam` no se encontraba ni abriendo otra terminal. El
+  script añade `~/.local/bin` a su propio PATH para usar `uv`, y por eso `uv tool update-shell` (y el
+  instalador de uv) creían que ya estaba y no lo apuntaban en ningún sitio. Ahora lo apunta el
+  instalador en `~/.bashrc` o `~/.zshrc`, una sola vez (pasó en un PC de clase con Ubuntu).
+- `instalar.sh` ya no acepta como correo de git algo sin `@` (por ejemplo el usuario de GitHub): lo
+  vuelve a preguntar, también si ya estaba mal guardado. Y si el clonado del almacén falla con
+  «Invalid username or token», explica que en *Password* va el token, no la contraseña.
+- `dam --version` (y `-V`) funcionan, igual que `dam version`. Antes daban «No existe la opción».
+
 - `dam configurar-ia` pide a OpenCode la lista de modelos al día (`--refresh`). Recién instalado,
   OpenCode enseñaba la lista que trae dentro, con modelos que ya no están (pasó en WSL). Si no hay
   ningún recomendado, propone primero uno que no guarde lo que le mandas.
