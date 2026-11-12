@@ -416,3 +416,29 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - **Al leer la web de OpenCode:** ya documenta la versión 2, que cambia el formato de los agentes. Por eso el instalador pone la 1.18.35, la de clase.
 
 **Qué aprendí:** [COMPLETAR]
+
+## 2026-11-12 · `ordenar` lee los `.odt` por dentro y mete cada fichero en su unidad (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows).
+**Prompt 1 (el problema):** «He descargado dos archivos del examen de recuperación de ayer de sistemas de la unidad 1 y me los mete en otros sitios, la imagen en imágenes y el odt [...] ¿cómo la uso para ver si me organiza bien estos apuntes que van los dos en sistemas unidad 1, que esta subcarpeta sí existe? ¿La IA de OpenCode será capaz de ello?»
+**Prompt 2:** «Sí, hazlo en una rama nueva, la 1 y la 2. Si abres el odt dentro sí que pone UD1, por eso lo digo, porque no leen dentro para ver de qué asignatura es y, si está la carpeta, en este caso que los ponga allí.»
+
+**Lo que pasaba de verdad:**
+- La tabla que vi **no era de mis ficheros**: sin CARPETA, `dam ejecutar ordenar` ordena el `origen` de la acción (`~/pruebas-tareas/prueba-final`, con `foto.png` y `notas.txt`). Para las descargas es `dam ejecutar ordenar ~\Downloads --simular`. Respondí N, así que no se movió nada.
+- Con mis ficheros tampoco habría ido bien: `ordenar` decidía por el nombre y solo leía por dentro los PDF. `Examen_A_cas_plantilla_part_1.odt` no dice nada en el nombre, así que iba a `POR-TIPO/DOCUMENTOS`.
+- Aunque acertara la asignatura, lo dejaba en `asignaturas/sistemas`, nunca en `1 Avaluacio/unitat 1`.
+- La IA tampoco: mi `~/.config/dam/acciones.json` es de antes de `dam configurar` y no tiene `clasificar-asignatura`, y esa acción no sabía leer un `.odt` (es un zip por dentro).
+- `LogoGVA2025.jpg` es el logo de la plantilla del examen: ni las reglas ni una IA pueden saber que es de sistemas. Ese lo coloco yo.
+
+**Qué se hizo (rama `feature/ordenar-dentro-y-unidad`):**
+- Leer el texto de `.odt`, `.ods`, `.odp`, `.docx`, `.pptx` y `.xlsx` con `zipfile`, sin dependencias nuevas, empezando por la cabecera y el pie. En mi examen, «SI – Sistemes Informàtics UD-01» estaba en la cabecera (`styles.xml`), no en el cuerpo (`content.xml`).
+- La unidad: del nombre o, si no, de los primeros 1500 caracteres del contenido («UD1», «UD-01», «Unitat 1», «Unidad 01», «Tema 1»). Si salen dos unidades distintas no se adivina.
+- La carpeta: la de esa unidad dentro de la asignatura, hasta 3 niveles. Si hay dos al mismo nivel, ninguna. Nunca se crea.
+- `"unidades": false` para no usarlo. `resumir-tema` y `clasificar-asignatura` aceptan `.odt`, `.docx`, `.odp` y `.pptx`.
+
+**Cómo se probó:**
+- Con mi examen de verdad, sin moverlo: `('sistemas', 1)` → `asignaturas/sistemas/1 Avaluacio/unitat 1`. El logo: sin asignatura.
+- 29 pruebas nuevas, entre ellas el examen reconstruido, un `.docx` con la palabra partida en dos trozos de XML y un índice con «Tema 1, Tema 2...» (no se adivina). En total, 520.
+
+**Lo que no hace:** entrar en `unitat 1/Examen recuperacion`. Llega hasta la carpeta de la unidad y las subcarpetas de dentro las elijo yo.
+
+**Qué aprendí:** [COMPLETAR]

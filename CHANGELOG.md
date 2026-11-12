@@ -10,6 +10,17 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Añadido
 
+- `ordenar` mete cada fichero en la carpeta de **su unidad** si la asignatura ya la tiene: si el
+  nombre, o si no el principio del contenido, dice «UD1», «UD-01», «Unitat 1», «Unidad 01» o
+  «Tema 1», va a `sistemas/1 Avaluacio/unitat 1` (busca hasta 3 niveles y nunca crea la carpeta).
+  Con `"unidades": false` se queda en la carpeta de la asignatura, como antes.
+- `ordenar`, `resumir` y `clasificar` leen por dentro los documentos de LibreOffice y de Office
+  (`.odt`, `.ods`, `.odp`, `.docx`, `.pptx`, `.xlsx`), empezando por la cabecera y el pie de página,
+  que es donde un examen o unos apuntes suelen decir la asignatura y la unidad. Antes, `ordenar`
+  solo leía los PDF y las acciones con IA le habrían mandado al modelo el zip tal cual.
+- `resumir-tema` y `clasificar-asignatura` (en el `acciones.json` del repo) aceptan `.odt`, `.docx`,
+  `.odp` y `.pptx`.
+
 - `dam configurar-ia`: elige con qué modelo trabajan las acciones con IA. Con los **modelos gratis de
   OpenCode** (sin cuenta ni clave) también funcionan en casa: enseña los que hay ese día y qué hace
   cada uno con lo que le mandas, hace una pregunta mínima y lo guarda en `~/.config/dam/ia.json`. Si

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import html
 import os
 import re
 import shutil
 import unicodedata
+import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -159,8 +161,60 @@ SISTEMA_RESUMIR = (
 )
 
 
+# ---------- Texto de los documentos de LibreOffice y de Office ----------
+# Por dentro son un zip con XML. Primero va la cabecera y el pie de página: en un examen o unos
+# apuntes es donde suele poner la asignatura y la unidad («SI – Sistemes Informàtics · UD-01»).
+OFIMATICA = {".odt", ".ods", ".odp", ".docx", ".pptx", ".xlsx"}
+_PARTES_ODF = ("styles.xml", "content.xml")  # en LibreOffice, la cabecera y el pie están en styles.xml
+_MAX_XML = 20 * 1024 * 1024  # una parte de más de 20 MB descomprimida no es texto normal (zip bomba): se salta
+_FIN_PARRAFO = re.compile(r"</(?:text:p|text:h|w:p|a:p|si)>")
+_ESPACIO = re.compile(r"<(?:text:s|text:tab|text:line-break|w:tab|w:br|a:br)\b[^>]*/>")
+_ETIQUETA = re.compile(r"<[^>]+>")
+
+
+def _partes_ofimatica(extension: str, nombres: list[str]) -> list[str]:
+    """Qué XML del zip llevan el texto, en orden: cabeceras y pies primero."""
+    if extension in {".odt", ".ods", ".odp"}:
+        return [n for n in _PARTES_ODF if n in nombres]
+    numero = lambda n: int(re.sub(r"\D", "", n.rsplit("/", 1)[-1]) or 0)  # slide10 después de slide9
+    if extension == ".docx":
+        cabeceras = sorted(n for n in nombres if re.fullmatch(r"word/(header|footer)\d*\.xml", n))
+        return cabeceras + [n for n in ("word/document.xml",) if n in nombres]
+    if extension == ".pptx":
+        return sorted((n for n in nombres if re.fullmatch(r"ppt/slides/slide\d+\.xml", n)), key=numero)
+    return [n for n in ("xl/sharedStrings.xml",) if n in nombres]  # .xlsx: los textos de las celdas
+
+
+def _xml_a_texto(xml: str) -> str:
+    """Quita las etiquetas: cada párrafo, una línea. Las etiquetas de dentro de una palabra no la parten."""
+    texto = _ESPACIO.sub(" ", _FIN_PARRAFO.sub("\n", xml))
+    return html.unescape(_ETIQUETA.sub("", texto))
+
+
+def texto_ofimatica(ruta: Path, tope: int = 20000) -> str:
+    """El texto de un .odt, .ods, .odp, .docx, .pptx o .xlsx, cortado a `tope` caracteres.
+
+    Si está roto, cifrado o no es un zip, devuelve "": no ayuda y ya.
+    """
+    trozos, total = [], 0
+    try:
+        with zipfile.ZipFile(ruta) as z:
+            for nombre in _partes_ofimatica(ruta.suffix.lower(), z.namelist()):
+                if z.getinfo(nombre).file_size > _MAX_XML:
+                    continue
+                trozo = _xml_a_texto(z.read(nombre).decode("utf-8", "replace")).strip()
+                trozos.append(trozo)
+                total += len(trozo)
+                if total >= tope:
+                    break
+    except (zipfile.BadZipFile, OSError, KeyError, ValueError, RuntimeError):  # RuntimeError: cifrado
+        return ""
+    return "\n".join(t for t in trozos if t)[:tope]
+
+
 def leer_texto(fichero: Path, tope: int) -> str:
-    """El texto de un .pdf (con pypdf) o de un fichero de texto (.txt, .md...), cortado a `tope` caracteres.
+    """El texto de un .pdf (con pypdf), de un documento de LibreOffice u Office (.odt, .docx...) o de un
+    fichero de texto (.txt, .md...), cortado a `tope` caracteres.
 
     Un PDF escaneado (solo imágenes), roto o cifrado devuelve "": no hay nada que mandar al modelo.
     """
@@ -178,6 +232,8 @@ def leer_texto(fichero: Path, tope: int) -> str:
             texto = "\n".join(trozos)
         except Exception:  # PDF roto o cifrado: para la IA es como si no tuviera texto
             return ""
+    elif fichero.suffix.lower() in OFIMATICA:  # un zip con XML dentro: leído tal cual sería basura
+        texto = texto_ofimatica(fichero, tope)
     else:
         texto = fichero.read_text(encoding="utf-8", errors="replace")
     return texto.strip()[:tope]
@@ -323,6 +379,50 @@ def _texto_pdf(ruta: Path) -> str:
         return ""
 
 
+def _texto_contenido(ruta: Path) -> str:
+    """Lo que ordenar puede leer por dentro: un PDF o un documento de LibreOffice u Office."""
+    extension = ruta.suffix.lower()
+    if extension == ".pdf":
+        return _texto_pdf(ruta)
+    if extension in OFIMATICA:
+        return texto_ofimatica(ruta)
+    return ""
+
+
+# ---------- La unidad: «UD1», «UD-01», «Unitat 1», «Unidad 01», «Tema 1», «U.D. 1»... ----------
+# Sobre el texto ya normalizado (minúsculas, sin tildes, solo letras y números): «UD-01» -> «ud 01».
+_UNIDAD = re.compile(r"\b(?:ud|u d|unitat|unidad|unit|tema)\s?0*(\d{1,2})\b")
+INICIO_CONTENIDO = 1500  # la unidad se busca al principio (cabecera y portada), no en un índice de temas
+
+
+def unidad_de(texto_normalizado: str) -> int | None:
+    """El número de unidad si el texto nombra UNA sola («ud 01» -> 1). Si nombra varias, no se sabe: None."""
+    numeros = {int(n) for n in _UNIDAD.findall(texto_normalizado)}
+    return numeros.pop() if len(numeros) == 1 else None
+
+
+def carpeta_de_unidad(base: Path, numero: int, niveles: int = 3) -> Path | None:
+    """La carpeta de esa unidad dentro de la asignatura («unitat 1», «UD01», «Tema 1»...), hasta 3 niveles.
+
+    Si hay varias, la menos profunda; si empatan, ninguna (mejor en la asignatura que en otra unidad).
+    Nunca se crea: si no está, el fichero se queda en la carpeta de la asignatura.
+    """
+    candidatas: list[tuple[int, Path]] = []
+    for raiz, carpetas, _ in os.walk(base):
+        profundidad = len(Path(raiz).relative_to(base).parts) + 1
+        carpetas[:] = sorted(c for c in carpetas if not c.startswith("."))
+        for carpeta in carpetas:
+            if unidad_de(_normalizar(carpeta)) == numero:
+                candidatas.append((profundidad, Path(raiz) / carpeta))
+        if profundidad >= niveles:
+            carpetas[:] = []  # no bajar más
+    if not candidatas:
+        return None
+    menor = min(p for p, _ in candidatas)
+    mas_arriba = [c for p, c in candidatas if p == menor]
+    return mas_arriba[0] if len(mas_arriba) == 1 else None
+
+
 # Plan B de ordenar («por_tipo»): el tipo de dam inventario -> su carpeta (en MAYÚSCULAS, como en ~/Datos/POR-TIPO)
 CARPETA_POR_TIPO = {"documentos": "DOCUMENTOS", "imagenes": "IMAGENES", "video": "VIDEO", "audio": "AUDIO",
                     "comprimidos": "COMPRIMIDOS", "instaladores": "INSTALADORES", "codigo": "CODIGO",
@@ -352,28 +452,55 @@ class Ordenar(Accion):
                     puntos[asignatura] += peso
 
     def clasificar(self, fichero: Path) -> str | None:
+        return self.analizar(fichero)[0]
+
+    def analizar(self, fichero: Path) -> tuple[str | None, int | None]:
+        """(asignatura, unidad). Primero el nombre; el contenido (PDF, .odt, .docx...) solo si hace falta.
+
+        La unidad sale del nombre o, si no, del principio del contenido (cabecera y portada).
+        """
+        nombre = _normalizar(fichero.stem)
+        contenido: str | None = None  # se lee una vez y solo si hace falta
+
+        def leer() -> str:
+            nonlocal contenido
+            if contenido is None:
+                contenido = _normalizar(_texto_contenido(fichero))
+            return contenido
+
         puntos = dict.fromkeys(self._claves, 0)
-        self._sumar(puntos, _normalizar(fichero.stem), 2)  # el nombre pesa más
+        self._sumar(puntos, nombre, 2)  # el nombre pesa más
         por_ext = {k.lower(): v for k, v in self.config.get("por_extension", {}).items()}
         asignatura_ext = por_ext.get(fichero.suffix.lower())
         if asignatura_ext in puntos:
             puntos[asignatura_ext] += 1
-        if not any(puntos.values()) and fichero.suffix.lower() == ".pdf":
-            self._sumar(puntos, _normalizar(_texto_pdf(fichero)), 1)
+        if not any(puntos.values()):
+            self._sumar(puntos, leer(), 1)
         mejor = max(puntos.values())
         if mejor == 0:
-            return None
-        return next(a for a, p in puntos.items() if p == mejor)  # empate: gana la primera
+            return None, None
+        asignatura = next(a for a, p in puntos.items() if p == mejor)  # empate: gana la primera
+        if self.config.get("unidades") is False:
+            return asignatura, None
+        unidad = unidad_de(nombre)
+        if unidad is None and not _UNIDAD.search(nombre):  # si el nombre dice dos unidades, no se adivina
+            unidad = unidad_de(leer()[:INICIO_CONTENIDO])
+        return asignatura, unidad
 
     def aplicar(self, fichero, n, simular):
         if fichero.name.lower() in DEL_SISTEMA or fichero.name.startswith(".") or es_basura(fichero.name):
             return Resultado(fichero, None, "saltado", "del sistema, temporal o a medio descargar")
-        asignatura = self.clasificar(fichero)
+        asignatura, unidad = self.analizar(fichero)
         nota = ""
         if asignatura is not None:
             carpeta = self._carpeta_destino(fichero) / asignatura
             if self.config.get("al_almacen") and not carpeta.is_dir():  # en el almacén no se inventan asignaturas
                 return Resultado(fichero, None, "saltado", f"«{asignatura}» no está en el almacén")
+            # Si dice de qué unidad es y la asignatura ya tiene esa carpeta, dentro (nunca se crea)
+            subcarpeta = carpeta_de_unidad(carpeta, unidad) if unidad is not None and carpeta.is_dir() else None
+            if subcarpeta is not None:
+                carpeta = subcarpeta
+                nota = f"unidad {unidad}"
         elif self.config.get("por_tipo"):  # plan B: no es de ninguna asignatura
             carpeta = Path(self.config["por_tipo"]).expanduser() / CARPETA_POR_TIPO.get(tipo_de(fichero.name), "OTROS")
             nota = "por tipo"
