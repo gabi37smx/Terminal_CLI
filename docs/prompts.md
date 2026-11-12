@@ -475,3 +475,34 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - 2 pruebas nuevas, que fallan sin el cambio. En total, 526.
 
 **Qué aprendí:** [COMPLETAR]
+
+## 2026-11-12 · Instalación desde cero en un Linux de clase (Claude Code y PC de clase)
+**Herramienta:** Claude Code, en casa, para preguntar y arreglar; `dam` lo probé yo en un PC del aula con Ubuntu que no es el mío y donde nunca se había instalado.
+**Prompt:** «Estoy con el terminal cli y en clase he arrancado otro PC con Linux para hacer las últimas pruebas, he clonado el repo, ¿qué hago para probarlo de nuevo?». Después le fui pegando lo que salía en la terminal: «este ha sido el proceso por si tienes que arreglar algo».
+
+**Lo que hice:** `git clone` del repo y `bash instalar.sh`, sin nada instalado antes (ni `uv`). El instalador descargó `uv` y Python 3.12, instaló `dam`, activó el TAB, me preguntó el ciclo (`dam configurar`) y el modelo de IA (`dam configurar-ia`: DeepSeek V4.1 Flash gratis con OpenCode, que ya estaba en el PC). Salté el clonado del almacén: el PC no es mío y no quiero dejar allí mis apuntes.
+
+**Lo que falló y cómo se arregló (PR #34):**
+- **`dam` no se encontraba**, ni abriendo otra terminal ni con `source ~/.bashrc` («No s'ha trobat l'ordre 'dam'»), aunque `~/.local/bin/dam` existía. El instalador añade `~/.local/bin` a su propio PATH para usar `uv`, y por eso `uv tool update-shell` decía «already in PATH» y no lo guardaba en ningún sitio. En WSL no salió porque allí ya tenía `uv` de antes. Ahora el instalador lo escribe él en `~/.bashrc` una sola vez, **aunque ya esté en el PATH de ese momento**: me pasó que un `export PATH=...` hecho a mano solo dura en esa terminal y en la siguiente `dam` volvía a desaparecer.
+- Al hacer ese `export` a mano me comí un `$` (`...:PATH` en vez de `...:$PATH`) y en esa terminal dejaron de funcionar `clear`, `ls` y `git`. Al abrir otra volvió todo menos `dam`. Así entendí que el PATH es solo una lista de carpetas donde se buscan los programas.
+- **Correo de git:** escribí mi usuario de GitHub y lo aceptó. Ahora exige una `@` y lo vuelve a preguntar si ya estaba mal guardado (al repetir el instalador me lo pidió otra vez).
+- **El clonado del almacén** falló con «Invalid username or token»: en *Password* va el token, no la contraseña. Ahora el aviso lo explica.
+- **`dam --version`** daba «No existe la opción». Ahora funciona, igual que `-V` y `dam version`.
+
+**La segunda vuelta, con la #34 fusionada (`git pull` y otra vez `bash instalar.sh`):**
+- `[ok] ... .bashrc ya pone ... .local/bin en el PATH`; en una terminal nueva, `which dam` → `~/.local/bin/dam` y `dam --version` → `dam 1.0.1`. El TAB va.
+- Repetir el instalador no estropea nada: guarda copia de `acciones.json` antes de rehacerlo y no vuelve a preguntar el modelo de IA. Esta vez elegí 1º de DAW.
+- `uv run pytest -q` → **527 passed, 1 skipped** en 14,6 s. `dam doctor` → **11 de 11**.
+
+**Las acciones, en `~/pruebas-tareas` y con `DAM_ALMACEN` apuntando a un almacén de prueba:**
+- `dam comprobar-ia` → responde «ok» en 5,0 s.
+- `resumir-tema` con un `.txt` de SQL → `resumenes/apuntes-sql.resumen.md` (1.011 + 100 tokens, 6,9 s).
+- `nombrar-descargas`: `documento1.txt` → `redes-direcciones-ip-mascara-subred.txt` (8,4 s). La primera vez pulsé Enter en la pregunta y canceló, que es lo que tiene que hacer.
+- `clasificar-asignatura --simular`: los 2 ficheros, sin gastar tokens.
+- `limpiar-temporales`: borró el `.tmp` de 40 días después de preguntar.
+- `ordenar` falló la primera vez: «No encuentro las asignaturas de tu almacén». El almacén de prueba estaba vacío y las carpetas de asignatura las crea `dam configurar`. Ahora el error lo dice. Con las 8 carpetas de 1º de DAW: `apuntes-sql.txt` → `bases-datos` y el de redes → `sistemas`. Al acabar avisó de que el almacén no es un repositorio git y no ofreció `dam sync`.
+- Detalle visto: con una tabla estrecha el título se partía («SIMULACIÓN: no / se ha tocado nada»). Arreglado.
+
+**Lo que queda de esta prueba:** mañana, en el mismo PC, `which dam`, para saber si el PC de clase guarda la carpeta personal (lo que falta por rellenar en la entrada del 3-nov). Y `dam status` y `dam sync --simular` con el almacén clonado, en un equipo mío.
+
+**Qué aprendí:** que probar en mi PC no es probar: en WSL todo funcionaba porque ya tenía `uv` instalado de antes, y el fallo del PATH solo salía en un ordenador limpio. También que un `export` solo dura en esa terminal y que lo permanente va en `~/.bashrc`.

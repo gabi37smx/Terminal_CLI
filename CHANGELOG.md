@@ -54,6 +54,8 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
   vuelve a preguntar, también si ya estaba mal guardado. Y si el clonado del almacén falla con
   «Invalid username or token», explica que en *Password* va el token, no la contraseña.
 - `dam --version` (y `-V`) funcionan, igual que `dam version`. Antes daban «No existe la opción».
+- `ordenar`, si el almacén no tiene las carpetas de asignatura, dice que `dam configurar` las crea.
+- El título de la tabla de `dam ejecutar` ya no se parte en dos líneas cuando la tabla es estrecha.
 
 - `dam configurar-ia` pide a OpenCode la lista de modelos al día (`--refresh`). Recién instalado,
   OpenCode enseñaba la lista que trae dentro, con modelos que ya no están (pasó en WSL). Si no hay

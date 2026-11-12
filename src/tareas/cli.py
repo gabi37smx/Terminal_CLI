@@ -581,7 +581,8 @@ def con_virgulilla(ruta: Path) -> str:
 
 def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
     titulo = f"{nombre} (SIMULACIÓN: no se ha tocado nada)" if simular else nombre
-    tabla = Table(title=titulo)
+    # min_width: con pocos ficheros la tabla es estrecha y el título se partía en dos líneas
+    tabla = Table(title=titulo, min_width=len(titulo))
     tabla.add_column("Fichero", overflow="fold")
     tabla.add_column("Destino", overflow="fold")
     tabla.add_column("Estado")
@@ -635,7 +636,8 @@ def ejecutar(
         asignaturas = almacen.ruta / almacen.carpeta_asignaturas
         if not asignaturas.is_dir():
             raise TareasError(f"No encuentro las asignaturas de tu almacén en «{asignaturas}». "
-                              "Revisa la variable DAM_ALMACEN o «almacen» en acciones.json.")
+                              "Revisa la variable DAM_ALMACEN o «almacen» en acciones.json. "
+                              "Si el almacén es nuevo, dam configurar te ofrece crear las carpetas de asignatura.")
         accion.config["destino"] = str(asignaturas)
     if not ficheros:
         consola.print("Ningún fichero cumple el filtro: no hay nada que hacer.")
