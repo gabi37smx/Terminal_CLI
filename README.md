@@ -32,7 +32,7 @@ con `git --version` y `curl --version`, e instala lo que falte:
 | Ubuntu, Debian, Mint | `sudo apt update && sudo apt install -y git curl` |
 | Fedora | `sudo dnf install -y git curl` |
 | macOS | `xcode-select --install` (trae git; curl ya viene) |
-| Windows | `winget install --id Git.Git -e` (curl ya viene en Windows 10 y 11) |
+| Windows | `winget install --id Git.Git -e` (curl ya viene en Windows 10 y 11). Sin winget (Windows LTSC o sin Microsoft Store): descárgalo de https://git-scm.com/download/win y deja las opciones que trae |
 
 Después, **uv** con su instalador oficial. En Ubuntu, si escribes `uv` sin tenerlo, te sugiere
 `sudo snap install astral-uv`: **no lo uses**, el de snap no deja bien los comandos en `~/.local/bin`.
