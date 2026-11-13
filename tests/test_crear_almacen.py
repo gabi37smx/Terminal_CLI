@@ -187,6 +187,41 @@ def test_una_carpeta_que_no_es_git_no_se_toca(github):
     assert list((github["casa"] / "ASIR-almacen").iterdir()) == []
 
 
+def _ruta_vieja(github, ruta="~/DAM-almacen"):
+    datos = json.loads(github["config"].read_text(encoding="utf-8"))
+    datos["almacen"]["ruta"] = ruta
+    github["config"].write_text(json.dumps(datos), encoding="utf-8")
+
+
+def _ruta_guardada(github) -> str:
+    return json.loads(github["config"].read_text(encoding="utf-8"))["almacen"]["ruta"]
+
+
+def test_si_acciones_json_se_quedo_con_la_ruta_de_otro_ciclo_la_corrige(github):
+    """13-nov, PC1411: ciclo DAW pero la ruta aún en ~/DAM-almacen (dijo «n» a rehacer acciones.json)."""
+    configurar_sin_almacen(github, "daw")
+    _ruta_vieja(github)
+    github["crear_repo"]("ana", "DAW-almacen")
+    r = preparar(github, "ana\ns\n")  # usuario, SÍ lo tengo ya
+    assert r.exit_code == 0, r.output
+    assert "pasa de ~/DAM-almacen a ~/DAW-almacen" in plano(r)
+    assert (github["casa"] / "DAW-almacen" / ".git").is_dir()
+    assert not (github["casa"] / "DAM-almacen").exists()
+    assert _ruta_guardada(github) == "~/DAW-almacen"
+
+
+def test_una_ruta_de_otro_ciclo_que_ya_es_tu_almacen_no_se_cambia(github):
+    configurar_sin_almacen(github, "daw")
+    _ruta_vieja(github)
+    remoto = github["crear_repo"]("ana", "DAM-almacen")  # su almacén de siempre, ya clonado
+    subprocess.run(["git", "clone", "-q", str(remoto), str(github["casa"] / "DAM-almacen")],
+                   check=True, capture_output=True)
+    r = preparar(github, "")
+    assert r.exit_code == 0, r.output
+    assert "Ya tienes tu almacén" in plano(r)
+    assert _ruta_guardada(github) == "~/DAM-almacen"
+
+
 def test_configurar_lo_ofrece_al_acabar(github):
     github["crear_repo"]("ana", "SMX-almacen")
     # SMX, 1º, sin cambios, guardar, SÍ prepárame el almacén, usuario, ya lo tengo

@@ -1111,6 +1111,25 @@ def _crear_almacen(ctx: typer.Context, asignaturas: list[str], ciclo: str | None
     return True
 
 
+def _almacen_de_tu_ciclo(datos: dict, ciclo: str, fichero: Path) -> None:
+    """Si acciones.json se quedó con el almacén de otro ciclo, lo pone en el tuyo.
+
+    13-nov, PC1411: en el instalador dije «n» a rehacer acciones.json (ciclo DAW, pero la ruta seguía en
+    ~/DAM-almacen) y crear-almacen iba a clonar DAW-almacen en ~/DAM-almacen. Con DAM_ALMACEN, o si en
+    esa ruta ya hay un repo, no se toca nada: es tu almacén de verdad.
+    """
+    almacen = datos.get("almacen")
+    if os.environ.get("DAM_ALMACEN") or not (isinstance(almacen, dict) and isinstance(almacen.get("ruta"), str)):
+        return
+    nueva = almacen_nuevo.ruta_para(almacen["ruta"], ciclo)
+    if nueva == almacen["ruta"] or (Path(almacen["ruta"]).expanduser() / ".git").exists():
+        return
+    consola.print(f"Tu ciclo es {escape(ciclo.upper())}: el almacén pasa de {escape(almacen['ruta'])} a "
+                  f"[bold]{escape(nueva)}[/bold] (en {escape(str(fichero))}).")
+    almacen["ruta"] = nueva
+    configurar_mod.guardar(datos, fichero)
+
+
 @comando(nombre="crear-almacen")
 @controlar_errores
 def crear_almacen_cmd(ctx: typer.Context) -> None:
@@ -1120,12 +1139,15 @@ def crear_almacen_cmd(ctx: typer.Context) -> None:
 
     dam nunca ve tu contraseña ni tu token: los pide git. Si ya lo tienes, solo crea las carpetas que falten. Lo lanza el instalador.
     """
-    datos = config.leer_json(config.buscar(ctx.obj))
+    fichero = config.buscar(ctx.obj)
+    datos = config.leer_json(fichero)
     perfil = configurar_mod.perfil(datos) or {}
     asignaturas = list(configurar_mod.asignaturas_actuales(datos))
     if not perfil.get("ciclo"):
         consola.print("[yellow]Aún no has elegido tu ciclo: el almacén se llamará APUNTES-almacen. "
                       "Para que lleve el de tu ciclo, antes: dam configurar[/yellow]")
+    else:
+        _almacen_de_tu_ciclo(datos, perfil["ciclo"], fichero)
     if not _crear_almacen(ctx, asignaturas, perfil.get("ciclo")):
         raise typer.Exit(1)
 
