@@ -27,6 +27,31 @@ def motor(tmp_path, **accion):
     return Motor([{**base, **accion}])
 
 
+def test_mover_solo_lo_que_cumple_el_filtro(descargas, tmp_path):
+    m = motor(tmp_path, tipo="mover", destino=str(tmp_path / "PDF"), filtro={"extensiones": [".pdf"]})
+    r = m.ejecutar("a", descargas, simular=False)
+    assert [x.origen.name for x in r] == ["factura.pdf"]
+    assert (tmp_path / "PDF" / "factura.pdf").exists() and not (descargas / "factura.pdf").exists()
+    assert (descargas / "apuntes de redes.docx").exists() and (descargas / "FOTO1.JPG").exists()
+
+
+def test_nunca_sobrescribe(descargas, tmp_path):
+    destino = tmp_path / "PDF"
+    destino.mkdir()
+    (destino / "factura.pdf").write_text("la factura que ya tenía", encoding="utf-8")
+    motor(tmp_path, tipo="mover", destino=str(destino), filtro={"extensiones": [".pdf"]}).ejecutar("a", descargas, False)
+    assert (destino / "factura.pdf").read_text(encoding="utf-8") == "la factura que ya tenía"
+    assert (destino / "factura (1).pdf").read_text(encoding="utf-8") == "contenido de factura.pdf"
+
+
+def test_renombrar_con_plantilla(descargas, tmp_path):
+    m = motor(tmp_path, tipo="renombrar", plantilla="foto_{n:03}{ext}", filtro={"extensiones": [".jpg", ".png"]})
+    r = m.ejecutar("a", descargas, simular=False)
+    # Por orden alfabético sin mirar mayúsculas (cumpleaños antes que FOTO1), y la extensión en minúsculas
+    assert [x.destino.name for x in r] == ["foto_001.png", "foto_002.jpg"]
+    assert not (descargas / "FOTO1.JPG").exists() and not (descargas / "cumpleaños 2.png").exists()
+
+
 def test_mover_no_sobrescribe_y_es_idempotente(tmp_path):
     orig, dest = tmp_path / "o", tmp_path / "d"
     orig.mkdir(); dest.mkdir()

@@ -233,13 +233,13 @@ def test_las_acciones_con_ia_del_repo_son_validas():
 
 # ---------- ProveedorCentro contra un servidor de mentira ----------
 class ServidorFalso(BaseHTTPRequestHandler):
-    """Responde según la ruta: /ok, /401, /404, /429, /roto (no es JSON)."""
+    """Responde según la ruta: /ok, /401, /403, /404, /429, /roto (no es JSON)."""
 
     def do_POST(self):
         largo = int(self.headers.get("Content-Length", 0))
         ServidorFalso.ultima = (self.headers.get("Authorization"), json.loads(self.rfile.read(largo)))
         caso = self.path.split("/")[1]
-        if caso in {"401", "404", "429"}:
+        if caso in {"401", "403", "404", "429"}:
             self.send_response(int(caso))
             self.end_headers()
             return
@@ -278,6 +278,7 @@ def test_proveedor_centro_manda_la_peticion_y_limpia_la_respuesta(servidor):
 
 @pytest.mark.parametrize("caso, mensaje", [
     ("401", "la clave no es válida"),
+    ("403", "no puede usar el modelo «Qwen38-DualSpark-medium»"),  # 13-nov en clase: el modelo viejo daba 403
     ("404", "CENTRO_IA_URL"),
     ("429", "espera un minuto"),
     ("roto", "algo que no entiendo"),

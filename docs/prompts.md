@@ -145,7 +145,7 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 **Prompt 1:** «Revisa el proyecto y mira por qué, si he clonado el repositorio en el PC de clase con Linux, no funcionaban en la terminal los comandos, y no he podido subir los archivos al repo de DAM-almacen. No funcionaba nada, ni `dam` ni `--help`. Tiene que funcionar en Linux, aquí en Windows y en Mac.»
 **Qué pasó en clase:** [COMPLETAR] (los mensajes de error exactos que salieron en el PC de clase).
 **Qué encontró:** el código no tenía la culpa. En un clon limpio, `uv sync` + `uv run dam --help` funcionan y pasan los 162 tests. En mi Windows tengo preparadas cosas que no están en el repo: `dam` instalado con `uv tool install` (`~/.local/bin`), `~/.config/dam/acciones.json`, la variable `DAM_ALMACEN` y `~/DAM-almacen`. Al clonar en otro equipo no hay nada de eso: `dam: command not found`, y `dam sync` no sabe dónde está el almacén. Para subir a GitHub hace falta un token, no la contraseña.
-**Por qué el otro día sí funcionaba:** sin confirmar. Lo más probable es que fuera otro PC u otro usuario, o que el PC se restaure al reiniciar, y con eso se pierde la carpeta personal. Lo compruebo mañana con `which uv dam` y `ls ~/.config/dam ~/DAM-almacen`. Resultado: [COMPLETAR].
+**Por qué el otro día sí funcionaba:** sin confirmar. Lo más probable es que fuera otro PC u otro usuario, o que el PC se restaure al reiniciar, y con eso se pierde la carpeta personal. Lo compruebo mañana con `which uv dam` y `ls ~/.config/dam ~/DAM-almacen`. Resultado (13-nov, en el PC del aula donde lo instalé el 12-nov): un día después, `which dam` seguía dando `~/.local/bin/dam` y `~/.config/dam` seguía ahí. Ese PC **guarda la carpeta personal**, así que lo de que se restaura al reiniciar queda descartado (al menos en ese PC). Lo del otro día fue otro PC u otro usuario.
 
 **Prompt 2:** «¿No puedes hacer un script o un ejecutable que, al clonar el repo en el PC que sea, lo ejecute y ya instale lo que tenga que instalar y configure lo que tenga que configurar?»
 **Qué se construyó:** `instalar.sh` (Linux/macOS), `instalar.ps1` (Windows, en UTF-8 con BOM para que PowerShell 5 lea las tildes) e `instalar.cmd` (doble clic). Comprueban git, instalan uv si falta, hacen `uv sync`, instalan `dam`, copian `acciones.json` a `~/.config/dam/` (si ya existe, no lo tocan), piden nombre y correo de git si faltan, clonan `DAM-almacen` y terminan con `dam validar`. Se pueden repetir sin romper nada. `.gitattributes` fija LF para `.sh` y CRLF para `.ps1`/`.cmd`. El commit y el push de esto los hice yo (`40ff2e5`).
@@ -264,7 +264,7 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 ## Sesión 3 · context7 y las acciones con IA de verdad (OpenCode, en clase) — [COMPLETAR]
 **Herramienta:** OpenCode · modelo centro/qwen3.8-flash-next
 **context7 (paso 2):** conectar con `/mcps` solo para esa sesión, preguntar en el agente plan cómo pasar a `httpx.post` un certificado de CA propio y desconectarlo. Qué respondió: [COMPLETAR]. ¿Propuso `verify="ruta"` (obsoleto en httpx 0.28) o `ssl.create_default_context`? [COMPLETAR]. Comprobado con `uv run python -W always -c "import httpx; ..."`: [COMPLETAR]. La frase para aquí: «context7 me trajo la doc, pero tuve que elegir yo» [COMPLETAR con lo que pasó de verdad].
-**`dam comprobar-ia` en la red del centro:** [COMPLETAR] (servidor, modelo y segundos)
+**`dam comprobar-ia` en la red del centro:** probado el 13-nov en mi PC de clase (lo cuento en la entrada «Mi PC de clase: almacén real e IA del centro»). Con el modelo de entonces, `qwen3.8-flash-next`, el servidor respondía **403**. Con `Qwen38-DualSpark-medium`, el del OpenCode del centro: «✔ El modelo responde «ok» en 31.6 s (30+2 tokens)».
 **`dam ejecutar resumir-tema` de verdad:** [COMPLETAR] (tokens y segundos de cada fichero, y si el resumen acaba en una línea «Para el examen:» con contenido)
 **`dam ejecutar nombrar-descargas` y `clasificar-asignatura` de verdad:** [COMPLETAR] (qué nombres y categorías puso; qué hizo con `descarga.pdf`, el que intenta engañar al modelo)
 **Un fallo real del modelo y cómo lo arreglé en el JSON (no en Python):** [COMPLETAR]
@@ -573,9 +573,55 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 
 **Cómo se probó:** 30 pruebas nuevas con un «GitHub de mentira» (repos *bare* en una carpeta temporal, como los de GitHub) y sin abrir el navegador: alumno nuevo de ASIR, otro equipo que solo lo baja, repo que no existe, usuario mal escrito, carpeta que no es git... En total, **559 pruebas OK**. Al meter el comando, la ayuda general se pasaba de una pantalla porque el nombre largo ensanchaba la columna: por eso es `crear-almacen` y no `preparar-almacen`.
 
-**Falta probarlo de verdad:** [COMPLETAR] crear un `ASIR-almacen` real con la cuenta de mi cuñado (o una de prueba) y ver que la página de GitHub sale rellena y privada, que se clona y que la primera subida llega.
+**Probado de verdad (13-nov):** abrí la dirección que da `dam crear-almacen` y la página de GitHub sale con el nombre puesto y **Private** marcado. **Falta:** [COMPLETAR] la prueba entera con mi cuñado: crear su `ASIR-almacen`, ver que se clona y que la primera subida llega.
 
 **Qué aprendí:**
 - **Hacer las preguntas de un usuario nuevo descubre huecos.** Las pruebas pasaban, pero nadie había pensado qué le pasa a alguien que no tiene el almacén. Lo vi al imaginar a mi cuñado instalándolo.
 - **Fácil para quien menos sabe.** La opción más automática (con token) no era la más fácil: el paso difícil es crear el token. Pulsar un botón verde en GitHub lo sabe hacer todo el mundo.
 - **El orden importa.** Para poner el nombre del ciclo, primero hay que saber el ciclo: hubo que cambiar el orden del instalador.
+
+---
+
+## 2026-11-13 · Mi PC de clase: almacén real e IA del centro (Claude Code)
+**Herramienta:** Claude Code (en casa) mientras yo probaba en mi PC de clase (Ubuntu). Yo ejecutaba las órdenes y le pegaba las salidas.
+
+**Prompt 1:** «Vale, seguimos con CLI en mi PC de Linux.»
+
+**Actualizar e instalar:** en este PC ya tenía `dam` instalado, con el repo en otra carpeta (`~/Documents/Terminal/Terminal_CLI`). Hice `git pull` (a la #37) y `bash instalar.sh`, y en otra terminal `dam --version` dio `dam 1.0.1`. Es normal: la versión no sube hasta la 1.1.0, pero `dam crear-almacen --help` ya salía, así que el código era el nuevo.
+
+**`dam doctor`, en el sitio equivocado:** lo lancé en la terminal nueva, que empieza en mi carpeta personal, y revisó todo `~`: «2 de 9 comprobaciones bien», 27 «secretos» (sobre todo certificados de librerías dentro de `.cache`, pero también algún fichero mío con claves) y «Dependencias declaradas: `.nvm/package.json`». Me avisó de que parecía la carpeta de fuera. Dentro del proyecto: **11 de 11**. Dos cosas sacadas de ahí:
+- Las claves en ficheros de texto no están en ningún repo, pero es mejor no tenerlas sueltas.
+- Tenía **dos clones** del almacén (`~/DAM-almacen` y `~/Documents/DAM/DAM-almacen`). Comprobé con `git status -s` y `git log origin/main..HEAD` que el segundo no tenía nada sin subir y lo borré.
+
+**El almacén de verdad (lo que faltaba de la semana 1):**
+- `dam status`: 54 ficheros por descargar.
+- `dam sync --simular`: «Descargaría 5 commit(s) de GitHub. (simulación: no he tocado nada)».
+- `dam sync`: «Archivos descargados desde clase/casa (5 commit(s))», y otra vez `dam status`: «✔ Todo está actualizado».
+- `dam instalar-hook`: «✔ Hook instalado: .git/hooks/pre-commit».
+
+**Fallo 1, visto en `dam status`:** rutas como `Apuntes JAVA Internet/...zip` salían partidas en dos líneas, como si fueran dos ficheros. Pensé que el nombre tenía un salto de línea, pero con `git ls-files` se vio que es un espacio: Rich partía la línea por ahí en una terminal estrecha. Arreglado con `soft_wrap` y una prueba con una consola de 60 caracteres.
+
+**Prompt 2:** «¿Por qué no funciona la del centro, si tenía OpenCode configurado y sí que me iba?»
+**Por qué:** cada programa guarda lo suyo. OpenCode tiene la dirección y la clave en `~/.config/opencode/opencode.json`, y el certificado en `NODE_EXTRA_CA_CERTS`. `dam` (Python) lee `CENTRO_IA_URL`, `CENTRO_IA_KEY` y `CENTRO_IA_CA`, y no las tenía. Las puse en `~/.bashrc` con los datos de OpenCode. La clave la copié con `grep` directamente al fichero, sin que saliera por pantalla.
+
+**Fallo 2, el 403:** con las variables puestas, `dam comprobar-ia` decía «El servidor de IA responde 403: algo ha fallado». OpenCode, con la misma clave, funcionaba: la diferencia era el modelo. `dam` pedía `qwen3.8-flash-next` y el OpenCode del centro usa `Qwen38-DualSpark-*`. Con `CENTRO_IA_MODELO="Qwen38-DualSpark-medium"`: «✔ El modelo responde «ok» en 31.6 s». Arreglado en casa:
+- El modelo por defecto pasa a ser `Qwen38-DualSpark-medium`.
+- El 403 ahora dice «tu clave no puede usar el modelo X: prueba otro con CENTRO_IA_MODELO».
+- Como solo decir «ok» tardó 31 s, el tiempo máximo sube de 60 a 120 s.
+
+**Una cosa que no sé explicar:** entre un `comprobar-ia` y el siguiente, `~/.config/dam/ia.json` pasó de «centro» a «opencode», y `comprobar-ia` respondió con un modelo gratis de OpenCode. Solo `dam configurar-ia` escribe ese fichero. Lo dejé otra vez con `dam configurar-ia --proveedor centro`. Si vuelve a pasar, lo apunto como issue.
+
+**Fallo 3 (del PC del aula, por la mañana):** en el instalador dije «n» a rehacer `acciones.json`, que era de una prueba con ciclo DAW pero tenía la ruta `~/DAM-almacen`. `crear-almacen` iba a clonar `DAW-almacen` en `~/DAM-almacen`. Ahora corrige la ruta según el ciclo (con copia de `acciones.json`), salvo si ya hay un repo en la ruta vieja o tengo `DAM_ALMACEN`.
+
+**Prompt 3:** «Sí, empieza con los fallos en casa, es el portátil. Vamos a dejar todo fino y repasa todo lo de la página del profe de aula en la nube para que no se nos pase nada.»
+**Repaso contra las sesiones 3 y 4:** están todos los ficheros que se piden, los cuatro mínimos y las preguntas de la defensa. Lo que no estaba al pie de la letra en la Sesión 4, y ahora sí:
+- `conftest.py`: `aislado` también cambia a `tmp_path` y pone `HOME` y `USERPROFILE` en una carpeta temporal.
+- También quita `DAM_ALMACEN`, que en mi portátil apunta a mi almacén real.
+- Están las fixtures `descargas` y `escribir_config`, las pruebas `test_mover_solo_lo_que_cumple_el_filtro`, `test_nunca_sobrescribe` y `test_renombrar_con_plantilla`, y una prueba por cada código de salida (0 a 4) en `test_cli.py`.
+
+Mi primera `test_renombrar_con_plantilla` falló porque yo esperaba otro orden. `dam` ordena sin mirar mayúsculas (`cumpleaños` va antes que `FOTO1`), y eso está bien: corregí la prueba, no el código.
+
+**Qué aprendí:**
+- **Que funcione en un programa no quiere decir que funcione en el otro.** OpenCode y `dam` hablan con el mismo servidor, pero cada uno con su configuración y su modelo. El 403 no era la clave: era el nombre del modelo, y el mensaje «algo ha fallado» no ayudaba a verlo.
+- **Primero mirar, luego borrar.** Antes de borrar el almacén repetido comprobé que no tenía nada sin subir. Y antes de «arreglar» el salto de línea comprobé que no existía.
+- **Un dato real cambia los números.** Con el servidor de mentira de las pruebas todo tarda milisegundos. El de verdad tardó 31 s en decir «ok», y eso no se ve hasta que lo pruebas en clase.

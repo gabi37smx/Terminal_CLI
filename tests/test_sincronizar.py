@@ -241,6 +241,17 @@ def test_cli_status_y_sync(pcs, tmp_path):
     assert r.exit_code == 0
 
 
+def test_cli_status_no_parte_las_rutas_largas_con_espacios(pcs, monkeypatch):
+    """13-nov, PC1412: «Apuntes JAVA» e «Internet/...» salían en dos líneas, como si fueran dos ficheros."""
+    from tareas import cli
+    clase, _ = pcs
+    ruta = "asignaturas/programacion/Apuntes JAVA Internet/programación-colecciones-y-mapas.pdf"
+    escribir(clase.ruta / ruta)
+    monkeypatch.setattr(cli.consola, "width", 60)  # una terminal estrecha
+    r = CliRunner().invoke(app, ["status", "--almacen", str(clase.ruta)])
+    assert r.exit_code == 0 and ruta in r.output
+
+
 def test_cli_sin_almacen_configurado(tmp_path, monkeypatch):
     monkeypatch.delenv("DAM_ALMACEN", raising=False)
     monkeypatch.chdir(tmp_path)

@@ -83,7 +83,9 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
    - Si no sale nada (el PC se restauró u otro usuario): `git clone https://github.com/gabi37smx/Terminal_CLI.git`, `cd Terminal_CLI`, `bash instalar.sh` (con el token a mano) y abrir otra terminal.
    - Comprobar: `dam help` (deben salir `doctor`, `pendientes` y `entregar`), `dam doc<TAB>`, `dam status` y `dam sync --simular`.
    - Apuntar qué pasó en `docs/prompts.md` (los **[COMPLETAR]** de la entrada del 3-nov): así se sabe por fin si el PC de clase guarda la carpeta personal.
-   - **12-nov:** instalado desde cero en un PC del aula (no salía `dam`: arreglado en la #34 y probado allí). Falta: **13-nov, en el mismo PC, `which dam`** (¿guarda la carpeta personal?) y `dam status` / `dam sync --simular` con el almacén clonado.
+   - **12-nov:** instalado desde cero en un PC del aula (no salía `dam`: arreglado en la #34 y probado allí).
+   - **HECHO el 13-nov:** ese PC **guarda la carpeta personal** (`which dam` y `~/.config/dam` seguían ahí). En mi PC de clase: `dam status`, `dam sync --simular`, `dam sync` y `dam instalar-hook` con el almacén real, y `dam comprobar-ia` con el servidor del centro (tras arreglar el modelo por defecto, que daba 403). Todo en `docs/prompts.md`, entrada «Mi PC de clase: almacén real e IA del centro».
+   - **Falta en clase:** las 3 acciones con IA de verdad, romperlo a propósito (`echo $?` → 4), context7 con `/mcps`, `changelog-borrador` y `scripts/revisar.sh`.
 2. **En otros equipos Windows:** después del `pull`, `instalar.cmd` otra vez para tener el TAB arreglado. En Linux/WSL no hace falta (el fallo era solo de PowerShell).
 3. **Lo que han encontrado los comandos nuevos:**
    - ~~`portfolio-backend`: añadir a `.env.example`, con el valor vacío, `GITHUB_TOKEN`, `GNEWS_API_KEY` y `Gemini_API_Key`.~~ HECHO (11-nov, PR #4 de portfolio-backend): con el nombre `GEMINI_API_KEY`, que es el que el código mira primero.

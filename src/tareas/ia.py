@@ -31,7 +31,9 @@ from dotenv import find_dotenv, load_dotenv
 from . import URL_REPO
 from .errores import IANoDisponible
 
-MODELO_POR_DEFECTO = "qwen3.8-flash-next"
+# El que trae el OpenCode del centro (13-nov: el antiguo «qwen3.8-flash-next» ya da 403)
+MODELO_POR_DEFECTO = "Qwen38-DualSpark-medium"
+SEGUNDOS_CENTRO = 120  # en clase, solo para decir «ok» tardó 31 s: con 60 s un resumen se cortaba
 # Los modelos «thinking» pueden devolver su razonamiento entre <think> y </think>: no es la respuesta
 PENSAMIENTO = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 
@@ -122,7 +124,7 @@ class ProveedorCentro(ProveedorIA):
                 f"{self.url}/chat/completions",
                 json=cuerpo,
                 headers={"Authorization": f"Bearer {self._clave}"},
-                timeout=httpx.Timeout(60, connect=5),
+                timeout=httpx.Timeout(SEGUNDOS_CENTRO, connect=5),
                 verify=self._tls,  # verify="ruta" está obsoleto en httpx 0.28
             )
             r.raise_for_status()
@@ -139,6 +141,8 @@ class ProveedorCentro(ProveedorIA):
             motivo = {
                 401: "la clave no es válida",
                 404: "esa dirección no es la del servidor (revisa CENTRO_IA_URL: suele acabar en /v1)",
+                403: (f"tu clave no puede usar el modelo «{self.modelo}». Prueba otro con CENTRO_IA_MODELO "
+                      "(los que salen en OpenCode con /models; si no, revisa CENTRO_IA_KEY)"),
                 429: "demasiadas peticiones, espera un minuto",
             }
             raise IANoDisponible(f"El servidor de IA responde {codigo}: {motivo.get(codigo, 'algo ha fallado')}") from None
