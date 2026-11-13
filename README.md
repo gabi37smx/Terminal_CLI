@@ -410,7 +410,7 @@ desde la que lanzas `dam`. `.env` está en `.gitignore` y nunca se sube; `.env.e
 
 ```bash
 cp .env.example .env      # y rellénalo (o exporta las variables en ~/.bashrc / setx)
-dam comprobar-ia          # Servidor: ... · modelo: qwen3.8-flash-next · clave: definida
+dam comprobar-ia          # Servidor: ... · modelo: Qwen38-DualSpark-medium · clave: definida
 ```
 
 Si instalaste sin clonar no tienes `.env.example`: define las variables en la terminal
@@ -422,7 +422,7 @@ el `.env` con las líneas `CENTRO_IA_URL=...`, `CENTRO_IA_KEY=...` y `CENTRO_IA_
 | `CENTRO_IA_URL` | Dirección del servidor (acaba en `/v1`). |
 | `CENTRO_IA_KEY` | Tu clave personal. Nunca se imprime: `comprobar-ia` solo dice «definida». |
 | `CENTRO_IA_CA` | Ruta del certificado del instituto (`ca-ies-simarro.crt`). Python no lee el `NODE_EXTRA_CA_CERTS` de OpenCode. |
-| `CENTRO_IA_MODELO` | Opcional: otro modelo del servidor. |
+| `CENTRO_IA_MODELO` | Opcional: otro modelo del servidor (por defecto, `Qwen38-DualSpark-medium`; los que hay los ves en OpenCode con `/models`). |
 
 **2. Primero, siempre `--simular`.** No llama al modelo ni gasta nada: dice cuánto mandaría
 («enviaría 338 caracteres (~84 tokens)»). Un PDF escaneado sin texto se salta: no se pregunta por nada.
@@ -447,8 +447,8 @@ hecho se queda hecho y el resto, sin tocar.
 | Falta la URL o la clave | Faltan CENTRO_IA_URL o CENTRO_IA_KEY: ponlas en .env (mira .env.example) |
 | Sin red | No llego al servidor de IA: ¿estás en la red del centro? |
 | Sin certificado | No me fío del servidor: falta el certificado del centro (CENTRO_IA_CA) |
-| Tarda más de 60 s | El servidor de IA no ha respondido a tiempo |
-| HTTP 401 / 404 / 429 | La clave no es válida / revisa CENTRO_IA_URL / demasiadas peticiones, espera un minuto |
+| Tarda más de 120 s | El servidor de IA no ha respondido a tiempo |
+| HTTP 401 / 403 / 404 / 429 | La clave no es válida / tu clave no puede usar ese modelo (cámbialo con CENTRO_IA_MODELO) / revisa CENTRO_IA_URL / demasiadas peticiones, espera un minuto |
 
 Por qué la IA va detrás de una interfaz (`ProveedorIA`): [`docs/adr/0002-proveedor-ia.md`](docs/adr/0002-proveedor-ia.md).
 
