@@ -86,9 +86,10 @@ bash instalar.sh          # Linux y macOS
 En Windows: doble clic en `instalar.cmd` (o `powershell -ExecutionPolicy Bypass -File instalar.ps1`).
 
 El script instala uv si no está (y uv baja Python 3.12), instala el comando `dam`, te pide nombre y
-correo para git si faltan, clona tu `DAM-almacen` en `~/DAM-almacen` y, como `adduser` en Linux,
-**te pregunta qué estudias** (`dam configurar`): con tu ciclo y curso deja `~/.config/dam/acciones.json`
-con tus asignaturas y ofrece crear sus carpetas en el almacén. Por último, **te pregunta con qué IA
+correo para git si faltan y, como `adduser` en Linux, **te pregunta qué estudias** (`dam configurar`):
+con tu ciclo y curso deja `~/.config/dam/acciones.json` con tus asignaturas. Después **prepara tu
+almacén de apuntes** (`dam crear-almacen`): si ya lo tienes en GitHub lo baja, y si no, te ayuda a
+crearlo (mira [Tu almacén de apuntes](#tu-almacén-de-apuntes-si-aún-no-lo-tienes)). Por último, **te pregunta con qué IA
 quieres trabajar** (`dam configurar-ia`): si eliges los modelos gratis, instala OpenCode si no lo tienes
 y lo deja configurado (mira [IA gratis con OpenCode](#ia-gratis-con-opencode)). Se puede repetir sin
 miedo: lo que ya está hecho se salta.
@@ -161,7 +162,7 @@ notepad $PROFILE.CurrentUserAllHosts    # borra la línea «# autocompletado de 
 Si definiste `CENTRO_IA_URL`, `CENTRO_IA_KEY`, `CENTRO_IA_CA` o `CENTRO_IA_MODELO` como variables
 de tu usuario, quítalas igual que `DAM_ALMACEN`. Si el instalador te puso OpenCode y ya no lo quieres:
 `npm uninstall -g opencode-ai`. Si `dam configurar-ia` cambió tu `~/.config/opencode/opencode.json`,
-al lado está la copia de antes (`opencode.json.antes-FECHA`). La carpeta del repo y tu `DAM-almacen` no se tocan:
+al lado está la copia de antes (`opencode.json.antes-FECHA`). La carpeta del repo y tu almacén (`CICLO-almacen`) no se tocan:
 bórralas tú si ya no las quieres (antes, `dam status` para no perder nada sin subir).
 
 ## Órdenes
@@ -176,6 +177,7 @@ bórralas tú si ya no las quieres (antes, `dam status` para no perder nada sin 
 | `dam configurar-ia [--proveedor opencode\|centro] [--modelo M] [--si]` | Elige el modelo de las acciones con IA: los gratis de OpenCode (en casa, sin clave) o el servidor del centro. Mira [IA gratis con OpenCode](#ia-gratis-con-opencode). |
 | `dam comprobar-ia` | ¿Responde el modelo que usa `dam`? Enseña cuál es (nunca la clave) y hace una pregunta mínima. Sale con 4 si no responde: sin clave, red, certificado u `opencode`. |
 | `dam ejecutar NOMBRE [CARPETA\|FICHERO] [--simular] [--si]` | Ejecuta una acción sobre una carpeta o un solo fichero (si cumple el filtro de la acción). `--simular` enseña qué haría sin tocar nada; borrar pide confirmación salvo `--si`. `ordenar` (con `al_almacen`) mete los apuntes en el almacén, en la carpeta de su unidad si ya existe, y luego ofrece `dam sync`; con `por_tipo`, lo demás va a `~/Datos/POR-TIPO`. Nunca mueve `desktop.ini`, temporales ni descargas a medias. |
+| `dam crear-almacen` | Deja listo tu almacén de apuntes: si ya lo tienes en GitHub lo baja; si no, abre GitHub con el nombre de tu ciclo y «privado» ya puestos. Luego crea las carpetas de tus asignaturas y, si es nuevo, las sube. |
 | `dam status [ASIGNATURA]` | Qué has cambiado en local y qué hay nuevo en GitHub. No modifica nada. |
 | `dam sync [ASIGNATURA] [MENSAJE] [-m TEXTO] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
 | `dam scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves, tokens y contraseñas expuestas. Sale con 1 si encuentra algo. |
@@ -286,13 +288,52 @@ Por qué funciona así (vocabulario en `ciclos.py`, qué no se toca y qué palab
 
 ## Almacén de apuntes (status y sync)
 
-Un repositorio git (mejor **privado**) con una carpeta por asignatura (`asignaturas/programacion/`...).
-Los nombres deben coincidir con las claves de `carpetas` en `acciones.json`.
-Lo clonas en cada sitio (clase, casa, USB) y `dam sync` mantiene todo igual sin perder nada.
-La carpeta `Documentacio` nunca se sube: `status` y `sync` la ignoran siempre.
+Son **dos repos distintos**:
+
+| Repo | Qué es | De quién es |
+|---|---|---|
+| `Terminal_CLI` (este) | El programa `dam` | Mío. Tú solo lo clonas para instalarlo: aquí no subes nada. |
+| `CICLO-almacen` | Tus apuntes, con una carpeta por asignatura (`asignaturas/programacion/`...) | **Tuyo**, en tu cuenta de GitHub y **privado**. |
+
+El almacén se llama como tu ciclo: `SMX-almacen`, `DAM-almacen`, `DAW-almacen` o `ASIR-almacen`
+(`APUNTES-almacen` si elegiste «otro»). Lo tienes en cada sitio (clase, casa, USB) y `dam sync` lo
+mantiene igual sin perder nada. Los nombres de las carpetas son las asignaturas que elegiste en
+`dam configurar`. La carpeta `Documentacio` nunca se sube: `status` y `sync` la ignoran siempre.
+
+### Tu almacén de apuntes (si aún no lo tienes)
+
+No hace falta saber git. El instalador lo hace por ti; si lo saltaste, escribe:
 
 ```bash
-git clone https://github.com/TU_USUARIO/DAM-almacen.git ~/DAM-almacen
+dam crear-almacen
+```
+
+1. Te pide tu **usuario de GitHub** (lo que va detrás de `github.com/`). ¿No tienes cuenta? Créala
+   gratis en <https://github.com/signup>.
+2. Te pregunta si ya tienes el repo. Si es la primera vez, di que **no**: se abre GitHub con el
+   nombre de tu ciclo y **Private** ya puestos. Solo pulsas el botón verde **Create repository** y
+   vuelves a la terminal. Si el navegador no se abre, copia la dirección que sale en la terminal.
+3. Lo baja a `~/CICLO-almacen`, crea una carpeta por asignatura y la sube a GitHub. Ya puedes usar
+   `dam ejecutar ordenar` y `dam sync`.
+
+En otro equipo (clase, casa) es lo mismo, pero a la pregunta de si ya lo tienes dices que **sí**:
+solo lo baja.
+
+> **Al bajarlo o subirlo, ¿qué contraseña pongo?** En Windows se abre el navegador para que inicies
+> sesión en GitHub. En Linux y macOS, git pide `Username` (tu usuario) y `Password`: ahí **no vale tu
+> contraseña**, va un *token* que creas en <https://github.com/settings/tokens> con permiso «repo»
+> (al pegarlo no se ve: es normal). `dam` nunca ve ni guarda tu contraseña ni tu token: los pide git.
+
+Si ya lo tenías clonado en otro sitio, el instalador lo encuentra solo (busca un repo cuyo remoto
+acabe en `-almacen`). A mano también vale:
+
+```bash
+git clone https://github.com/TU_USUARIO/ASIR-almacen.git ~/ASIR-almacen
+```
+
+### Usarlo cada día
+
+```bash
 dam status                      # ¿qué hay pendiente?
 dam sync programacion "tema 3"  # solo esa asignatura
 dam sync                        # todo el almacén

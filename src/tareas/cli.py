@@ -17,14 +17,14 @@ from rich.table import Table
 from tareas import URL_EJEMPLO_ACCIONES, __version__, ciclos, config, escanear, hook, sincronizar, web
 from tareas import configurar as configurar_mod  # «configurar» ya es el nombre del comando
 from tareas import configurar_ia as configurar_ia_mod
-from tareas import ia
+from tareas import ia, almacen_nuevo
 from tareas import doctor as doctor_mod  # «doctor», «entregar» y «pendientes» ya son nombres de comandos
 from tareas import duplicados as duplicados_mod
 from tareas import entregar as entregar_mod
 from tareas import inventario as inventario_mod
 from tareas import pendientes as pendientes_mod
 from tareas import readme as readme_mod
-from tareas.errores import ConfigError, IANoDisponible, TareasError
+from tareas.errores import ConfigError, GitError, IANoDisponible, TareasError
 from tareas.inventario import tamano_legible
 from tareas.motor import Motor
 from typer import _completion_classes, _completion_shared, rich_utils
@@ -270,6 +270,10 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("dam comprobar-ia", "¿Responde el modelo que usa dam? Enseña cuál es, nunca la clave"),
         ("DAM_IA=centro dam comprobar-ia", "Solo esta vez, con el servidor del centro (en PowerShell: $env:DAM_IA=\"centro\")"),
     ],
+    "crear-almacen": [
+        ("dam crear-almacen", "Baja tu almacén de GitHub o te ayuda a crearlo (privado y con el nombre de tu ciclo)"),
+        ("dam --config acciones.json crear-almacen", "Con las asignaturas de otro acciones.json"),
+    ],
     "status": [
         ("dam status", "Qué has cambiado y qué hay nuevo en GitHub (no modifica nada)"),
         ("dam status programacion", "Mira solo la asignatura programacion"),
@@ -288,7 +292,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
 GRUPOS = [
     ("Ficheros", "ordenar y limpiar", ["configurar", "listar", "validar", "acciones", "ejecutar"]),
     ("IA", "gratis o del centro", ["configurar-ia", "comprobar-ia"]),
-    ("Almacén (git)", "clase, casa y USB", ["status", "sync"]),
+    ("Almacén (git)", "clase, casa y USB", ["crear-almacen", "status", "sync"]),
     ("Seguridad", "claves expuestas", ["scan-secrets", "instalar-hook"]),
     ("Tus proyectos", "revisar y entregar", ["doctor", "pendientes", "entregar"]),
     ("Tus datos", "organizar el PC", ["inventario", "duplicados", "readme"]),
@@ -613,7 +617,7 @@ def ejecutar(
     simular: Annotated[bool, typer.Option("--simular", help="Enseña qué haría sin tocar nada.")] = False,
     si: Annotated[bool, typer.Option("--si", help="No pregunta antes de actuar (solo si estás seguro).")] = False,
 ) -> None:
-    """Ejecuta una acción de acciones.json sobre una carpeta (o un solo fichero).
+    """Ejecuta una acción de acciones.json sobre una carpeta o un fichero.
 
     Sin CARPETA usa el «origen» de la acción. Con un FICHERO actúa solo sobre él, si cumple el filtro de la acción (si no, dice por qué y no hace nada). Empieza SIEMPRE con --simular: enseña una tabla fichero → destino sin tocar nada.
 
@@ -1014,7 +1018,15 @@ def configurar(
         almacen = None
     base_asignaturas = almacen.ruta / almacen.carpeta_asignaturas if almacen else None
     if base_asignaturas is None or not almacen.ruta.is_dir():
-        consola.print("Cuando tengas el almacén clonado, repite dam configurar para crear las carpetas de asignatura.")
+        if almacen is None or almacen.ruta.exists() or si:
+            consola.print("Aún no tienes tu almacén de apuntes en este equipo. Prepáralo con: [bold]dam crear-almacen[/bold]")
+        elif preguntar("\nAún no tienes tu almacén de apuntes en este equipo. ¿Te lo preparo ahora?"):
+            try:
+                _crear_almacen(ctx, list(asignaturas), ciclo)
+            except TareasError as e:  # lo de acciones.json ya está guardado: eso no se pierde
+                consola.print(f"[yellow]{escape(str(e))}[/yellow]")
+        else:
+            consola.print("Cuando quieras: [bold]dam crear-almacen[/bold]")
         return
     faltan = configurar_mod.carpetas_que_faltan(base_asignaturas, list(asignaturas))
     if not faltan:
@@ -1026,6 +1038,96 @@ def configurar(
     else:
         consola.print(f"[yellow]Faltan en tu almacén: {escape(', '.join(faltan))}.[/yellow] "
                       "«ordenar» no mete ficheros en asignaturas sin carpeta (créalas con --crear-carpetas).")
+
+
+def _pedir_usuario_github() -> str | None:
+    """El usuario de GitHub (acepta también github.com/usuario). None si pulsa Enter."""
+    consola.print("¿No tienes cuenta? Créala gratis en https://github.com/signup y vuelve aquí.")
+    while True:
+        texto = typer.prompt("Tu usuario de GitHub, lo que va detrás de github.com/ (Enter para saltar)",
+                             default="", show_default=False)
+        if not texto.strip():
+            return None
+        try:
+            return almacen_nuevo.limpiar_usuario(texto)
+        except ValueError as e:
+            consola.print(f"[yellow]{escape(str(e))}[/yellow]")
+
+
+def _crear_almacen(ctx: typer.Context, asignaturas: list[str], ciclo: str | None) -> bool:
+    """Lo de dam crear-almacen (dam configurar también lo ofrece). Devuelve si hay almacén al acabar."""
+    almacen = _abrir_almacen(ctx, None)
+    repo = almacen_nuevo.nombre(ciclo)
+    if (almacen.ruta / ".git").exists():
+        consola.print(f"[green]✔ Ya tienes tu almacén en {escape(str(almacen.ruta))}[/green]")
+    elif almacen.ruta.exists():
+        consola.print(f"[yellow]{escape(str(almacen.ruta))} existe pero no es un repositorio git: no lo toco.[/yellow]")
+        return False
+    else:
+        consola.print(f"\nTu almacén es un repo [bold]privado[/bold] de GitHub, [bold]{repo}[/bold], con una carpeta "
+                      f"por asignatura. Irá en {escape(str(almacen.ruta))} y, con dam sync, lo tendrás igual "
+                      "en clase, en casa y en el USB.")
+        usuario = _pedir_usuario_github()
+        if usuario is None:
+            consola.print("Saltado. Cuando quieras: [bold]dam crear-almacen[/bold]")
+            return False
+        if not preguntar(f"¿Ya tienes el repo {repo} en tu GitHub?"):
+            url = almacen_nuevo.url_crear(repo)
+            consola.print("\n[bold]Créalo en GitHub[/bold] (solo se hace una vez):")
+            consola.print("  1. Si te lo pide, inicia sesión.")
+            consola.print(f"  2. Comprueba que el nombre es [bold]{repo}[/bold] y que está marcado [bold]Private[/bold] "
+                          "(ya lo he rellenado yo).")
+            consola.print("  3. Pulsa el botón verde [bold]Create repository[/bold]. No hace falta marcar nada más.")
+            if almacen_nuevo.abrir_navegador(url):
+                consola.print("Te lo he abierto en el navegador. Si no lo ves, abre esta dirección:")
+            else:
+                consola.print("Abre esta dirección en el navegador (en muchas terminales, Ctrl+clic):")
+            consola.print(escape(url), soft_wrap=True)
+            typer.prompt("Cuando lo hayas creado, pulsa Enter", default="", show_default=False)
+        if sys.platform == "win32":
+            consola.print("Si se abre el navegador, inicia sesión en GitHub: así git puede bajar tu repo privado.")
+        else:
+            consola.print("Si git te pide [bold]Password[/bold], pega un token de GitHub, no tu contraseña (al pegarlo "
+                          "no se ve: es normal). Créalo en https://github.com/settings/tokens con permiso «repo».")
+        if not almacen_nuevo.clonar(almacen_nuevo.url_repo(usuario, repo), almacen.ruta):
+            raise GitError(
+                f"No he podido bajar {repo}. Si pone «Repository not found»: revisa el usuario, que el repo se llame "
+                f"{repo} y que ya lo hayas creado (GitHub esconde así los repos privados). Si pone «Invalid username "
+                "or token»: en Password va el token, no la contraseña. Para repetirlo: dam crear-almacen"
+            )
+        consola.print(f"[green]✔ Tu almacén está en {escape(str(almacen.ruta))}[/green]")
+
+    base = almacen.ruta / almacen.carpeta_asignaturas
+    faltan = configurar_mod.carpetas_que_faltan(base, asignaturas)
+    if faltan:
+        configurar_mod.crear_carpetas(base, faltan)
+        consola.print(f"[green]✔ Creadas {len(faltan)} carpetas de asignatura[/green] en {escape(str(base))}")
+    if faltan and almacen_nuevo.esta_vacio(almacen.ruta):
+        consola.print("Es un almacén nuevo: subo las carpetas a GitHub (solo esta vez; después, dam sync).")
+        almacen_nuevo.primera_subida(almacen.ruta)
+        consola.print("[green]✔ Subido. A partir de ahora: dam ejecutar ordenar y dam sync[/green]")
+    elif faltan:
+        consola.print("Súbelas con: [bold]dam sync[/bold]")
+    return True
+
+
+@comando(nombre="crear-almacen")
+@controlar_errores
+def crear_almacen_cmd(ctx: typer.Context) -> None:
+    """Baja tu almacén de GitHub o te ayuda a crearlo.
+
+    El almacén es un repo privado tuyo con una carpeta por asignatura, y se llama como tu ciclo (DAM-almacen, ASIR-almacen...). Si aún no lo tienes, abre GitHub con el nombre y «privado» ya puestos: solo pulsas «Create repository». Después lo clona, crea las carpetas de tus asignaturas (las de dam configurar) y, si es nuevo, las sube.
+
+    dam nunca ve tu contraseña ni tu token: los pide git. Si ya lo tienes, solo crea las carpetas que falten. Lo lanza el instalador.
+    """
+    datos = config.leer_json(config.buscar(ctx.obj))
+    perfil = configurar_mod.perfil(datos) or {}
+    asignaturas = list(configurar_mod.asignaturas_actuales(datos))
+    if not perfil.get("ciclo"):
+        consola.print("[yellow]Aún no has elegido tu ciclo: el almacén se llamará APUNTES-almacen. "
+                      "Para que lleve el de tu ciclo, antes: dam configurar[/yellow]")
+    if not _crear_almacen(ctx, asignaturas, perfil.get("ciclo")):
+        raise typer.Exit(1)
 
 
 # ---------- almacén de apuntes (git) ----------
@@ -1513,7 +1615,7 @@ def duplicados(
     guardar: Annotated[Optional[Path], typer.Option("--guardar", metavar="INFORME.md", help="Guarda el informe en un .md.")] = None,
     top: Annotated[int, typer.Option("--top", min=1, metavar="N", help="Grupos de ficheros que enseña (por defecto, 15).")] = 15,
 ) -> None:
-    """Busca ficheros repetidos y carpetas que son copia de otra. No borra nada.
+    """Busca ficheros repetidos y carpetas copiadas. No borra nada.
 
     Compara el contenido (no el nombre): dos ficheros son iguales si tienen la misma huella SHA-256.
 

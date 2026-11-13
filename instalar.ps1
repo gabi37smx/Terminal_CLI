@@ -111,12 +111,17 @@ if ($nombre -and $correo) {
 }
 
 # 6. Almacén de apuntes ----------------------------------------------------
+# Solo se busca si ya lo tienes. Si no, se baja o se crea en el paso 6b, después de elegir el ciclo:
+# se llama como tu ciclo (DAM-almacen, ASIR-almacen...) y dam te ayuda a crearlo (ADR-0005).
 Paso "Almacén de apuntes"
 $Almacen = $env:DAM_ALMACEN
 if (-not $Almacen) { $Almacen = [Environment]::GetEnvironmentVariable('DAM_ALMACEN', 'User') }
-if (-not $Almacen) {
-    # ¿Ya está clonado en otro sitio (por ejemplo en Documentos)? Se busca hasta 3 niveles dentro de
-    # tu carpeta personal un repo git cuyo remoto sea DAM-almacen, se llame como se llame la carpeta.
+if ($Almacen) {
+    $env:DAM_ALMACEN = $Almacen
+    Ok "Uso el de DAM_ALMACEN: $Almacen"
+} else {
+    # ¿Ya está clonado (por ejemplo en Documentos)? Se busca hasta 3 niveles dentro de tu carpeta
+    # personal un repo git cuyo remoto sea CICLO-almacen, se llame como se llame la carpeta.
     # No entra en carpetas ocultas, AppData, node_modules, enlaces ni dentro de otros repos.
     function Buscar-Almacen($carpeta, $nivel) {
         Get-ChildItem -LiteralPath $carpeta -Directory -Force -ErrorAction SilentlyContinue |
@@ -125,7 +130,7 @@ if (-not $Almacen) {
             ForEach-Object {
                 if (Test-Path (Join-Path $_.FullName '.git')) {
                     $remoto = git -C $_.FullName remote get-url origin 2>$null
-                    if ($remoto -match '/dam-almacen') { $_.FullName }
+                    if ($remoto -match '/(smx|dam|daw|asir|apuntes)-almacen(\.git)?/?$') { $_.FullName }
                 } elseif ($nivel -lt 3) {
                     Buscar-Almacen $_.FullName ($nivel + 1)
                 }
@@ -134,51 +139,35 @@ if (-not $Almacen) {
     $Encontrados = @(Buscar-Almacen $HOME 1 | Sort-Object)
     if ($Encontrados.Count -gt 0) {
         $Almacen = $Encontrados[0]
+        Ok "Ya lo tienes en $Almacen"
         if ($Encontrados.Count -gt 1) {
             Aviso "Hay $($Encontrados.Count) copias del almacén: $($Encontrados -join ', ')"
             Aviso "Uso la primera. Para usar otra, cambia la variable DAM_ALMACEN de tu usuario."
         }
-        if ($Almacen -ne (Join-Path $HOME "DAM-almacen")) {
-            # dam lo busca en ~/DAM-almacen (acciones.json): si está en otro sitio, se lo digo con
+        $EnSuSitio = 'SMX', 'DAM', 'DAW', 'ASIR', 'APUNTES' | ForEach-Object { Join-Path $HOME "$_-almacen" }
+        if ($Almacen -notin $EnSuSitio) {
+            # dam lo busca en ~/CICLO-almacen (acciones.json): si está en otro sitio, se lo digo con
             # DAM_ALMACEN como variable de tu usuario (la ven PowerShell, cmd y Git Bash)
             [Environment]::SetEnvironmentVariable('DAM_ALMACEN', $Almacen, 'User')
             Ok "Guardado DAM_ALMACEN=$Almacen en las variables de tu usuario"
         }
+        $env:DAM_ALMACEN = $Almacen
     } else {
-        $Almacen = Join-Path $HOME "DAM-almacen"
-    }
-}
-$env:DAM_ALMACEN = $Almacen
-if (Test-Path (Join-Path $Almacen ".git")) {
-    Ok "Ya está clonado en $Almacen"
-} elseif (Test-Path $Almacen) {
-    Aviso "$Almacen existe pero no es un repositorio git: no lo toco."
-} else {
-    Write-Host "    Tu usuario de GitHub es el de github.com/TU_USUARIO (no el de este ordenador)."
-    $usuario = Read-Host "    Usuario de GitHub para clonar DAM-almacen (Enter para saltar)"
-    if ($usuario) {
-        Write-Host "    Si el repo es privado, se abrirá el navegador para iniciar sesión en GitHub."
-        git clone "https://github.com/$usuario/DAM-almacen.git" "$Almacen"
-        if ($LASTEXITCODE -eq 0) {
-            Ok "Clonado en $Almacen"
-        } else {
-            Aviso "No he podido clonarlo. Si pone «Repository not found»: el usuario está mal, no has iniciado"
-            Aviso "sesión o el repo no se llama DAM-almacen (GitHub esconde así los repos privados)."
-            Aviso "Puedes repetir el instalador: lo que ya está hecho se salta."
-        }
-    } else {
-        Aviso "Saltado. Luego: git clone https://github.com/TU_USUARIO/DAM-almacen.git $Almacen"
+        Write-Host "    Aún no lo tienes en este equipo: después de elegir tu ciclo te ayudo a bajarlo o a crearlo."
     }
 }
 
-# 6b. Tu ciclo y tus asignaturas --------------------------------------------
-# Como adduser en Linux: pregunta qué estudias y deja acciones.json a tu medida. Va después del
-# almacén para poder crear en él las carpetas de tus asignaturas.
+# 6b. Tu ciclo, tus asignaturas y tu almacén ---------------------------------
+# Como adduser en Linux: pregunta qué estudias y deja acciones.json a tu medida. Al acabar ofrece
+# preparar el almacén (se llama como tu ciclo). Si no se configura, se prepara igual con crear-almacen.
 Paso "Tu ciclo y tus asignaturas (dam configurar)"
 # Sin función: en PowerShell lo que escribe una función es su resultado y no se verían las preguntas
+$Configurado = $false
 if (-not (Test-Path $Config)) {
     uv run dam --config "$Config" configurar --plantilla acciones.json
-    if ($LASTEXITCODE -ne 0) {
+    if ($LASTEXITCODE -eq 0) {
+        $Configurado = $true
+    } else {
         New-Item -ItemType Directory -Force (Split-Path $Config) | Out-Null
         Copy-Item acciones.json $Config
         Aviso "No se ha configurado: he copiado las acciones de 1º de DAM a $Config."
@@ -192,10 +181,15 @@ if (-not (Test-Path $Config)) {
     $respuesta = Read-Host "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [s/N]"
     if ($respuesta -eq 's') {
         uv run dam --config "$Config" configurar --plantilla acciones.json
-        if ($LASTEXITCODE -ne 0) { Aviso "No he cambiado nada: dam seguirá usando la tuya." }
+        if ($LASTEXITCODE -eq 0) { $Configurado = $true } else { Aviso "No he cambiado nada: dam seguirá usando la tuya." }
     } else {
         Aviso "No la toco: dam seguirá usando la tuya."
     }
+}
+if (-not $Configurado) {
+    Paso "Tu almacén de apuntes (dam crear-almacen)"
+    uv run dam --config "$Config" crear-almacen
+    if ($LASTEXITCODE -ne 0) { Aviso "Sin almacén de momento. Cuando quieras:  dam crear-almacen" }
 }
 
 # 6c. IA para las acciones que la usan --------------------------------------
