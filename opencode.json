@@ -45,6 +45,7 @@
     }
   },
   "agent": {
-    "plan": { "permission": { "edit": "deny" } }
+    "plan": { "permission": { "edit": "deny" } },
+    "explore": { "permission": { "edit": "deny" } }
   }
 }
