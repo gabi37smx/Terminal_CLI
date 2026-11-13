@@ -108,3 +108,35 @@ def test_la_ayuda_dice_que_tareas_es_el_mismo_programa_y_el_tab_sin_clonar():  #
     salida = " ".join(runner.invoke(app, ["--help"]).output.split())
     assert "«tareas»: es el mismo programa" in salida
     assert "si clonaste el repo" in salida and "dam --install-completion" in salida
+
+
+# ---------- Un código de salida por prueba (Sesión 4, paso 5) ----------
+def test_codigo_0_la_ayuda_funciona():
+    r = runner.invoke(app, ["--help"])
+    assert r.exit_code == 0 and "dam ejecutar" in r.output
+
+
+def test_codigo_1_accion_que_no_existe(escribir_config, tmp_path):
+    cfg = escribir_config([{"nombre": "mover-pdf", "descripcion": "d", "tipo": "mover", "destino": "PDF"}])
+    r = runner.invoke(app, ["--config", str(cfg), "ejecutar", "no-existe", str(tmp_path)])
+    assert r.exit_code == 1 and "no-existe" in r.output and "Traceback" not in r.output
+
+
+def test_codigo_2_opcion_que_no_existe():
+    r = runner.invoke(app, ["listar", "--niveles"])
+    assert r.exit_code == 2 and "No existe la opción --niveles" in " ".join(r.output.split())
+
+
+def test_codigo_3_json_roto_sin_traza(escribir_config):
+    cfg = escribir_config('{"version": 1,\n  "acciones": [}')
+    r = runner.invoke(app, ["--config", str(cfg), "validar"])
+    assert r.exit_code == 3 and "línea" in r.output and "Traceback" not in r.output
+
+
+def test_codigo_4_ia_sin_clave_y_las_demas_siguen(escribir_config, tmp_path):
+    (tmp_path / "Apuntes").mkdir()
+    (tmp_path / "Apuntes" / "tema1.txt").write_text("La CPU y la memoria", encoding="utf-8")
+    cfg = escribir_config([{"nombre": "resumir-tema", "descripcion": "Resume", "tipo": "resumir"}])
+    r = runner.invoke(app, ["--config", str(cfg), "ejecutar", "resumir-tema", str(tmp_path / "Apuntes"), "--si"])
+    salida = " ".join(r.output.split())
+    assert r.exit_code == 4 and "Las acciones sin IA siguen funcionando" in salida and "Traceback" not in salida
