@@ -625,3 +625,10 @@ Mi primera `test_renombrar_con_plantilla` falló porque yo esperaba otro orden. 
 - **Que funcione en un programa no quiere decir que funcione en el otro.** OpenCode y `dam` hablan con el mismo servidor, pero cada uno con su configuración y su modelo. El 403 no era la clave: era el nombre del modelo, y el mensaje «algo ha fallado» no ayudaba a verlo.
 - **Primero mirar, luego borrar.** Antes de borrar el almacén repetido comprobé que no tenía nada sin subir. Y antes de «arreglar» el salto de línea comprobé que no existía.
 - **Un dato real cambia los números.** Con el servidor de mentira de las pruebas todo tarda milisegundos. El de verdad tardó 31 s en decir «ok», y eso no se ve hasta que lo pruebas en clase.
+
+**Prompt 4:** «Te paso las otras dos [sesiones] por si aún queda algo pendiente de las primeras, creo que no pero por si acaso. Y adelantemos todo lo que podamos, a falta de lo de clase para el lunes y lo del cuñado para mañana.»
+**Repaso de las sesiones 1 y 2:** estaba todo: ficheros, excepciones, `Motor`, la skill, `/nueva-accion`, el revisor, ADR-0001, `listar` con sus códigos (1 si no existe, 2 con dos carpetas), `python -m tareas`… Faltaba una línea de la Sesión 1: el agente `explore` también tiene que tener `edit` denegado en `opencode.json`, y solo lo tenía `plan`.
+**Lo que salió probando los casos feos a mano en Windows:** `dam --help | head -3` acababa con una traza de una pantalla (`OSError: [Errno 22]`), porque en Windows cerrar la tubería no da `BrokenPipeError`. Ahora acaba sin más. Cualquier otro `OSError` se sigue viendo, y hay una prueba para cada caso.
+**Adelantado de mis ideas del 13-nov:**
+- `dam configurar-ia` ofrece usar el servidor del centro que ya tiene OpenCode. La clave se queda en OpenCode y en `ia.json` solo se guarda el nombre del servidor. Solo se usa si digo que sí, para que `dam` nunca mande mis apuntes a otro servidor que tenga configurado en OpenCode. El certificado sale de `NODE_EXTRA_CA_CERTS` si no hay `CENTRO_IA_CA`.
+- `dam doctor` en mi carpeta personal avisa y me dice qué proyectos hay, en vez de revisarla entera.
