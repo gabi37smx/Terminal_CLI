@@ -54,6 +54,13 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Arreglado
 
+- Servidor de IA del centro: el modelo por defecto (`qwen3.8-flash-next`) daba **403**. Ahora es
+  `Qwen38-DualSpark-medium`, el mismo que trae el OpenCode del centro. Un 403 ya no dice «algo ha
+  fallado»: dice que tu clave no puede usar ese modelo y que pruebes otro con `CENTRO_IA_MODELO`.
+- El servidor del centro puede tardar más de 30 s en responder: `dam` espera hasta 120 s (antes, 60).
+- `dam status` ya no parte en dos líneas una ruta larga con espacios (parecían dos ficheros).
+- `dam crear-almacen`: si `acciones.json` se quedó con la ruta de otro ciclo (`~/DAM-almacen` siendo de
+  DAW), la cambia a la de tu ciclo antes de clonar, salvo que ahí ya tengas tu almacén.
 - `instalar.sh` en un Linux recién instalado: `dam` no se encontraba ni abriendo otra terminal. El
   script añade `~/.local/bin` a su propio PATH para usar `uv`, y por eso `uv tool update-shell` (y el
   instalador de uv) creían que ya estaba y no lo apuntaban en ningún sitio. Ahora lo apunta el
