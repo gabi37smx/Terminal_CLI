@@ -222,7 +222,7 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 - Un script que cambia variables de entorno tiene que dejarlas como estaban pase lo que pase: para eso está `try/finally`.
 - En Windows, `\"` dentro de un argumento son unas comillas literales: una ruta nunca debe acabar en `\` antes de cerrar las comillas.
 - Una herramienta que revisa mis proyectos me da datos concretos (variables que faltan en `.env.example`, verificados sin fecha) en vez de impresiones.
-- [COMPLETAR] (lo que yo quiera añadir)
+- Antes de hacer un commit hay que mirar en qué rama estoy: como estaba en `main`, Claude Code creó una rama nueva antes de guardar nada. Así `main` solo cambia cuando yo fusiono la PR.
 
 ---
 
@@ -304,8 +304,8 @@ Las pruebas ya pasaban de 28 (las que pide la página): ahora son 405.
 ## Sesión 4 · borrador del CHANGELOG, release e instalación cruzada — [COMPLETAR]
 **`opencode run --agent plan` → `docs/changelog-borrador.md` (en clase):** [COMPLETAR] (qué se inventó o qué se dejó comparado con `CHANGELOG.md`)
 **`bash scripts/revisar.sh` de verdad:** [COMPLETAR] (veredicto, segundos y si lo que señaló era cierto)
-**Actions en macOS:** [COMPLETAR] (¿verde a la primera? si no, qué falló)
-**Release:** PR de `release-1.0` fusionada, `git tag -a v1.0.0`, `git push --tags` y `gh release create`: [COMPLETAR]
+**Actions en macOS:** no salió verde a la primera. El 11-nov, la rama `release-1.0` falló en Ubuntu y en macOS, y en Windows pasó. La prueba `test_version_con_los_dos_nombres` le pasaba al programa una ruta de Windows (`C:\Users\alumno\...\tareas.exe`). En Linux y macOS esa ruta no se parte por las barras invertidas, así que el nombre no salía y respondía `dam 1.0.0` en vez de `tareas 1.0.0`. Se arregló en `bde3cb7`: ahora la prueba construye las rutas con `Path.home()` del sistema donde se ejecuta. Tres minutos después, verde en los tres. Para eso sirve probar en los tres sistemas: en mi Windows esa prueba pasaba siempre.
+**Release:** PR de `release-1.0` fusionada, `git tag -a v1.0.0`, `git push --tags` y `gh release create`: la PR #16 la fusioné yo el 11-nov a las 15:40 y en los minutos siguientes creé la etiqueta `v1.0.0` y la release «tareas 1.0.0» en GitHub. Las órdenes me las dio Claude Code, pero las ejecuté yo. Esa misma tarde salió la `v1.0.1` con los arreglos del ensayo en el portátil (abajo).
 **Ensayo en un ordenador limpio (hecho el 11-nov):** en mi portátil viejo con Ubuntu 24.04.4 recién instalado, siguiendo solo el README, mientras Claude Code me guiaba y arreglaba desde el PC de casa. Lo que salió, cada cosa con su issue (abiertos con `gh issue create`) y arreglado en la **1.0.1** con «Closes #N»:
 - **#17:** Ubuntu no traía ni `git` ni `curl`, y al escribir `uv` sin tenerlo, Ubuntu sugiere el de snap. → Apartado «Antes de empezar» en el README.
 - **#18:** con la orden única no hay `acciones.json`, y el error decía «Créalo» sin decir cómo. → El mensaje dice de dónde bajar el ejemplo y dónde guardarlo. Una prueba comprueba que ese ejemplo es válido.
@@ -324,7 +324,11 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - `uv run pytest -q` → **418 passed, 1 skipped** en Ubuntu 24.04.
 - Release `v1.0.1` publicada con los arreglos de los issues #17-#22, todos cerrados.
 **Instalación cruzada con otra persona:** quién la hizo, en qué sistema, qué issues abrió y cómo los contesté: [COMPLETAR]
-**Qué aprendí:** [COMPLETAR]
+**Qué aprendí:**
+- **El README se prueba en un ordenador limpio y siguiéndolo al pie de la letra.** En mi PC funcionaba porque ya tenía `git`, `curl` y `uv`. En el portátil recién instalado salieron cinco fallos en una tarde, y ninguno era del código: eran del README y de los mensajes.
+- **Un issue por fallo y `Closes #N` en el commit.** Así cada arreglo queda unido a su problema y la release dice qué arregla.
+- **Un mensaje de error tiene que decir qué hacer, no solo qué pasa.** «Créalo» o «mira `.env.example`» no sirven si no dices cómo ni dónde.
+- **`uv tool install` no usa mi `uv.lock`.** En otro equipo se pueden instalar otras versiones de las librerías, y las pruebas tienen que pasar también con ellas.
 
 ---
 
@@ -384,7 +388,7 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 ## 2026-11-12 · `dam configurar-ia`: la IA de dam con los modelos gratis de OpenCode (Claude Code)
 **Herramienta:** Claude Code, en casa (Windows), y mi Ubuntu de WSL para el instalador.
 **Prompt:** «Una cosa para lo de la IA, ¿no podríamos hacer que usara OpenCode con modelos gratuitos como DeepSeek u otro, el que sea, como un instalador más o que se autoinstale si quieres con IA, que lo pregunte, que se configure ya con los modelos gratuitos, que cuando se instale se cree el archivo de configuración de los modelos, el de opencode.json o algo así más automatizado?»
-**Por qué se me ocurrió:** [COMPLETAR] (con tus palabras: el servidor del centro solo responde desde el instituto y en casa me quedaba sin las acciones con IA).
+**Por qué se me ocurrió:** el servidor del centro solo responde desde la red del instituto. En casa, que es donde más trabajo en el proyecto, `resumir-tema`, `nombrar-descargas` y `clasificar-asignatura` no me servían para nada: solo podía probarlas con `--simular`. Yo ya usaba OpenCode con modelos gratis, así que pensé: si OpenCode puede hablar con esos modelos desde casa, ¿por qué no puede hacerlo `dam`? Y que lo dejara configurado el instalador, para que otro alumno no tuviera que pelearse con ficheros de configuración.
 
 **Lo que me explicó antes de empezar:** los modelos gratis de OpenCode solo funcionan desde dentro de OpenCode, así que `dam` no los puede llamar con `httpx` como al servidor del centro. Propuso lanzar `opencode run` con un agente propio sin herramientas, para no romper lo que decidí en el ADR-0002 (que un PDF con «Ignora tus instrucciones...» no pueda hacer nada). También me avisó de que no todos los modelos gratis tratan igual lo que les mandas y de que los van cambiando.
 
@@ -415,7 +419,11 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - **En WSL se ven el `npm` y el `opencode` de Windows** (`/mnt/c/...`). Ese `npm` instalaría OpenCode en Windows y ese `opencode` no entiende las rutas de Linux. Ahora el instalador y `dam` solo usan los de Linux.
 - **Al leer la web de OpenCode:** ya documenta la versión 2, que cambia el formato de los agentes. Por eso el instalador pone la 1.18.35, la de clase.
 
-**Qué aprendí:** [COMPLETAR]
+**Qué aprendí:**
+- **Lo que decidí en un ADR me sirvió para decidir lo siguiente.** Como el ADR-0002 dice que la IA no puede hacer nada con lo que lee, el proveedor nuevo lanza OpenCode con un agente que no puede salir de una carpeta vacía. Y como `ProveedorIA` es una clase abstracta, añadir `ProveedorOpenCode` no cambió ninguna acción.
+- **Probar que algo NO pasa también es una prueba.** Le pedí dentro del texto que leyera un fichero de fuera de su carpeta y respondió «NOPUEDO».
+- **Las herramientas de otros cambian sin avisar.** Los modelos gratis van y vienen, y la versión 2 de OpenCode cambia el formato de los agentes. Por eso la lista se pide al día y el instalador fija la 1.18.35, la de clase.
+- **Con un programa de mentira** (un `opencode` falso) puedo comprobar 29 casos sin red y sin gastar nada.
 
 ## 2026-11-12 · `ordenar` lee los `.odt` por dentro y mete cada fichero en su unidad (Claude Code)
 **Herramienta:** Claude Code, en casa (Windows).
@@ -441,7 +449,11 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 
 **Lo que no hace:** entrar en `unitat 1/Examen recuperacion`. Llega hasta la carpeta de la unidad y las subcarpetas de dentro las elijo yo.
 
-**Qué aprendí:** [COMPLETAR]
+**Qué aprendí:**
+- **Antes de arreglar, mirar qué pasa de verdad.** Creía que `ordenar` fallaba con mis ficheros, y la tabla que vi era de otra carpeta (el `origen` de la acción).
+- **Un `.odt` o un `.docx` es un zip con XML dentro.** Se puede leer con `zipfile`, sin instalar nada. Y lo importante no siempre está en el cuerpo: en mi examen, la asignatura y la unidad estaban en la cabecera (`styles.xml`).
+- **Si hay duda, no adivinar.** Cuando salen dos unidades o dos carpetas posibles, `ordenar` no elige ninguna. Prefiero colocar yo un fichero a encontrarlo en una carpeta equivocada.
+- **Hay cosas que ningún programa puede saber**, como que el logo de la plantilla es de un examen de sistemas.
 
 ## 2026-11-12 · Prueba de verdad: mis apuntes de 1º de SMX, con IA y sin IA (Claude Code y WSL)
 **Herramienta:** Claude Code, en casa (Windows), y mi Ubuntu de WSL para ejecutar `dam`.
@@ -474,7 +486,11 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - Comprobado con los ficheros de verdad, sin moverlos: `Spamhause.odt` va ahora a seguridad y los de redes siguen en redes. `A2_UD2_SOMsmx.odt` sigue yendo a montaje: ahí ayuda la IA.
 - 2 pruebas nuevas, que fallan sin el cambio. En total, 526.
 
-**Qué aprendí:** [COMPLETAR]
+**Qué aprendí:**
+- **Probar con una lista de lo que tiene que salir.** Con `esperado.txt` y `diff` veo exactamente cuántos acierta y cuáles falla, en vez de mirar por encima y decir «parece que va bien».
+- **La IA y las palabras clave fallan en sitios distintos.** La IA entiende de qué va un texto aunque no tenga las palabras de la lista, pero no veía el nombre del fichero. `ordenar` es instantáneo y gratis, pero cuenta palabras sin entenderlas. Juntos aciertan más que cada uno por separado.
+- **A veces no hay forma de saberlo.** `module5.pdf` no lo acierta nadie: lo que lo hace de ciberseguridad es la carpeta de donde lo saqué, no lo que hay dentro.
+- **Un cambio pequeño puede no bastar.** Con cuatro palabras nuevas, `Spamhause` habría empatado con redes, y en un empate gana la primera de la lista. Hay que comprobarlo con el fichero de verdad, no suponerlo.
 
 ## 2026-11-12 · Instalación desde cero en un Linux de clase (Claude Code y PC de clase)
 **Herramienta:** Claude Code, en casa, para preguntar y arreglar; `dam` lo probé yo en un PC del aula con Ubuntu que no es el mío y donde nunca se había instalado.

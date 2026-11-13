@@ -18,7 +18,7 @@ mis apuntes de 1º DAM sincronizados entre el PC de clase, el de casa y el USB.
 7. **Nunca hará:** borrar sin preguntar ni tocar ficheros fuera de la carpeta que le indique.
 8. **Plataformas:** Linux primero; también Windows y macOS.
 9. **Códigos de salida:** 0 bien · 1 fallo al ejecutar · 2 uso incorrecto · 3 configuración inválida.
-10. **Instalación:** `uv tool install --editable .` (lo completo en la semana 4).
+10. **Instalación:** `uv tool install --editable .` (lo completo en la semana 4). *Hecho: ahora es una sola orden, `uv tool install git+https://github.com/gabi37smx/Terminal_CLI`, o `bash instalar.sh`, que lo deja todo listo (ver [Instalación](#instalación)).*
 
 ## Instalación
 
