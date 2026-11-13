@@ -1398,7 +1398,7 @@ def doctor(
         consola.print("[yellow]⚠ Estás en tu carpeta personal, no en un proyecto.[/yellow] dam doctor revisa "
                       "un proyecto: entra en su carpeta (cd) o dime cuál.")
         for repo in doctor_mod.proyectos_visibles(raiz.resolve()):
-            consola.print(f'  dam doctor "{escape(str(raiz.resolve() / repo))}"')
+            consola.print(f'  dam doctor "{escape(str(raiz.resolve() / repo))}"', soft_wrap=True)  # entera, para copiarla
         raise typer.Exit(1)
     informe = doctor_mod.revisar(carpeta)
     tabla = Table(title=f"Revisión de {escape(str(informe.carpeta))}")
@@ -1414,7 +1414,7 @@ def doctor(
     consola.print(f"{informe.correctas} de {len(informe.aplicables)} comprobaciones bien.")
     for repo in informe.repos_dentro:
         consola.print(f'[yellow]⚠ Parece la carpeta de fuera. Revisa el proyecto:[/yellow]  '
-                      f'dam doctor "{escape(str(informe.carpeta / repo))}"')
+                      f'dam doctor "{escape(str(informe.carpeta / repo))}"', soft_wrap=True)
     if informe.fallan_basicas:
         consola.print(f"[red]✘ Falla lo básico: {escape(', '.join(informe.fallan_basicas))}[/red]")
         raise typer.Exit(1)
