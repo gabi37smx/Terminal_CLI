@@ -154,27 +154,35 @@ if [ "$(uname)" = "Linux" ] && [ -z "$(git config --global credential.helper || 
 fi
 
 # 6. Almacén de apuntes ----------------------------------------------------
+# Solo se busca si ya lo tienes. Si no, se baja o se crea en el paso 6b, después de elegir el ciclo:
+# se llama como tu ciclo (DAM-almacen, ASIR-almacen...) y dam te ayuda a crearlo (ADR-0005).
 paso "Almacén de apuntes"
 ALMACEN="${DAM_ALMACEN:-}"
-if [ -z "$ALMACEN" ]; then
-    # ¿Ya está clonado en otro sitio (por ejemplo en ~/Documents o ~/Documentos)? Se busca hasta
-    # 3 niveles un repo git cuyo remoto sea DAM-almacen, se llame como se llame la carpeta.
+if [ -n "$ALMACEN" ]; then
+    ok "Uso el de DAM_ALMACEN: $ALMACEN"
+else
+    # ¿Ya está clonado (por ejemplo en ~/Documents o ~/Documentos)? Se busca hasta 3 niveles un repo
+    # git cuyo remoto sea CICLO-almacen, se llame como se llame la carpeta.
     encontrados=()
     while IFS= read -r git_dir; do
         carpeta="$(dirname "$git_dir")"
-        if git -C "$carpeta" remote get-url origin 2>/dev/null | grep -qi "/dam-almacen"; then
+        if git -C "$carpeta" remote get-url origin 2>/dev/null | grep -qiE "/(smx|dam|daw|asir|apuntes)-almacen(\.git)?/?$"; then
             encontrados+=("$carpeta")
         fi
-    done < <(find "$HOME" -maxdepth 4 \( -path "$HOME/.*" -o -name node_modules \) -prune \
-                  -o -type d -name .git -print 2>/dev/null | sort || true)
+    done < <(find "$HOME" -maxdepth 4 \( -path "$HOME/.*" -o -name node_modules \) -prune                   -o -type d -name .git -print 2>/dev/null | sort || true)
     if [ "${#encontrados[@]}" -gt 0 ]; then
         ALMACEN="${encontrados[0]}"
+        ok "Ya lo tienes en $ALMACEN"
         if [ "${#encontrados[@]}" -gt 1 ]; then
             aviso "Hay ${#encontrados[@]} copias del almacén: ${encontrados[*]}"
             aviso "Uso la primera. Para usar otra: export DAM_ALMACEN=RUTA en $RC"
         fi
-        if [ "$ALMACEN" != "$HOME/DAM-almacen" ] && [ -n "${RC:-}" ]; then
-            # dam lo busca en ~/DAM-almacen (acciones.json): si está en otro sitio, se lo digo con DAM_ALMACEN
+        # dam lo busca en ~/CICLO-almacen (acciones.json): si está en otro sitio, se lo digo con DAM_ALMACEN
+        en_su_sitio=0
+        case "$ALMACEN" in
+            "$HOME"/SMX-almacen|"$HOME"/DAM-almacen|"$HOME"/DAW-almacen|"$HOME"/ASIR-almacen|"$HOME"/APUNTES-almacen) en_su_sitio=1 ;;
+        esac
+        if [ "$en_su_sitio" = 0 ] && [ -n "${RC:-}" ]; then
             if ! grep -q "DAM_ALMACEN=" "$RC" 2>/dev/null; then
                 printf '\n# Dónde está el almacén de apuntes (lo añadió instalar.sh)\nexport DAM_ALMACEN="%s"\n' "$ALMACEN" >> "$RC"
                 ok "Guardado DAM_ALMACEN=$ALMACEN en $RC"
@@ -184,43 +192,20 @@ if [ -z "$ALMACEN" ]; then
         fi
         export DAM_ALMACEN="$ALMACEN"
     else
-        ALMACEN="$HOME/DAM-almacen"
-    fi
-fi
-if [ -d "$ALMACEN/.git" ]; then
-    ok "Ya está clonado en $ALMACEN"
-elif [ -e "$ALMACEN" ]; then
-    aviso "$ALMACEN existe pero no es un repositorio git: no lo toco."
-else
-    usuario=""
-    echo "    Tu usuario de GitHub es el de github.com/TU_USUARIO (no el de este ordenador)."
-    read -rp "    Usuario de GitHub para clonar DAM-almacen (Enter para saltar): " usuario || true
-    if [ -n "$usuario" ]; then
-        echo "    Si el repo es privado, git te pedirá dos cosas:"
-        echo "      Username → $usuario"
-        echo "      Password → un token (la contraseña normal no vale). Créalo en"
-        echo "                 https://github.com/settings/tokens con permiso «repo». Al pegarlo no se ve: es normal."
-        if git clone "https://github.com/$usuario/DAM-almacen.git" "$ALMACEN"; then
-            ok "Clonado en $ALMACEN"
-        else
-            aviso "No he podido clonarlo. Si pone «Invalid username or token»: en Password pegaste la contraseña"
-            aviso "o un token caducado; el token empieza por ghp_ o github_pat_ (cópialo entero al crearlo)."
-            aviso "Si pone «Repository not found»: el usuario está mal, el token no vale"
-            aviso "o el repo no se llama DAM-almacen (GitHub esconde así los repos privados)."
-            aviso "Puedes repetir  bash instalar.sh : lo que ya está hecho se salta."
-        fi
-    else
-        aviso "Saltado. Luego: git clone https://github.com/TU_USUARIO/DAM-almacen.git ~/DAM-almacen"
+        echo "    Aún no lo tienes en este equipo: después de elegir tu ciclo te ayudo a bajarlo o a crearlo."
     fi
 fi
 
-# 6b. Tu ciclo y tus asignaturas --------------------------------------------
-# Como adduser en Linux: pregunta qué estudias y deja acciones.json a tu medida. Va después del
-# almacén para poder crear en él las carpetas de tus asignaturas.
+# 6b. Tu ciclo, tus asignaturas y tu almacén ---------------------------------
+# Como adduser en Linux: pregunta qué estudias y deja acciones.json a tu medida. Al acabar ofrece
+# preparar el almacén (se llama como tu ciclo). Si no se configura, se prepara igual con crear-almacen.
 paso "Tu ciclo y tus asignaturas (dam configurar)"
 configurar() { uv run dam --config "$CONFIG" configurar --plantilla acciones.json; }
+configurado=0
 if [ ! -f "$CONFIG" ]; then
-    if ! configurar; then
+    if configurar; then
+        configurado=1
+    else
         mkdir -p "$(dirname "$CONFIG")"
         cp acciones.json "$CONFIG"
         aviso "No se ha configurado: he copiado las acciones de 1º de DAM a $CONFIG."
@@ -234,10 +219,14 @@ else
     respuesta=""
     read -rp "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [s/N]: " respuesta || true
     if [ "$respuesta" = "s" ] || [ "$respuesta" = "S" ]; then
-        configurar || aviso "No he cambiado nada: dam seguirá usando la tuya."
+        if configurar; then configurado=1; else aviso "No he cambiado nada: dam seguirá usando la tuya."; fi
     else
         aviso "No la toco: dam seguirá usando la tuya."
     fi
+fi
+if [ "$configurado" = 0 ]; then
+    paso "Tu almacén de apuntes (dam crear-almacen)"
+    uv run dam --config "$CONFIG" crear-almacen || aviso "Sin almacén de momento. Cuando quieras:  dam crear-almacen"
 fi
 
 # 6c. IA para las acciones que la usan --------------------------------------

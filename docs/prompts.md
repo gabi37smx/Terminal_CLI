@@ -552,3 +552,30 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - **Ctrl+C a mitad de mover:** código 130 (el normal de Ctrl+C), sin traza, y el fichero se queda en su sitio. No dice nada al salir; no lo cambio porque no se pierde nada.
 
 **Qué aprendí:** que pasen las pruebas no es lo mismo que haberlo visto. Provocar los errores uno a uno con el programa instalado es lo que haría el profe, y así sé qué ve un usuario en cada caso. Que un mensaje sea «amable» no es que sea educado: es que diga dónde está el fallo (la acción y el campo) y qué hacer para arreglarlo.
+
+## 2026-11-13 · Cada ciclo con su almacén, y crearlo sin saber git (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows).
+**Prompt 1 (la duda):** «Si alguien empieza creando otro ciclo, por ejemplo ASIR, no clona mi repo: ¿creará su propio repo para subir las asignaturas, o eso lo crea el usuario luego y lo sube al repo? ¿Cómo está montado?»
+**Prompt 2 (la idea):** «Para cada ciclo debería ser CICLO-almacen, ¿no crees? Porque si no, está mal que sea DAM-almacen. ¿Y no se puede automatizar que, si tiene cuenta de GitHub, como al principio pregunta, ya cree el repo en privado?»
+**Prompt 3 (la decisión):** «¿Cuál es más fácil para los que no sepan mucho, por ejemplo los de 1º de SMX? Hay que facilitar las cosas.»
+**Por qué se me ocurrió:** mi cuñado (ASIR) iba a instalar `dam` para la instalación cruzada, y me di cuenta de que no sabía qué le iba a pasar con el almacén. Claude Code miró el código: el instalador clonaba siempre `USUARIO/DAM-almacen`, y nadie le decía que ese repo lo tenía que crear él antes. A alguien de ASIR le pedíamos un repo que se llamara DAM, y si no lo tenía, se quedaba sin almacén.
+
+**Qué se hizo:**
+- `dam configurar` pone la ruta del almacén según tu ciclo (`~/ASIR-almacen`...). Con DAM no cambia nada, y si la ruta la escribiste tú, tampoco.
+- `dam crear-almacen` (módulo `almacen_nuevo.py`):
+  - Pide el usuario de GitHub (vale pegar `github.com/usuario`) y pregunta si ya tienes el repo.
+  - Si no, abre `github.com/new` con el nombre y **Private** ya puestos: solo pulsas «Create repository».
+  - Lo clona, crea las carpetas de tus asignaturas y, si el repo es nuevo, hace el primer commit y el `push -u` (si no, `dam sync` no sabe adónde subir).
+- `dam configurar` lo ofrece al acabar. Los instaladores (`instalar.sh` e `instalar.ps1`) ya no clonan `DAM-almacen` a ciegas: buscan cualquier `CICLO-almacen` que ya tengas y lo preparan después de elegir el ciclo.
+- README con una sección paso a paso, y el ADR-0005 con por qué así.
+
+**Por qué con la página rellena y no con un token:** había tres opciones: abrir GitHub ya relleno, crearlo solo con un token, o las dos. Elegí la primera porque crear un token es lo más difícil para alguien de 1º de SMX, y porque así `dam` nunca ve ni la contraseña ni el token.
+
+**Cómo se probó:** 30 pruebas nuevas con un «GitHub de mentira» (repos *bare* en una carpeta temporal, como los de GitHub) y sin abrir el navegador: alumno nuevo de ASIR, otro equipo que solo lo baja, repo que no existe, usuario mal escrito, carpeta que no es git... En total, **559 pruebas OK**. Al meter el comando, la ayuda general se pasaba de una pantalla porque el nombre largo ensanchaba la columna: por eso es `crear-almacen` y no `preparar-almacen`.
+
+**Falta probarlo de verdad:** [COMPLETAR] crear un `ASIR-almacen` real con la cuenta de mi cuñado (o una de prueba) y ver que la página de GitHub sale rellena y privada, que se clona y que la primera subida llega.
+
+**Qué aprendí:**
+- **Hacer las preguntas de un usuario nuevo descubre huecos.** Las pruebas pasaban, pero nadie había pensado qué le pasa a alguien que no tiene el almacén. Lo vi al imaginar a mi cuñado instalándolo.
+- **Fácil para quien menos sabe.** La opción más automática (con token) no era la más fácil: el paso difícil es crear el token. Pulsar un botón verde en GitHub lo sabe hacer todo el mundo.
+- **El orden importa.** Para poner el nombre del ciclo, primero hay que saber el ciclo: hubo que cambiar el orden del instalador.

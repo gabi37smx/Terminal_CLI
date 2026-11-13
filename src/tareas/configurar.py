@@ -4,6 +4,7 @@ Aquí solo está la lógica, sin preguntas por pantalla (esas están en cli.py),
 - `aplicar` cambia las acciones «ordenar» y «clasificar» de una plantilla por tus asignaturas.
 - `guardar` valida el resultado entero y lo escribe, con copia del fichero anterior.
 - `carpetas_que_faltan` / `crear_carpetas` preparan asignaturas/ en tu almacén.
+- La ruta del almacén pasa a ser la de tu ciclo (~/ASIR-almacen...) si era una de las que pone dam.
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from . import ciclos, config
+from . import ciclos, config, almacen_nuevo
 from .errores import ConfigError
 
 OTROS = "otros"  # categoría de «clasificar» para lo que no es de ninguna asignatura
@@ -93,6 +94,9 @@ def aplicar(plantilla: dict, ciclo: str, cursos: list[int], asignaturas: dict[st
             accion["categorias"] = categorias
             accion["instrucciones"] = instrucciones(etiqueta, asignaturas)
             accion["descripcion"] = _cambiar_curso(accion.get("descripcion", ""), etiqueta)
+    almacen = datos.get("almacen")
+    if isinstance(almacen, dict) and isinstance(almacen.get("ruta"), str):
+        almacen["ruta"] = almacen_nuevo.ruta_para(almacen["ruta"], ciclo)  # ~/DAM-almacen -> ~/ASIR-almacen
     datos["perfil"] = {"ciclo": ciclo, "cursos": sorted(set(cursos))}
     return datos
 

@@ -10,6 +10,14 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Añadido
 
+- `dam crear-almacen`: deja listo tu almacén de apuntes aunque no sepas git. Si ya lo tienes en
+  GitHub, lo baja; si no, abre GitHub con el nombre y **Private** ya puestos, y solo pulsas «Create
+  repository». Luego crea las carpetas de tus asignaturas y, si el repo es nuevo, las sube (así
+  `dam sync` ya sabe adónde subir). `dam` nunca ve tu contraseña ni tu token (ADR-0005).
+- El almacén se llama como tu ciclo: `SMX-almacen`, `DAM-almacen`, `DAW-almacen` o `ASIR-almacen`.
+  `dam configurar` pone esa ruta en `acciones.json` (con DAM no cambia nada) y, si no tienes
+  almacén, ofrece crearlo.
+
 - `ordenar` mete cada fichero en la carpeta de **su unidad** si la asignatura ya la tiene: si el
   nombre, o si no el principio del contenido, dice «UD1», «UD-01», «Unitat 1», «Unidad 01» o
   «Tema 1», va a `sistemas/1 Avaluacio/unitat 1` (busca hasta 3 niveles y nunca crea la carpeta).
