@@ -126,7 +126,27 @@ class Dam(typer.Typer):
                               "antes de las comillas de cierre se las come (el TAB de PowerShell la añade).")
             consola_err.print(f"Quita la \\ del final y repite:  [bold]{escape(corregida)}[/bold]")
             raise SystemExit(2)  # 2 = uso incorrecto
-        return super().__call__(*args, **kwargs)
+        try:
+            return super().__call__(*args, **kwargs)
+        except OSError as e:
+            # «dam --help | head»: quien leía se fue antes de acabar. En Linux llega BrokenPipeError
+            # (Rich ya lo trata); en Windows, OSError 22 y una traza enorme. No es un fallo de dam.
+            if not (isinstance(e, BrokenPipeError) or _salida_cerrada()):
+                raise
+            try:  # que Python no se queje al cerrar intentando vaciar la salida rota
+                os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+            except (OSError, ValueError):
+                pass
+            raise SystemExit(0) from None
+
+
+def _salida_cerrada() -> bool:
+    """¿Se ha cerrado la salida (el otro lado de la tubería)? Si se puede vaciar, no."""
+    try:
+        sys.stdout.flush()
+        return False
+    except OSError:
+        return True
 
 
 app = Dam(
