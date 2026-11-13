@@ -1190,7 +1190,9 @@ def _lista(titulo: str, color: str, cambios: list[sincronizar.Cambio], limite: i
         return
     consola.print(f"\n[bold {color}]{titulo} ({len(cambios)})[/bold {color}]")
     for c in cambios[:limite]:
-        consola.print(f"  [{color}]{c.estado:<10}[/{color}] {escape(c.ruta)}")
+        # soft_wrap: una ruta larga con espacios («1 Evaluacion/...») no se parte en dos líneas
+        # que parecen dos ficheros (13-nov, PC1412); si no cabe, la terminal la sigue debajo
+        consola.print(f"  [{color}]{c.estado:<10}[/{color}] {escape(c.ruta)}", soft_wrap=True)
     if len(cambios) > limite:
         consola.print(f"  ... y {len(cambios) - limite} más")
 
