@@ -140,3 +140,28 @@ def test_codigo_4_ia_sin_clave_y_las_demas_siguen(escribir_config, tmp_path):
     r = runner.invoke(app, ["--config", str(cfg), "ejecutar", "resumir-tema", str(tmp_path / "Apuntes"), "--si"])
     salida = " ".join(r.output.split())
     assert r.exit_code == 4 and "Las acciones sin IA siguen funcionando" in salida and "Traceback" not in salida
+
+
+# ---------- «dam --help | head» en Windows ----------
+def _ayuda_que_falla(monkeypatch, error, salida_cerrada):
+    from tareas import cli
+    def romper():
+        raise error
+    monkeypatch.setattr(cli, "mostrar_ayuda", romper)
+    monkeypatch.setattr(cli, "_salida_cerrada", lambda: salida_cerrada)
+    monkeypatch.setattr(cli.os, "dup2", lambda *a: None)  # no tocar la salida de pytest
+    monkeypatch.setattr("sys.argv", ["dam", "--help"])
+    return cli.app
+
+
+def test_si_quien_lee_la_salida_se_va_no_hay_traza(monkeypatch):
+    app_ = _ayuda_que_falla(monkeypatch, OSError(22, "Invalid argument"), salida_cerrada=True)
+    with pytest.raises(SystemExit) as e:
+        app_()
+    assert e.value.code == 0
+
+
+def test_otro_oserror_no_se_esconde(monkeypatch):
+    app_ = _ayuda_que_falla(monkeypatch, OSError(22, "Invalid argument"), salida_cerrada=False)
+    with pytest.raises(OSError):
+        app_()

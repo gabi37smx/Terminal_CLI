@@ -126,7 +126,27 @@ class Dam(typer.Typer):
                               "antes de las comillas de cierre se las come (el TAB de PowerShell la añade).")
             consola_err.print(f"Quita la \\ del final y repite:  [bold]{escape(corregida)}[/bold]")
             raise SystemExit(2)  # 2 = uso incorrecto
-        return super().__call__(*args, **kwargs)
+        try:
+            return super().__call__(*args, **kwargs)
+        except OSError as e:
+            # «dam --help | head»: quien leía se fue antes de acabar. En Linux llega BrokenPipeError
+            # (Rich ya lo trata); en Windows, OSError 22 y una traza enorme. No es un fallo de dam.
+            if not (isinstance(e, BrokenPipeError) or _salida_cerrada()):
+                raise
+            try:  # que Python no se queje al cerrar intentando vaciar la salida rota
+                os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+            except (OSError, ValueError):
+                pass
+            raise SystemExit(0) from None
+
+
+def _salida_cerrada() -> bool:
+    """¿Se ha cerrado la salida (el otro lado de la tubería)? Si se puede vaciar, no."""
+    try:
+        sys.stdout.flush()
+        return False
+    except OSError:
+        return True
 
 
 app = Dam(
@@ -756,10 +776,24 @@ def configurar_ia(
         raise typer.BadParameter(f"usa {' o '.join(ia.PROVEEDORES)}", param_hint="--proveedor")
 
     if proveedor == "centro":
-        ruta = ia.guardar_ajustes({"proveedor": "centro"})
+        ajustes = {"proveedor": "centro"}
+        if not si and not (os.environ.get("CENTRO_IA_URL") and os.environ.get("CENTRO_IA_KEY")):
+            for nombre, datos in ia.servidores_opencode().items():
+                if preguntar(f"OpenCode ya tiene el servidor «{datos['titulo']}» ({datos['url']}). "
+                             "¿Lo uso también en dam? La clave se queda en OpenCode: no la copio"):
+                    ajustes["opencode"] = nombre
+                    break
+        ruta = ia.guardar_ajustes(ajustes)
         consola.print(f"[green]✔ Guardado en {escape(str(ruta))}[/green]: las acciones con IA usarán el servidor del centro.")
-        consola.print("Necesita CENTRO_IA_URL, CENTRO_IA_KEY y CENTRO_IA_CA (mira .env.example). "
-                      "Compruébalo desde la red del instituto con: [bold]dam comprobar-ia[/bold]")
+        if "opencode" in ajustes:
+            consola.print(f"La dirección y la clave las leo de {escape(str(configurar_ia_mod.ruta_opencode_global()))} "
+                          "cada vez. Si defines CENTRO_IA_URL y CENTRO_IA_KEY, mandan ellas.")
+            if not (os.environ.get("CENTRO_IA_CA") or os.environ.get("NODE_EXTRA_CA_CERTS")):
+                consola.print("[yellow]Falta el certificado del centro:[/yellow] pon su ruta en CENTRO_IA_CA "
+                              "(mira .env.example).")
+        else:
+            consola.print("Necesita CENTRO_IA_URL, CENTRO_IA_KEY y CENTRO_IA_CA (mira .env.example).")
+        consola.print("Compruébalo desde la red del instituto con: [bold]dam comprobar-ia[/bold]")
         return
 
     ejecutable = ia.ProveedorOpenCode().ejecutable()
@@ -1359,6 +1393,13 @@ def doctor(
 
     No cambia nada. Del .env solo lee los NOMBRES de las variables, nunca los valores.
     """
+    raiz = carpeta.expanduser()
+    if doctor_mod.es_carpeta_personal(raiz):
+        consola.print("[yellow]⚠ Estás en tu carpeta personal, no en un proyecto.[/yellow] dam doctor revisa "
+                      "un proyecto: entra en su carpeta (cd) o dime cuál.")
+        for repo in doctor_mod.proyectos_visibles(raiz.resolve()):
+            consola.print(f'  dam doctor "{escape(str(raiz.resolve() / repo))}"', soft_wrap=True)  # entera, para copiarla
+        raise typer.Exit(1)
     informe = doctor_mod.revisar(carpeta)
     tabla = Table(title=f"Revisión de {escape(str(informe.carpeta))}")
     tabla.add_column("Comprobación", overflow="fold")
@@ -1373,7 +1414,7 @@ def doctor(
     consola.print(f"{informe.correctas} de {len(informe.aplicables)} comprobaciones bien.")
     for repo in informe.repos_dentro:
         consola.print(f'[yellow]⚠ Parece la carpeta de fuera. Revisa el proyecto:[/yellow]  '
-                      f'dam doctor "{escape(str(informe.carpeta / repo))}"')
+                      f'dam doctor "{escape(str(informe.carpeta / repo))}"', soft_wrap=True)
     if informe.fallan_basicas:
         consola.print(f"[red]✘ Falla lo básico: {escape(', '.join(informe.fallan_basicas))}[/red]")
         raise typer.Exit(1)
