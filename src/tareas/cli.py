@@ -1393,6 +1393,13 @@ def doctor(
 
     No cambia nada. Del .env solo lee los NOMBRES de las variables, nunca los valores.
     """
+    raiz = carpeta.expanduser()
+    if doctor_mod.es_carpeta_personal(raiz):
+        consola.print("[yellow]⚠ Estás en tu carpeta personal, no en un proyecto.[/yellow] dam doctor revisa "
+                      "un proyecto: entra en su carpeta (cd) o dime cuál.")
+        for repo in doctor_mod.proyectos_visibles(raiz.resolve()):
+            consola.print(f'  dam doctor "{escape(str(raiz.resolve() / repo))}"')
+        raise typer.Exit(1)
     informe = doctor_mod.revisar(carpeta)
     tabla = Table(title=f"Revisión de {escape(str(informe.carpeta))}")
     tabla.add_column("Comprobación", overflow="fold")

@@ -75,6 +75,23 @@ def repos_dentro(raiz: Path) -> list[str]:
         return []
 
 
+def es_carpeta_personal(raiz: Path) -> bool:
+    """¿Es tu carpeta personal (~) y no un repositorio? Ahí no hay un proyecto que revisar.
+
+    13-nov, en clase: «dam doctor» en una terminal nueva (que empieza en ~) revisó todo: certificados de
+    librerías en .cache como «secretos», .nvm/package.json como «dependencias»... y tardó.
+    """
+    try:
+        return raiz.resolve() == Path.home().resolve() and not escanear.es_repo(raiz)
+    except OSError:
+        return False
+
+
+def proyectos_visibles(raiz: Path) -> list[str]:
+    """Los repos de dentro, sin las carpetas ocultas (.nvm, .cache...): esos no son proyectos tuyos."""
+    return [r for r in repos_dentro(raiz) if not r.startswith(".")]
+
+
 def _git(raiz: Path, con_git: bool, subrepos: list[str]) -> Comprobacion:
     if con_git:
         return Comprobacion("Repositorio git", "ok", "Tiene historial de cambios.")

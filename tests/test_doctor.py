@@ -205,3 +205,23 @@ def test_carpeta_de_fuera_con_repos_dentro(tmp_path):
 def test_un_repo_no_mira_sus_subcarpetas(sano):
     subprocess.run(["git", "init", str(sano / "vendor")], check=True, capture_output=True)
     assert doctor.revisar(sano).repos_dentro == []
+
+
+def test_en_tu_carpeta_personal_no_revisa_todo_y_dice_que_proyectos_hay(tmp_path):
+    """13-nov: en una terminal nueva (que empieza en ~), doctor revisaba todo: .cache, .nvm..."""
+    casa = Path.home()  # conftest la pone en una carpeta temporal
+    for nombre in ("Terminal_CLI", ".nvm"):
+        subprocess.run(["git", "init", str(casa / nombre)], check=True, capture_output=True)
+    escribir(casa / ".cache" / "cacert.pem", "-----BEGIN CERTIFICATE-----")
+    r = run.invoke(app, ["doctor", str(casa)])
+    salida = " ".join(r.output.split())
+    assert r.exit_code == 1
+    assert "Estás en tu carpeta personal" in salida and "Terminal_CLI" in salida
+    assert ".nvm" not in salida and "Revisión de" not in salida  # ni las ocultas ni la tabla
+
+
+def test_si_tu_carpeta_personal_es_un_repo_si_la_revisa():
+    casa = Path.home()
+    subprocess.run(["git", "init", str(casa)], check=True, capture_output=True)  # p. ej., tus dotfiles
+    r = run.invoke(app, ["doctor", str(casa)])
+    assert "Revisión de" in r.output
