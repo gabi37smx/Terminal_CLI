@@ -522,3 +522,33 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 **Lo que queda de esta prueba:** mañana, en el mismo PC, `which dam`, para saber si el PC de clase guarda la carpeta personal (lo que falta por rellenar en la entrada del 3-nov). Y `dam status` y `dam sync --simular` con el almacén clonado, en un equipo mío.
 
 **Qué aprendí:** que probar en mi PC no es probar: en WSL todo funcionaba porque ya tenía `uv` instalado de antes, y el fallo del PATH solo salía en un ordenador limpio. También que un `export` solo dura en esa terminal y que lo permanente va en `~/.bashrc`.
+
+## 2026-11-13 · Repaso de los errores amables antes de la entrega (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows), con `dam` instalado. Todo en una carpeta temporal con su `acciones.json` y un `DAM_ALMACEN` de prueba, para no tocar mis ficheros ni mi almacén.
+**Prompt:** «¿Has revisado lo de los errores amables? ¿Lo cumplimos?». Antes solo se había mirado que existieran las clases de error y que pasaran las pruebas, así que le pedí provocar uno a uno los errores de la lista del profe (sesiones 2 y 3) con el programa de verdad.
+
+**Qué se comprobó:** 26 errores. En ninguno salió un traceback, y el código de salida fue siempre el de mi spec.
+- **`acciones.json` roto → código 3, con la acción y el campo:**
+  - Coma de más: `coma.json no es JSON válido: línea 1, columna 31`.
+  - Tipo que no existe: `Acción «mover-zips», campo «tipo»: «teletransportar» no existe; usa uno de: borrar, ...`.
+  - Nombre repetido: `campo «nombre»: está repetido`.
+  - Regex rota: `campo «filtro.patron»: expresión regular rota`.
+  - Falta `destino`: `es obligatorio en acciones de tipo mover`.
+  - Fichero que no existe o vacío: `No encuentro ...` y `no es JSON válido`.
+- **Órdenes y ficheros:**
+  - Acción que no existe → código 1 y `Mira la lista con: dam acciones`. Opción que no existe → código 2, en español.
+  - Origen o carpeta que no existe → código 1, `no existe (ni como carpeta ni como fichero)`.
+  - `--simular` con un destino que no existe: no crea la carpeta.
+  - El destino ya tenía `a.zip`: el viejo no se tocó y el nuevo quedó como `a (1).zip`.
+  - `Ñandú con espacios.ZIP` (tildes, espacios y extensión en mayúsculas) se movió bien.
+  - Ejecutar la misma acción dos veces: `Ningún fichero cumple el filtro: no hay nada que hacer.`
+  - Borrar sin `--si`: pregunta, y con «n» dice `Cancelado.` y el fichero sigue ahí.
+- **IA sin red (`DAM_IA=centro`) → código 4:**
+  - Sin clave: dice qué variables faltan, cómo ponerlas en Linux y en PowerShell, y el enlace al README.
+  - URL que no existe o servidor apagado: `No llego al servidor de IA: ¿estás en la red del centro? Las acciones sin IA siguen funcionando`.
+  - Certificado que no existe: `No puedo leer el certificado del centro ... revisa CENTRO_IA_CA`.
+  - Clave mala (401): no se puede probar sin el servidor; lo cubre `test_ia.py` con un servidor de mentira («la clave no es válida»).
+  - Con la IA caída, `dam validar` sigue funcionando.
+- **Ctrl+C a mitad de mover:** código 130 (el normal de Ctrl+C), sin traza, y el fichero se queda en su sitio. No dice nada al salir; no lo cambio porque no se pierde nada.
+
+**Qué aprendí:** que pasen las pruebas no es lo mismo que haberlo visto. Provocar los errores uno a uno con el programa instalado es lo que haría el profe, y así sé qué ve un usuario en cada caso. Que un mensaje sea «amable» no es que sea educado: es que diga dónde está el fallo (la acción y el campo) y qué hacer para arreglarlo.
