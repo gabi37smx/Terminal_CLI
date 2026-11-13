@@ -10,6 +10,10 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Añadido
 
+- Si OpenCode ya usa el servidor del centro, `dam configurar-ia` ofrece usar esos mismos datos: no
+  hace falta copiar la dirección ni la clave (la clave se queda en OpenCode y se lee al momento). Y si
+  no defines `CENTRO_IA_CA`, `dam` usa el certificado de `NODE_EXTRA_CA_CERTS`, como OpenCode.
+
 - `dam crear-almacen`: deja listo tu almacén de apuntes aunque no sepas git. Si ya lo tienes en
   GitHub, lo baja; si no, abre GitHub con el nombre y **Private** ya puestos, y solo pulsas «Create
   repository». Luego crea las carpetas de tus asignaturas y, si el repo es nuevo, las sube (así
@@ -54,6 +58,7 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Arreglado
 
+- `dam --help | head` (o cualquier salida cortada) en Windows ya no acaba con una traza de una pantalla.
 - Servidor de IA del centro: el modelo por defecto (`qwen3.8-flash-next`) daba **403**. Ahora es
   `Qwen38-DualSpark-medium`, el mismo que trae el OpenCode del centro. Un 403 ya no dice «algo ha
   fallado»: dice que tu clave no puede usar ese modelo y que pruebes otro con `CENTRO_IA_MODELO`.

@@ -71,9 +71,11 @@ def _leer_dotenv() -> None:
 class ProveedorCentro(ProveedorIA):
     """Un servidor compatible con la API de OpenAI: el del centro (o cualquier otro)."""
 
-    def __init__(self, url: str, clave: str, modelo: str = MODELO_POR_DEFECTO, ca: str | None = None):
+    def __init__(self, url: str, clave: str, modelo: str = MODELO_POR_DEFECTO, ca: str | None = None,
+                 origen: str = "", variable_ca: str = "CENTRO_IA_CA"):
         self.url = url.rstrip("/")
         self.modelo = modelo
+        self.origen = origen  # «» si sale de tus variables; «OpenCode (simarro)» si sale de OpenCode
         self._clave = clave  # «_»: es privada; nunca se imprime
         self._tls = ssl.create_default_context()
         if ca:
@@ -82,31 +84,49 @@ class ProveedorCentro(ProveedorIA):
                 self._tls.load_verify_locations(ruta_ca)
             except (OSError, ssl.SSLError):
                 raise IANoDisponible(
-                    f"No puedo leer el certificado del centro en «{ruta_ca}»: revisa CENTRO_IA_CA"
+                    f"No puedo leer el certificado del centro en «{ruta_ca}»: revisa {variable_ca}"
                 ) from None
 
     def __repr__(self) -> str:  # por si alguien lo imprime: la clave nunca sale
         return f"ProveedorCentro(url={self.url!r}, modelo={self.modelo!r}, clave=«definida»)"
 
     def descripcion(self) -> str:
-        return f"Servidor: {self.url}  ·  modelo: {self.modelo}  ·  clave: definida"
+        de_donde = f"  ·  datos de {self.origen}" if self.origen else ""
+        return f"Servidor: {self.url}  ·  modelo: {self.modelo}  ·  clave: definida{de_donde}"
 
     @staticmethod
     def desde_entorno() -> ProveedorCentro:
-        """Fábrica: lee .env (si lo hay) y las variables de entorno."""
+        """Fábrica: lee .env (si lo hay) y las variables de entorno.
+
+        Si faltan la URL o la clave y en dam configurar-ia dijiste que use el servidor que ya tiene
+        OpenCode, las lee de la configuración de OpenCode en ese momento (no se copian a ningún sitio).
+        Las variables mandan siempre. Certificado: CENTRO_IA_CA o, si no, NODE_EXTRA_CA_CERTS (el que
+        ya usa OpenCode en clase).
+        """
         _leer_dotenv()
         url = os.environ.get("CENTRO_IA_URL", "").strip()
         clave = os.environ.get("CENTRO_IA_KEY", "").strip()
+        modelo = os.environ.get("CENTRO_IA_MODELO", "").strip()
+        origen = ""
+        if not url or not clave:
+            nombre = leer_ajustes().get("opencode")
+            servidor = servidores_opencode().get(nombre) if isinstance(nombre, str) else None
+            if servidor:
+                url, clave = url or servidor["url"], clave or servidor["clave"]
+                modelo = modelo or servidor["modelo"]
+                origen = f"OpenCode ({nombre})"
         if not url or not clave:
             raise IANoDisponible(
                 "Faltan CENTRO_IA_URL o CENTRO_IA_KEY. Defínelas en la terminal "
                 "(export CENTRO_IA_URL=... en Linux y macOS; $env:CENTRO_IA_URL=\"...\" en PowerShell) "
                 "o en un fichero .env en la carpeta desde la que ejecutas dam. "
                 f"Qué poner en cada una: {URL_REPO}#ia-opcional-acciones-con-los-modelos-del-centro. "
+                "Si OpenCode ya usa el servidor del centro, dam puede usar sus datos: dam configurar-ia. "
                 "Fuera del instituto puedes usar modelos gratis con OpenCode: dam configurar-ia"
             )
-        modelo = os.environ.get("CENTRO_IA_MODELO", "").strip() or MODELO_POR_DEFECTO
-        return ProveedorCentro(url, clave, modelo, os.environ.get("CENTRO_IA_CA") or None)
+        variable_ca = "CENTRO_IA_CA" if os.environ.get("CENTRO_IA_CA") else "NODE_EXTRA_CA_CERTS"
+        ca = os.environ.get(variable_ca) or None
+        return ProveedorCentro(url, clave, modelo or MODELO_POR_DEFECTO, ca, origen, variable_ca)
 
     def completar(self, sistema: str, usuario: str, max_tokens: int = 800) -> Respuesta:
         cuerpo = {
@@ -313,6 +333,45 @@ def leer_ajustes() -> dict:
     except (OSError, ValueError):
         raise IANoDisponible(f"{ruta} está roto: vuelve a elegir con dam configurar-ia") from None
     return datos if isinstance(datos, dict) else {}
+
+
+def _valor(texto) -> str:
+    """Un valor de opencode.json: «{env:CENTRO_IA_KEY}» es esa variable; lo demás, tal cual."""
+    if not isinstance(texto, str):
+        return ""
+    texto = texto.strip()
+    m = re.fullmatch(r"\{env:([A-Za-z_][A-Za-z0-9_]*)\}", texto)
+    return os.environ.get(m.group(1), "").strip() if m else texto
+
+
+def servidores_opencode() -> dict[str, dict]:
+    """Los servidores con dirección y clave que tiene configurados OpenCode (como el del centro).
+
+    {"simarro": {"titulo": "IES ...", "url": "https://.../v1", "clave": "...", "modelo": "Qwen..."}}
+    El modelo es el que usa OpenCode por defecto, si es de ese servidor. Si no se puede leer, {}.
+    13-nov: en clase, OpenCode iba con el servidor del centro y dam no, porque cada uno guarda lo suyo.
+    """
+    from .configurar_ia import _leer, ruta_opencode_global  # aquí dentro: configurar_ia importa ia
+    from .errores import ConfigError
+    try:
+        datos = _leer(ruta_opencode_global())
+    except ConfigError:
+        return {}
+    proveedores = datos.get("provider")
+    if not isinstance(proveedores, dict):
+        return {}
+    por_defecto = datos.get("model") if isinstance(datos.get("model"), str) else ""
+    servidores = {}
+    for nombre, p in proveedores.items():
+        opciones = p.get("options") if isinstance(p, dict) else None
+        if not isinstance(opciones, dict):
+            continue
+        url, clave = _valor(opciones.get("baseURL")), _valor(opciones.get("apiKey"))
+        if url.startswith(("http://", "https://")) and clave:
+            modelo = por_defecto.split("/", 1)[1] if por_defecto.startswith(f"{nombre}/") else ""
+            titulo = p.get("name") if isinstance(p.get("name"), str) else nombre
+            servidores[nombre] = {"titulo": titulo, "url": url, "clave": clave, "modelo": modelo}
+    return servidores
 
 
 def guardar_ajustes(ajustes: dict) -> Path:

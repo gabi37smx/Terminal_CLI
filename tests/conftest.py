@@ -25,7 +25,7 @@ def aislado(monkeypatch, tmp_path, tmp_path_factory):
     - Tampoco ven tu ~/.config/dam/ia.json (lo que elegiste con dam configurar-ia) ni tu
       configuración de OpenCode: las dos van a una carpeta temporal."""
     for variable in ("CENTRO_IA_URL", "CENTRO_IA_KEY", "CENTRO_IA_CA", "CENTRO_IA_MODELO", "DAM_IA", "DAM_IA_MODELO",
-                     "DAM_ALMACEN"):
+                     "DAM_ALMACEN", "NODE_EXTRA_CA_CERTS"):
         monkeypatch.delenv(variable, raising=False)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path / "home"))

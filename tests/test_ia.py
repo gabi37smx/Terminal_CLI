@@ -360,3 +360,91 @@ def test_sin_clave_el_mensaje_sirve_aunque_no_hayas_clonado():  # issue #19
     assert "carpeta desde la que ejecutas dam" in salida
     assert "#ia-opcional" in salida.replace(" ", "")
     assert ".env.example" not in salida  # sin clonar ese fichero no existe
+
+
+# ---------- El servidor del centro que ya tiene OpenCode (13-nov, en clase) ----------
+CLAVE_OPENCODE = "sk-" + "de-opencode-" + "1234"  # por trozos: que ningún buscador de secretos la confunda
+
+
+def opencode_con_centro(monkeypatch, api_key=CLAVE_OPENCODE, modelo="simarro/Qwen38-DualSpark-low"):
+    """Escribe el opencode.json global (temporal: lo pone conftest) como el de mi PC de clase."""
+    from tareas import configurar_ia
+    ruta = configurar_ia.ruta_opencode_global()
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    ruta.write_text(json.dumps({
+        "provider": {
+            "simarro": {"npm": "@ai-sdk/openai-compatible", "name": "IES del centro",
+                        "options": {"baseURL": "https://ia.centro.test/llmapi/v1", "apiKey": api_key},
+                        "models": {"Qwen38-DualSpark-low": {}}},
+            "sin-clave": {"options": {"baseURL": "https://otro.test/v1"}},
+        },
+        "model": modelo,
+    }), encoding="utf-8")
+
+
+def test_servidores_de_opencode_solo_los_que_tienen_direccion_y_clave(monkeypatch):
+    from tareas import ia
+    opencode_con_centro(monkeypatch)
+    servidores = ia.servidores_opencode()
+    assert list(servidores) == ["simarro"]
+    assert servidores["simarro"]["modelo"] == "Qwen38-DualSpark-low"  # el que usa OpenCode por defecto
+    assert servidores["simarro"]["titulo"] == "IES del centro"
+
+
+def test_la_clave_de_opencode_puede_venir_de_una_variable(monkeypatch):
+    from tareas import ia
+    opencode_con_centro(monkeypatch, api_key="{env:MI_CLAVE_DEL_CENTRO}")
+    monkeypatch.setenv("MI_CLAVE_DEL_CENTRO", CLAVE_OPENCODE)
+    assert ia.servidores_opencode()["simarro"]["clave"] == CLAVE_OPENCODE
+    monkeypatch.delenv("MI_CLAVE_DEL_CENTRO")
+    assert ia.servidores_opencode() == {}  # sin la variable no hay clave: no cuenta
+
+
+def test_sin_elegirlo_no_usa_los_datos_de_opencode(monkeypatch):
+    opencode_con_centro(monkeypatch)
+    with pytest.raises(IANoDisponible, match="dam puede usar sus datos: dam configurar-ia"):
+        ProveedorCentro.desde_entorno()
+
+
+def test_elegido_en_configurar_ia_usa_los_datos_de_opencode_sin_copiar_la_clave(monkeypatch):
+    from tareas import ia
+    opencode_con_centro(monkeypatch)
+    r = run.invoke(app, ["configurar-ia", "--proveedor", "centro"], input="s\n")
+    assert r.exit_code == 0, r.output
+    assert "no la copio" in " ".join(r.output.split())
+    guardado = ia.ruta_ajustes().read_text(encoding="utf-8")
+    assert json.loads(guardado) == {"proveedor": "centro", "opencode": "simarro"}
+    assert CLAVE_OPENCODE not in guardado and CLAVE_OPENCODE not in r.output
+    p = ProveedorCentro.desde_entorno()
+    assert p.url == "https://ia.centro.test/llmapi/v1" and p.modelo == "Qwen38-DualSpark-low"
+    assert "datos de OpenCode (simarro)" in p.descripcion() and CLAVE_OPENCODE not in p.descripcion()
+
+
+def test_las_variables_mandan_sobre_opencode(monkeypatch):
+    from tareas import ia
+    opencode_con_centro(monkeypatch)
+    ia.guardar_ajustes({"proveedor": "centro", "opencode": "simarro"})
+    monkeypatch.setenv("CENTRO_IA_URL", "https://mio.test/v1")
+    monkeypatch.setenv("CENTRO_IA_KEY", "sk-" + "mia")
+    monkeypatch.setenv("CENTRO_IA_MODELO", "otro-modelo")
+    p = ProveedorCentro.desde_entorno()
+    assert (p.url, p.modelo, p.origen) == ("https://mio.test/v1", "otro-modelo", "")
+
+
+def test_con_si_no_elige_el_de_opencode_sin_preguntar(monkeypatch):
+    from tareas import ia
+    opencode_con_centro(monkeypatch)
+    r = run.invoke(app, ["configurar-ia", "--proveedor", "centro", "--si"])
+    assert r.exit_code == 0, r.output
+    assert ia.leer_ajustes() == {"proveedor": "centro"}
+
+
+def test_el_certificado_de_opencode_sirve_si_no_hay_centro_ia_ca(monkeypatch, tmp_path):
+    monkeypatch.setenv("CENTRO_IA_URL", "https://ia.centro.test/v1")
+    monkeypatch.setenv("CENTRO_IA_KEY", "sk-" + "x")
+    monkeypatch.setenv("NODE_EXTRA_CA_CERTS", str(tmp_path / "no-esta.crt"))
+    with pytest.raises(IANoDisponible, match="revisa NODE_EXTRA_CA_CERTS"):
+        ProveedorCentro.desde_entorno()  # lo intenta leer: por eso falla con este que no existe
+    monkeypatch.setenv("CENTRO_IA_CA", str(tmp_path / "tampoco.crt"))
+    with pytest.raises(IANoDisponible, match="revisa CENTRO_IA_CA"):
+        ProveedorCentro.desde_entorno()  # CENTRO_IA_CA manda

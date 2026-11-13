@@ -776,10 +776,24 @@ def configurar_ia(
         raise typer.BadParameter(f"usa {' o '.join(ia.PROVEEDORES)}", param_hint="--proveedor")
 
     if proveedor == "centro":
-        ruta = ia.guardar_ajustes({"proveedor": "centro"})
+        ajustes = {"proveedor": "centro"}
+        if not si and not (os.environ.get("CENTRO_IA_URL") and os.environ.get("CENTRO_IA_KEY")):
+            for nombre, datos in ia.servidores_opencode().items():
+                if preguntar(f"OpenCode ya tiene el servidor «{datos['titulo']}» ({datos['url']}). "
+                             "¿Lo uso también en dam? La clave se queda en OpenCode: no la copio"):
+                    ajustes["opencode"] = nombre
+                    break
+        ruta = ia.guardar_ajustes(ajustes)
         consola.print(f"[green]✔ Guardado en {escape(str(ruta))}[/green]: las acciones con IA usarán el servidor del centro.")
-        consola.print("Necesita CENTRO_IA_URL, CENTRO_IA_KEY y CENTRO_IA_CA (mira .env.example). "
-                      "Compruébalo desde la red del instituto con: [bold]dam comprobar-ia[/bold]")
+        if "opencode" in ajustes:
+            consola.print(f"La dirección y la clave las leo de {escape(str(configurar_ia_mod.ruta_opencode_global()))} "
+                          "cada vez. Si defines CENTRO_IA_URL y CENTRO_IA_KEY, mandan ellas.")
+            if not (os.environ.get("CENTRO_IA_CA") or os.environ.get("NODE_EXTRA_CA_CERTS")):
+                consola.print("[yellow]Falta el certificado del centro:[/yellow] pon su ruta en CENTRO_IA_CA "
+                              "(mira .env.example).")
+        else:
+            consola.print("Necesita CENTRO_IA_URL, CENTRO_IA_KEY y CENTRO_IA_CA (mira .env.example).")
+        consola.print("Compruébalo desde la red del instituto con: [bold]dam comprobar-ia[/bold]")
         return
 
     ejecutable = ia.ProveedorOpenCode().ejecutable()

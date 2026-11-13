@@ -417,11 +417,18 @@ Si instalaste sin clonar no tienes `.env.example`: define las variables en la te
 (`export CENTRO_IA_URL=...` en Linux y macOS; `$env:CENTRO_IA_URL="..."` en PowerShell) o crea tú
 el `.env` con las líneas `CENTRO_IA_URL=...`, `CENTRO_IA_KEY=...` y `CENTRO_IA_CA=...`.
 
+**¿OpenCode ya usa el servidor del centro?** Entonces no hace falta copiar nada. En
+`dam configurar-ia`, elige «Servidor de IA del centro» y di «s» cuando pregunte si usa el de
+OpenCode. `dam` lee la dirección, la clave y el modelo de `~/.config/opencode/opencode.json` cada
+vez que los necesita: la clave no se copia a ningún sitio, y en `~/.config/dam/ia.json` solo queda el
+nombre del servidor. Si defines `CENTRO_IA_URL` y `CENTRO_IA_KEY`, mandan ellas. El certificado sale
+de `CENTRO_IA_CA` o, si no está, de `NODE_EXTRA_CA_CERTS`, el mismo que usa OpenCode.
+
 | Variable | Para qué |
 |---|---|
 | `CENTRO_IA_URL` | Dirección del servidor (acaba en `/v1`). |
 | `CENTRO_IA_KEY` | Tu clave personal. Nunca se imprime: `comprobar-ia` solo dice «definida». |
-| `CENTRO_IA_CA` | Ruta del certificado del instituto (`ca-ies-simarro.crt`). Python no lee el `NODE_EXTRA_CA_CERTS` de OpenCode. |
+| `CENTRO_IA_CA` | Ruta del certificado del instituto (`ca-ies-simarro.crt`). Si no está, `dam` usa `NODE_EXTRA_CA_CERTS`, el de OpenCode. |
 | `CENTRO_IA_MODELO` | Opcional: otro modelo del servidor (por defecto, `Qwen38-DualSpark-medium`; los que hay los ves en OpenCode con `/models`). |
 
 **2. Primero, siempre `--simular`.** No llama al modelo ni gasta nada: dice cuánto mandaría
