@@ -106,6 +106,25 @@ def test_si_eliges_1_de_dam_las_acciones_no_cambian():
     assert datos["acciones"] == plantilla["acciones"]  # ni descripciones, ni instrucciones, ni extensiones
 
 
+def test_configurar_pone_las_siglas_de_tu_ciclo():
+    plantilla = json.loads(PLANTILLA.read_text(encoding="utf-8"))
+    datos = configurar.aplicar(plantilla, "daw", [2], ciclos.asignaturas_de("daw", [2]))
+    ordenar = next(a for a in datos["acciones"] if a["tipo"] == "ordenar")
+    assert ordenar["siglas"]["cliente"] == ["dwec"] and ordenar["siglas"]["servidor"] == ["dwes"]
+    assert set(ordenar["siglas"]) <= set(ordenar["carpetas"])  # nunca siglas de una asignatura que no tienes
+    config.validar_datos(datos, "acciones.json")
+
+
+def test_un_acciones_json_de_antes_de_las_siglas_las_recibe_sin_perder_lo_que_afinaste():
+    plantilla = json.loads(PLANTILLA.read_text(encoding="utf-8"))
+    ordenar = next(a for a in plantilla["acciones"] if a["tipo"] == "ordenar")
+    del ordenar["siglas"]
+    ordenar["por_tipo"] = "~/MiCarpeta"  # algo que cambié yo a mano
+    datos = configurar.aplicar(plantilla, "dam", [1], ciclos.asignaturas_de("dam", [1]))
+    nuevo = next(a for a in datos["acciones"] if a["tipo"] == "ordenar")
+    assert nuevo["siglas"]["lenguaje-marcas"] == ["lm", "llmm", "lmsgi"] and nuevo["por_tipo"] == "~/MiCarpeta"
+
+
 def test_1_de_smx_cambia_ordenar_y_clasificar_sin_tocar_la_plantilla():
     plantilla = json.loads(PLANTILLA.read_text(encoding="utf-8"))
     copia = json.loads(json.dumps(plantilla))

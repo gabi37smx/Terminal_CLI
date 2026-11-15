@@ -148,6 +148,14 @@ def _validar_ordenar(nombre: str, accion: dict) -> None:
             raise AccionNoValida(
                 nombre, f"carpetas.{carpeta}", "debe ser una lista de palabras clave (textos)"
             )
+    siglas = accion.get("siglas", {})
+    if not isinstance(siglas, dict):
+        raise AccionNoValida(nombre, "siglas", 'debe ser un objeto {"lenguaje-marcas": ["lm"]}')
+    for carpeta, lista in siglas.items():
+        if carpeta not in carpetas:
+            raise AccionNoValida(nombre, f"siglas.{carpeta}", f"«{carpeta}» no está en «carpetas»")
+        if not (isinstance(lista, list) and all(_texto(s) for s in lista)):
+            raise AccionNoValida(nombre, f"siglas.{carpeta}", "debe ser una lista de siglas (textos)")
     por_ext = accion.get("por_extension", {})
     if not isinstance(por_ext, dict):
         raise AccionNoValida(nombre, "por_extension", 'debe ser un objeto {".sql": "carpeta"}')
@@ -196,8 +204,12 @@ def _validar_accion(a: object, i: int, vistos: set[str]) -> None:
             raise AccionNoValida(nombre, "al_almacen", "usa «al_almacen» o «destino», no los dos")
     if "por_tipo" in a and (tipo != "ordenar" or not _texto(a["por_tipo"])):
         raise AccionNoValida(nombre, "por_tipo", "solo vale en acciones de tipo ordenar y debe ser una ruta (texto)")
-    if "unidades" in a and (tipo != "ordenar" or not isinstance(a["unidades"], bool)):
-        raise AccionNoValida(nombre, "unidades", "solo vale en acciones de tipo ordenar y debe ser true o false")
+    for campo in ("unidades", "crear_unidades", "siglas"):
+        if campo in a and tipo != "ordenar":
+            raise AccionNoValida(nombre, campo, "solo vale en acciones de tipo ordenar")
+    for campo in ("unidades", "crear_unidades"):
+        if campo in a and not isinstance(a[campo], bool):
+            raise AccionNoValida(nombre, campo, "solo vale en acciones de tipo ordenar y debe ser true o false")
     if "filtro" in a:
         _validar_filtro(nombre, a["filtro"])
     if tipo == "borrar" and not a.get("filtro"):

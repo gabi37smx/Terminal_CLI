@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from tareas.acciones import Ordenar, carpeta_de_unidad, leer_texto, texto_ofimatica, unidad_de
+from tareas.acciones import Ordenar, carpeta_de_unidad, leer_texto, nombre_carpeta_unidad, texto_ofimatica, unidad_de
 from tareas.motor import Motor
 
 CARPETAS = {
@@ -184,15 +184,90 @@ def test_ordenar_lo_mete_en_la_carpeta_de_su_unidad(tmp_path):
     assert hecho.estado == "hecho" and hecho.destino.exists()
 
 
-def test_si_no_tiene_la_carpeta_de_la_unidad_va_a_la_asignatura(tmp_path):
+def test_si_no_tiene_la_carpeta_de_la_unidad_la_crea(tmp_path):
     motor, descargas, destino = entregar(tmp_path)
     (destino / "sistemas" / "1 Avaluacio" / "unitat 1").rename(destino / "sistemas" / "1 Avaluacio" / "unitat 5")
     [r] = motor.ejecutar("o", descargas, simular=True)
+    assert r.destino == destino / "sistemas" / "UD01" / "Examen_A_cas_plantilla_part_1.odt"
+    assert r.nota == "unidad 1 (carpeta nueva)"
+    assert not (destino / "sistemas" / "UD01").exists()  # simulando no se crea nada
+    [r] = motor.ejecutar("o", descargas, simular=False)
+    assert r.estado == "hecho" and (destino / "sistemas" / "UD01" / "Examen_A_cas_plantilla_part_1.odt").exists()
+
+
+def test_con_crear_unidades_false_se_queda_en_la_asignatura(tmp_path):
+    motor, descargas, destino = entregar(tmp_path, crear_unidades=False)
+    (destino / "sistemas" / "1 Avaluacio" / "unitat 1").rename(destino / "sistemas" / "1 Avaluacio" / "unitat 5")
+    [r] = motor.ejecutar("o", descargas, simular=True)
     assert r.destino == destino / "sistemas" / "Examen_A_cas_plantilla_part_1.odt" and r.nota == ""
-    assert not (destino / "sistemas" / "1 Avaluacio" / "unitat 1").exists()  # nunca se crea
+
+
+def test_la_carpeta_nueva_copia_el_estilo_de_las_que_ya_hay(tmp_path):
+    asignatura = tmp_path / "redes"
+    (asignatura / "Tema 1").mkdir(parents=True)
+    (asignatura / "Apuntes internet").mkdir()  # las que no son «solo unidad» no cuentan
+    assert nombre_carpeta_unidad(asignatura, 2) == "Tema 2"
+    (tmp_path / "bd" / "UD01").mkdir(parents=True)
+    assert nombre_carpeta_unidad(tmp_path / "bd", 12) == "UD12"
+    (tmp_path / "lm" / "unitat-3").mkdir(parents=True)
+    assert nombre_carpeta_unidad(tmp_path / "lm", 4) == "unitat-4"
+    assert nombre_carpeta_unidad(tmp_path / "vacia", 3) == "UD03"  # sin ninguna: UD01, UD02...
+
+
+def test_con_dos_carpetas_de_la_misma_unidad_no_crea_otra(tmp_path):
+    motor, descargas, destino = entregar(tmp_path)
+    (destino / "sistemas" / "1 Avaluacio" / "unitat 1").rename(destino / "sistemas" / "unitat 1")
+    (destino / "sistemas" / "UD-01").mkdir()
+    [r] = motor.ejecutar("o", descargas, simular=True)
+    assert r.destino == destino / "sistemas" / "Examen_A_cas_plantilla_part_1.odt" and r.nota == ""
+
+
+def test_varios_ficheros_de_la_misma_unidad_van_a_la_misma_carpeta_nueva(tmp_path):
+    motor, descargas, destino = entregar(tmp_path)
+    (destino / "sistemas" / "1 Avaluacio" / "unitat 1").rename(destino / "sistemas" / "1 Avaluacio" / "unitat 5")
+    (descargas / "linux tema 1 practica.txt").write_text("x", encoding="utf-8")
+    resultados = motor.ejecutar("o", descargas, simular=False)
+    assert {r.destino.parent for r in resultados} == {destino / "sistemas" / "UD01"}
 
 
 def test_con_unidades_false_no_entra_en_la_unidad(tmp_path):
     motor, descargas, destino = entregar(tmp_path, unidades=False)
     [r] = motor.ejecutar("o", descargas, simular=True)
     assert r.destino == destino / "sistemas" / "Examen_A_cas_plantilla_part_1.odt"
+
+
+# ---------- siglas del módulo e instaladores (lo que vio la instalación cruzada) ----------
+SIGLAS = {"sistemas": ["si"], "programacion": ["prg"]}
+
+
+def test_las_siglas_del_nombre_dicen_la_asignatura(tmp_path):
+    f = tmp_path / "PRG_Tema01_Part_I.pdf"
+    f.write_bytes(b"%PDF")
+    assert ordenar(siglas=SIGLAS).analizar(f) == ("programacion", 1)
+    g = tmp_path / "SI-UD3 practica.txt"
+    g.write_text("nada", encoding="utf-8")
+    assert ordenar(siglas=SIGLAS).analizar(g) == ("sistemas", 3)
+
+
+def test_las_siglas_dentro_del_documento_no_cuentan(tmp_path, monkeypatch):
+    # En un PDF, «si» sale en cualquier frase: solo vale en el nombre del fichero
+    monkeypatch.setattr("tareas.acciones._texto_pdf", lambda ruta: "si quieres aprobar, estudia")
+    f = tmp_path / "apuntes.pdf"
+    f.write_bytes(b"%PDF")
+    assert ordenar(siglas=SIGLAS).analizar(f) == (None, None)
+
+
+def test_las_siglas_son_palabras_enteras(tmp_path):
+    f = tmp_path / "simulacro.pdf"  # empieza por «si», pero no es «si»
+    f.write_bytes(b"%PDF")
+    assert ordenar(siglas=SIGLAS).analizar(f) == (None, None)
+
+
+def test_un_instalador_nunca_es_un_apunte(tmp_path):
+    descargas = tmp_path / "Descargas"
+    descargas.mkdir()
+    (descargas / "linux-mint-installer.exe").write_bytes(b"MZ")  # dice «linux», pero es un instalador
+    accion = {"nombre": "o", "descripcion": "d", "tipo": "ordenar", "carpetas": CARPETAS,
+              "destino": str(tmp_path / "asignaturas"), "por_tipo": str(tmp_path / "POR-TIPO")}
+    [r] = Motor([accion]).ejecutar("o", descargas, simular=True)
+    assert r.destino == tmp_path / "POR-TIPO" / "INSTALADORES" / "linux-mint-installer.exe"
