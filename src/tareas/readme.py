@@ -1,9 +1,9 @@
-"""dam readme: el README.md de cada carpeta, con una tabla de lo que hay dentro.
+"""mochila readme: el README.md de cada carpeta, con una tabla de lo que hay dentro.
 
 Cada README tiene dos partes:
-- Arriba, lo que escribes tú (qué guarda la carpeta). dam no lo toca nunca.
+- Arriba, lo que escribes tú (qué guarda la carpeta). mochila no lo toca nunca.
 - El apartado «## Qué hay dentro»: una tabla con cada subcarpeta (tamaño y la primera frase de
-  su propio README) y cada archivo (tamaño y tipo). Ese apartado lo rellena dam.
+  su propio README) y cada archivo (tamaño y tipo). Ese apartado lo rellena mochila.
 
 Un README que no tiene ese apartado (el de un repo, uno escrito a mano...) no se toca. No entra en
 repos git ni en proyectos de código: sus README son del proyecto. Solo lee nombres y tamaños,
@@ -22,8 +22,8 @@ from .inventario import (PROGRAMAS, REGENERABLES, SISTEMA, _es_enlace, tamano_ca
                          tamano_legible, tipo_de)
 
 SECCION = "## Qué hay dentro"
-PIE = "_Esta tabla la rellena `dam readme`"  # así empieza la última línea del apartado
-PENDIENTE = "_Escribe aquí qué guarda esta carpeta. `dam readme` no toca este texto._"
+PIE = "_Esta tabla la rellena `mochila readme`"  # así empieza la última línea del apartado
+PENDIENTE = "_Escribe aquí qué guarda esta carpeta. `mochila readme` no toca este texto._"
 MAX_ARCHIVOS = 15
 MAX_DESCRIPCION = 110
 # Un proyecto de código: su README es del proyecto y sus carpetas no se recorren
@@ -169,7 +169,7 @@ def planear(carpeta: Path, niveles: int = 3, hoy: date | None = None) -> list[Ca
     if not raiz.is_dir():
         raise TareasError(f"«{raiz}» no existe o no es una carpeta.")
     if es_repo(raiz):
-        raise TareasError(f"«{raiz}» es un repo git: su README es del repo y dam readme no lo toca.")
+        raise TareasError(f"«{raiz}» es un repo git: su README es del repo y mochila readme no lo toca.")
     hoy = hoy or date.today()
     cambios: list[Cambio] = []
 

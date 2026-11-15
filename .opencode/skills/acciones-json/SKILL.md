@@ -1,6 +1,6 @@
 ---
 name: acciones-json
-description: Reglas del fichero acciones.json de la CLI dam (campos, tipos, filtros, plantillas, sección almacen y validación). Úsala siempre que crees o cambies acciones o el código que las lee (config.py, acciones.py, motor.py, sincronizar.py).
+description: Reglas del fichero acciones.json de la CLI mochila (campos, tipos, filtros, plantillas, sección almacen y validación). Úsala siempre que crees o cambies acciones o el código que las lee (config.py, acciones.py, motor.py, sincronizar.py).
 ---
 # Esquema de acciones.json
 - Raíz: {"version": 1, "acciones": [...], "almacen": {"ruta": "~/DAM-almacen", "asignaturas": "asignaturas"}}. «almacen» es opcional.

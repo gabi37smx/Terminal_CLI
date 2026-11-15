@@ -1,4 +1,4 @@
-"""Modelos gratis con OpenCode (ProveedorOpenCode y dam configurar-ia) sin lanzar opencode de verdad.
+"""Modelos gratis con OpenCode (ProveedorOpenCode y mochila configurar-ia) sin lanzar opencode de verdad.
 
 Un «opencode de mentira» sustituye a subprocess.run: apunta qué se le pidió y responde como lo haría
 «opencode run --format json» (un evento JSON por línea). Ninguna prueba usa la red.
@@ -44,7 +44,7 @@ class OpencodeFalso:
     def __call__(self, orden, **kw):
         llamada = {"orden": orden, **kw}
         if "run" in orden:
-            agente = Path(kw["cwd"]) / ".opencode" / "agents" / "dam-ia.md"
+            agente = Path(kw["cwd"]) / ".opencode" / "agents" / "mochila-ia.md"
             llamada["agente"] = agente.read_text(encoding="utf-8")
         self.llamadas.append(llamada)
         if self.excepcion:
@@ -78,7 +78,7 @@ def test_devuelve_el_texto_y_los_tokens(opencode):
     llamada = falso.llamadas[0]
     orden = llamada["orden"]
     assert orden[:2] == ["/usr/bin/opencode", "run"]
-    assert orden[orden.index("--agent") + 1] == "dam-ia"
+    assert orden[orden.index("--agent") + 1] == "mochila-ia"
     assert orden[orden.index("-m") + 1] == "opencode/glm-5.3-flash-free"
     assert orden[orden.index("--dir") + 1] == str(llamada["cwd"])  # opencode trabaja en la carpeta temporal
     assert "--title" in orden  # sin título, opencode se lo pide a tu small_model (el del centro, en casa falla)
@@ -145,11 +145,11 @@ def test_leer_eventos_salta_lo_que_no_es_json():
     assert leer_eventos(salida) == ("hola mundo", 15, 3, "")
 
 
-# ---------- qué proveedor usa dam ----------
+# ---------- qué proveedor usa mochila ----------
 def test_sin_elegir_nada_es_el_servidor_del_centro():
     with pytest.raises(IANoDisponible, match="Faltan CENTRO_IA_URL") as e:
         crear_proveedor()
-    assert "dam configurar-ia" in str(e.value)  # y le dice que fuera del instituto tiene los gratis
+    assert "mochila configurar-ia" in str(e.value)  # y le dice que fuera del instituto tiene los gratis
 
 
 def test_lo_que_guardo_configurar_ia():
@@ -162,12 +162,12 @@ def test_dam_ia_lo_cambia_solo_en_esa_terminal(monkeypatch):
     ia.guardar_ajustes({"proveedor": "opencode", "modelo": "opencode/beam-free"})
     monkeypatch.setenv("CENTRO_IA_URL", "https://servidor/v1")
     monkeypatch.setenv("CENTRO_IA_KEY", "sk-" + "de-prueba")
-    monkeypatch.setenv("DAM_IA", "centro")
+    monkeypatch.setenv("MOCHILA_IA", "centro")
     assert isinstance(crear_proveedor(), ProveedorCentro)
-    monkeypatch.setenv("DAM_IA", "opencode")
-    monkeypatch.setenv("DAM_IA_MODELO", "opencode/glm-5.3-flash-free")
+    monkeypatch.setenv("MOCHILA_IA", "opencode")
+    monkeypatch.setenv("MOCHILA_IA_MODELO", "opencode/glm-5.3-flash-free")
     assert crear_proveedor().modelo == "opencode/glm-5.3-flash-free"
-    monkeypatch.setenv("DAM_IA", "chatgpt")
+    monkeypatch.setenv("MOCHILA_IA", "chatgpt")
     with pytest.raises(IANoDisponible, match="No conozco el proveedor"):
         crear_proveedor()
 
@@ -268,7 +268,7 @@ def test_configurar_ia_propone_opencode_la_primera_vez(opencode):
     assert ia.leer_ajustes() == {"proveedor": "opencode", "modelo": "opencode/deepseek-v4.1-flash-free"}
 
 
-# ---------- dam configurar-ia y dam comprobar-ia ----------
+# ---------- mochila configurar-ia y mochila comprobar-ia ----------
 def test_configurar_ia_sin_preguntas(opencode):
     r = run.invoke(app, ["configurar-ia", "--proveedor", "opencode", "--modelo", "opencode/beam-free", "--si"])
     assert r.exit_code == 0, r.output

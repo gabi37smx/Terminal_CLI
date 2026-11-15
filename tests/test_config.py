@@ -118,7 +118,7 @@ def test_sin_acciones_json_dice_de_donde_bajar_el_ejemplo(tmp_path, monkeypatch)
         config.buscar(None)
     mensaje = str(error.value)
     assert URL_EJEMPLO_ACCIONES in mensaje
-    assert str(tmp_path / "casa" / ".config" / "dam" / "acciones.json") in mensaje
+    assert str(tmp_path / "casa" / ".config" / "mochila" / "acciones.json") in mensaje
     assert "#esquema-de-accionesjson" in mensaje and "--config RUTA" in mensaje
 
 

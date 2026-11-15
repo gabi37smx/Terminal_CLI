@@ -426,7 +426,7 @@ def carpeta_de_unidad(base: Path, numero: int, niveles: int = 3) -> Path | None:
     return mas_arriba[0] if len(mas_arriba) == 1 else None
 
 
-# Plan B de ordenar («por_tipo»): el tipo de dam inventario -> su carpeta (en MAYÚSCULAS, como en ~/Datos/POR-TIPO)
+# Plan B de ordenar («por_tipo»): el tipo de mochila inventario -> su carpeta (en MAYÚSCULAS, como en ~/Datos/POR-TIPO)
 CARPETA_POR_TIPO = {"documentos": "DOCUMENTOS", "imagenes": "IMAGENES", "video": "VIDEO", "audio": "AUDIO",
                     "comprimidos": "COMPRIMIDOS", "instaladores": "INSTALADORES", "codigo": "CODIGO",
                     "redes": "REDES"}  # lo demás (máquinas virtuales, otros...) va a OTROS

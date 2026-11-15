@@ -1,8 +1,8 @@
-"""dam crear-almacen: tu almacén de apuntes en GitHub, aunque no sepas git (ADR-0005).
+"""mochila crear-almacen: tu almacén de apuntes en GitHub, aunque no sepas git (ADR-0005).
 
 El almacén es un repo privado TUYO, con una carpeta por asignatura. Se llama como tu ciclo
-(DAM-almacen, ASIR-almacen...). Si aún no lo tienes, dam abre GitHub con el nombre y «privado» ya
-puestos: solo pulsas «Create repository». dam nunca ve tu contraseña ni tu token: de eso se
+(DAM-almacen, ASIR-almacen...). Si aún no lo tienes, mochila abre GitHub con el nombre y «privado» ya
+puestos: solo pulsas «Create repository». mochila nunca ve tu contraseña ni tu token: de eso se
 encarga git.
 
 Aquí solo está la lógica, sin preguntas por pantalla (esas están en cli.py), para poder probarla.
@@ -24,9 +24,9 @@ from .errores import GitError
 
 GITHUB = "https://github.com"  # las pruebas lo cambian por una carpeta con repos de mentira
 _USUARIO = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")  # las reglas de GitHub
-# Rutas que puso dam (o el acciones.json del repo): esas se pueden cambiar al cambiar de ciclo
+# Rutas que puso mochila (o el acciones.json del repo): esas se pueden cambiar al cambiar de ciclo
 _RUTA_DE_CICLO = re.compile(r"^~/(?:" + "|".join([*ciclos.CICLOS, "apuntes"]) + r")-almacen$", re.IGNORECASE)
-MENSAJE_PRIMERA_SUBIDA = "Carpetas de mis asignaturas (dam crear-almacen)"
+MENSAJE_PRIMERA_SUBIDA = "Carpetas de mis asignaturas (mochila crear-almacen)"
 
 
 def nombre(ciclo: str | None) -> str:
@@ -39,7 +39,7 @@ def nombre(ciclo: str | None) -> str:
 def ruta_para(ruta_actual: str, ciclo: str) -> str:
     """La ruta del almacén en acciones.json tras elegir ciclo.
 
-    Si es una de las que pone dam (~/DAM-almacen, ~/SMX-almacen...), pasa a la de tu ciclo.
+    Si es una de las que pone mochila (~/DAM-almacen, ~/SMX-almacen...), pasa a la de tu ciclo.
     Si la escribiste tú (D:/apuntes, ~/Documentos/mis-apuntes...), no se toca.
     """
     return f"~/{nombre(ciclo)}" if _RUTA_DE_CICLO.match(ruta_actual.strip()) else ruta_actual
@@ -64,7 +64,7 @@ def url_crear(repo: str) -> str:
     return "https://github.com/new?" + urlencode({
         "name": repo,
         "visibility": "private",
-        "description": "Mis apuntes, ordenados por asignatura (dam sync)",
+        "description": "Mis apuntes, ordenados por asignatura (mochila sync)",
     })
 
 
@@ -107,7 +107,7 @@ def esta_vacio(ruta: Path) -> bool:
 
 def primera_subida(ruta: Path) -> None:
     """En un almacén vacío: commit con las carpetas y push a main, que queda como rama remota
-    (sin eso, dam sync no sabe adónde subir)."""
+    (sin eso, mochila sync no sabe adónde subir)."""
     _git(ruta, "symbolic-ref", "HEAD", "refs/heads/main")  # GitHub usa main; el git de clase quizá master
     _git(ruta, "add", "-A")
     p = _git(ruta, "commit", "-m", MENSAJE_PRIMERA_SUBIDA)
@@ -116,7 +116,7 @@ def primera_subida(ruta: Path) -> None:
             raise GitError("git no sabe tu nombre ni tu correo. Ponlos una vez con:\n"
                            '  git config --global user.name "Tu Nombre"\n'
                            '  git config --global user.email "tu@correo.es"\n'
-                           "y repite: dam crear-almacen")
+                           "y repite: mochila crear-almacen")
         raise GitError(f"No he podido guardar las carpetas: {(p.stderr or p.stdout).strip()}")
     if _git(ruta, "push", "-u", "origin", "main", a_la_vista=True).returncode != 0:
         raise GitError("Las carpetas están guardadas en tu equipo, pero no he podido subirlas a GitHub. "

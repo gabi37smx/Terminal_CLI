@@ -1,7 +1,7 @@
-"""Pruebas de dam crear-almacen y del nombre del almacén por ciclo (ADR-0005).
+"""Pruebas de mochila crear-almacen y del nombre del almacén por ciclo (ADR-0005).
 
 GitHub es de mentira: una carpeta con repos «bare» (como los de GitHub, sin ficheros a la vista).
-Nunca se abre el navegador ni se toca tu almacén: DAM_ALMACEN no existe y el acciones.json va a una
+Nunca se abre el navegador ni se toca tu almacén: MOCHILA_ALMACEN no existe y el acciones.json va a una
 carpeta temporal.
 """
 
@@ -35,7 +35,7 @@ def github(tmp_path, monkeypatch):
     casa.mkdir()
     monkeypatch.setenv("HOME", str(casa))
     monkeypatch.setenv("USERPROFILE", str(casa))
-    monkeypatch.delenv("DAM_ALMACEN", raising=False)
+    monkeypatch.delenv("MOCHILA_ALMACEN", raising=False)
     monkeypatch.chdir(tmp_path)
     for k, v in {"GIT_AUTHOR_NAME": "Test", "GIT_AUTHOR_EMAIL": "t@t.es",
                  "GIT_COMMITTER_NAME": "Test", "GIT_COMMITTER_EMAIL": "t@t.es"}.items():
@@ -90,8 +90,8 @@ def test_configurar_pone_la_ruta_de_tu_ciclo_y_con_dam_no_cambia_nada():
     plantilla = json.loads(PLANTILLA.read_text(encoding="utf-8"))
     asir = configurar.aplicar(plantilla, "asir", [1], {"redes": ["redes"]})
     assert asir["almacen"]["ruta"] == "~/ASIR-almacen"
-    dam = configurar.aplicar(plantilla, "dam", [1], configurar.asignaturas_actuales(plantilla))
-    assert dam["almacen"] == plantilla["almacen"]
+    mochila = configurar.aplicar(plantilla, "dam", [1], configurar.asignaturas_actuales(plantilla))
+    assert mochila["almacen"] == plantilla["almacen"]
 
 
 @pytest.mark.parametrize("texto", ["ana-22", " Ana-22 ", "https://github.com/Ana-22/", "github.com/ana-22", "@ana-22"])
@@ -122,7 +122,7 @@ def test_alumno_nuevo_de_asir_crea_su_almacen_privado_y_se_sube_solo(github):
     local = github["casa"] / "ASIR-almacen"
     assert (local / "asignaturas" / "redes" / ".gitkeep").is_file()
     assert "asignaturas/redes/.gitkeep" in ficheros_en_github(remoto)  # ya está en GitHub
-    # Y dam sync ya sabe adónde subir (la rama tiene remoto)
+    # Y mochila sync ya sabe adónde subir (la rama tiene remoto)
     s = runner.invoke(app, ["--config", str(github["config"]), "status"])
     assert s.exit_code == 0, s.output
 
@@ -155,7 +155,7 @@ def test_con_enter_se_salta(github):
     configurar_sin_almacen(github)
     r = preparar(github, "\n")
     assert r.exit_code == 1
-    assert "dam crear-almacen" in plano(r)
+    assert "mochila crear-almacen" in plano(r)
     assert github["abiertas"] == []
 
 
@@ -174,7 +174,7 @@ def test_si_ya_lo_tienes_solo_crea_las_carpetas_que_faltan(github):
     subprocess.run(["git", "-C", str(almacen), "commit", "-m", "x"], check=True, capture_output=True)
     r = preparar(github, "")
     assert r.exit_code == 0, r.output
-    assert "Ya tienes tu almacén" in plano(r) and "dam sync" in plano(r)
+    assert "Ya tienes tu almacén" in plano(r) and "mochila sync" in plano(r)
     assert (almacen / "asignaturas" / "redes" / ".gitkeep").is_file()
 
 
@@ -233,5 +233,5 @@ def test_configurar_lo_ofrece_al_acabar(github):
 
 def test_configurar_con_si_no_pregunta_por_el_almacen(github):
     r = configurar_sin_almacen(github)
-    assert "dam crear-almacen" in plano(r)
+    assert "mochila crear-almacen" in plano(r)
     assert not (github["casa"] / "ASIR-almacen").exists()

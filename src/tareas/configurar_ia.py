@@ -1,4 +1,4 @@
-"""dam configurar-ia: elige con qué modelo trabajan las acciones con IA.
+"""mochila configurar-ia: elige con qué modelo trabajan las acciones con IA.
 
 Aquí solo está la lógica, sin preguntas por pantalla (esas están en cli.py), para poder probarla:
 - `modelos_gratis` pregunta a OpenCode qué modelos gratis hay hoy y los ordena (los recomendados, primero).

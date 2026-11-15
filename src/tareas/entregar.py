@@ -1,4 +1,4 @@
-"""dam entregar: empaqueta un proyecto en un .zip limpio para entregarlo.
+"""mochila entregar: empaqueta un proyecto en un .zip limpio para entregarlo.
 
 Fuera quedan los secretos (.env, claves privadas), lo que no hace falta (.venv, node_modules,
 .git, __pycache__...) y, si es un repositorio, todo lo que ignora .gitignore. Antes de crear

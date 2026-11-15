@@ -63,7 +63,7 @@ class Motor:
         accion = self.acciones.get(nombre)
         if accion is None:
             raise TareasError(
-                f"No hay ninguna acción «{nombre}». Mira la lista con: dam acciones"
+                f"No hay ninguna acción «{nombre}». Mira la lista con: mochila acciones"
             )
         origen = carpeta if carpeta is not None else accion.config.get("origen")
         if origen is None:

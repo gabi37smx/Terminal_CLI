@@ -1,4 +1,4 @@
-"""dam doctor. Proyectos de mentira en tmp_path; los valores «secretos» se montan por trozos."""
+"""mochila doctor. Proyectos de mentira en tmp_path; los valores «secretos» se montan por trozos."""
 import subprocess
 from pathlib import Path
 

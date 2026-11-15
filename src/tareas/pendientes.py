@@ -1,4 +1,4 @@
-"""dam pendientes: qué está verificado y qué no en la documentación de un proyecto.
+"""mochila pendientes: qué está verificado y qué no en la documentación de un proyecto.
 
 Lee dos cosas de los .md:
   1. Las etiquetas sueltas: [Verificado], [Hipótesis] y [Pendiente] (con lo que lleven detrás:
@@ -93,7 +93,7 @@ def _limpiar(linea: str) -> str:
 def etiquetas_de_texto(fichero: str, contenido: str) -> list[Etiqueta]:
     resultado = []
     for n, linea in enumerate(contenido.splitlines(), start=1):
-        if "dam:ignore" in linea or LEYENDA.match(linea) or LEYENDA_TITULO.match(linea):
+        if "mochila:ignore" in linea or "dam:ignore" in linea or LEYENDA.match(linea) or LEYENDA_TITULO.match(linea):
             continue
         encontradas = list(ETIQUETA.finditer(linea))
         if {_tipo(m.group(1)) for m in encontradas} == set(TIPOS):

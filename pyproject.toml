@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-dam = "tareas.cli:app"
+mochila = "tareas.cli:app"
 # El mismo programa con el nombre de la spec v0: «tareas version» → tareas 1.0.0
 tareas = "tareas.cli:app"
 

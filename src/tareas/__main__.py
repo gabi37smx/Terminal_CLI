@@ -3,4 +3,4 @@
 from tareas.cli import app
 
 if __name__ == "__main__":
-    app(prog_name="dam")
+    app(prog_name="mochila")

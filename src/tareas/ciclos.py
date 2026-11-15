@@ -1,15 +1,15 @@
 """Vocabulario de los ciclos de Informática: qué asignaturas tiene cada curso y cómo reconocer sus ficheros.
 
-Lo usa «dam configurar» para preguntar qué estudias y rellenar acciones.json con TUS asignaturas
+Lo usa «mochila configurar» para preguntar qué estudias y rellenar acciones.json con TUS asignaturas
 (las carpetas y palabras clave de «ordenar» y las categorías de «clasificar»).
 
 - Cada asignatura tiene un nombre corto (el de la carpeta), su nombre en castellano y en valenciano,
-  palabras clave (en los dos idiomas, sin tildes: dam las quita al comparar) y, si las hay,
+  palabras clave (en los dos idiomas, sin tildes: mochila las quita al comparar) y, si las hay,
   extensiones que solo usa esa asignatura.
 - Los módulos comunes (inglés, itinerario para la empleabilidad, proyecto intermodular...) son la
   misma carpeta en todos los ciclos.
 - Plan de estudios nuevo (LOFP). Dónde cae cada módulo común puede cambiar según el centro:
-  por eso «dam configurar» deja quitar y añadir asignaturas.
+  por eso «mochila configurar» deja quitar y añadir asignaturas.
 
 Para añadir un ciclo: sus asignaturas en ASIGNATURAS y el ciclo en CICLOS. No hay que tocar nada más.
 """

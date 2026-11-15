@@ -357,7 +357,7 @@ def test_sin_clave_el_mensaje_sirve_aunque_no_hayas_clonado():  # issue #19
     salida = " ".join(r.output.split())
     assert r.exit_code == 4
     assert "export CENTRO_IA_URL" in salida and "$env:CENTRO_IA_URL" in salida
-    assert "carpeta desde la que ejecutas dam" in salida
+    assert "carpeta desde la que ejecutas mochila" in salida
     assert "#ia-opcional" in salida.replace(" ", "")
     assert ".env.example" not in salida  # sin clonar ese fichero no existe
 
@@ -402,7 +402,7 @@ def test_la_clave_de_opencode_puede_venir_de_una_variable(monkeypatch):
 
 def test_sin_elegirlo_no_usa_los_datos_de_opencode(monkeypatch):
     opencode_con_centro(monkeypatch)
-    with pytest.raises(IANoDisponible, match="dam puede usar sus datos: dam configurar-ia"):
+    with pytest.raises(IANoDisponible, match="mochila puede usar sus datos: mochila configurar-ia"):
         ProveedorCentro.desde_entorno()
 
 

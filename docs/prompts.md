@@ -558,7 +558,7 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 **Prompt 1 (la duda):** «Si alguien empieza creando otro ciclo, por ejemplo ASIR, no clona mi repo: ¿creará su propio repo para subir las asignaturas, o eso lo crea el usuario luego y lo sube al repo? ¿Cómo está montado?»
 **Prompt 2 (la idea):** «Para cada ciclo debería ser CICLO-almacen, ¿no crees? Porque si no, está mal que sea DAM-almacen. ¿Y no se puede automatizar que, si tiene cuenta de GitHub, como al principio pregunta, ya cree el repo en privado?»
 **Prompt 3 (la decisión):** «¿Cuál es más fácil para los que no sepan mucho, por ejemplo los de 1º de SMX? Hay que facilitar las cosas.»
-**Por qué se me ocurrió:** mi cuñado (ASIR) iba a instalar `dam` para la instalación cruzada, y me di cuenta de que no sabía qué le iba a pasar con el almacén. Claude Code miró el código: el instalador clonaba siempre `USUARIO/DAM-almacen`, y nadie le decía que ese repo lo tenía que crear él antes. A alguien de ASIR le pedíamos un repo que se llamara DAM, y si no lo tenía, se quedaba sin almacén.
+**Por qué se me ocurrió:** mi cuñado (DAW) iba a instalar `dam` para la instalación cruzada, y me di cuenta de que no sabía qué le iba a pasar con el almacén. Claude Code miró el código: el instalador clonaba siempre `USUARIO/DAM-almacen`, y nadie le decía que ese repo lo tenía que crear él antes. A alguien de ASIR le pedíamos un repo que se llamara DAM, y si no lo tenía, se quedaba sin almacén.
 
 **Qué se hizo:**
 - `dam configurar` pone la ruta del almacén según tu ciclo (`~/ASIR-almacen`...). Con DAM no cambia nada, y si la ruta la escribiste tú, tampoco.
@@ -632,3 +632,31 @@ Mi primera `test_renombrar_con_plantilla` falló porque yo esperaba otro orden. 
 **Adelantado de mis ideas del 13-nov:**
 - `dam configurar-ia` ofrece usar el servidor del centro que ya tiene OpenCode. La clave se queda en OpenCode y en `ia.json` solo se guarda el nombre del servidor. Solo se usa si digo que sí, para que `dam` nunca mande mis apuntes a otro servidor que tenga configurado en OpenCode. El certificado sale de `NODE_EXTRA_CA_CERTS` si no hay `CENTRO_IA_CA`.
 - `dam doctor` en mi carpeta personal avisa y me dice qué proyectos hay, en vez de revisarla entera.
+
+## 2026-11-15 · Instalación cruzada con un compañero de DAW, y `dam` pasa a llamarse `mochila` (Claude Code)
+**Herramienta:** Claude Code (en casa) mientras mi cuñado, que estudia **DAW**, instalaba en su portátil (Windows 11 LTSC) y después en una máquina virtual con Windows. Él seguía solo el README y lo que preguntaba el instalador; yo miraba y le pasaba a Claude lo que salía.
+
+**Prompt 1:** «Vamos a probar lo de instalar el repo de CLI en el portátil de mi cuñado y le digo lo que tiene que hacer.»
+
+**Fallo 1, el TAB en un Windows recién instalado:** `instalar.cmd` dio en rojo `Set-Content : No se puede encontrar una parte de la ruta de acceso '...\.config\dam\completado.ps1'`. El instalador guardaba el script del TAB antes de crear la carpeta `.config\dam` (eso pasaba después, con `acciones.json`), y aun así añadía al perfil la línea que lo carga. En mi PC nunca salió porque esa carpeta ya existía. Arreglado en la #40: se crea la carpeta antes (como `mkdir -p` en `instalar.sh`) y el perfil solo se toca si el script existe. La prueba ejecuta con PowerShell el paso real del instalador con una carpeta personal vacía; con el instalador viejo falla con el mismo mensaje que le salió a él.
+
+**Fallo 2, en su portátil el TAB tampoco iba:** Windows 11 LTSC trae la política de PowerShell en `Restricted`, así que el instalador se salta el TAB y lo avisa en amarillo. Con `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` y repitiendo el instalador funciona. El aviso estaba, pero él no lo vio entre el resto de la salida.
+
+**Lo que no entendió de `ordenar` (y con razón):**
+- `dam ordenar` → «No existe el comando». `ordenar` es una acción y va con `ejecutar`, pero eso no se lo decía nadie.
+- `dam ejecutar ordenar` sin carpeta → «`pruebas-tareas\prueba-final` no existe»: es mi carpeta de pruebas, no la suya.
+- `dam acciones` decía «por asignatura del DAM»: `configurar` no llegó a terminar la primera vez y se quedó con las acciones de ejemplo.
+
+**Prompt 2:** «Mi cuñado dice que `dam` le confunde porque él estudia DAW, e igual a los otros también. Dime nombres que digan lo que hace o que sean chulos.»
+**Por qué cambiar el nombre:** desde la ADR-0003 sirve para cualquier ciclo, pero el comando seguía llamándose como el mío. A él le salía `DAW-almacen` y escribía `dam`: se parecen demasiado. Claude propuso `apunta`, `apuntes`, `repasa`, `estudi`, `mochila`, `pupitre`, `aula` y `fp`, con lo bueno y lo malo de cada uno. **Elegí `mochila`:** es donde llevas los apuntes de clase a casa, que es lo que hace el almacén.
+
+**Prompt 3:** «Elegimos mochila, ya definitivo, así que cambia y modifica lo que tengas que modificar.»
+**Qué se cambió (ADR-0006):**
+- El comando, `~/.config/mochila`, las variables `MOCHILA_*`, la marca `mochila:ignore`, el hook y el agente de OpenCode. El alias `tareas` se queda; `dam` no, porque la confusión seguiría.
+- Lo que **no** se toca: el ciclo DAM (`DAM-almacen`, `--ciclo dam`). El cambio se hizo con un script que respetaba esas excepciones, y después se revisaron a mano las que quedaban.
+- Para no romper lo que ya estaba instalado: los instaladores copian `~/.config/dam` a `~/.config/mochila`, pasan `DAM_ALMACEN` a `MOCHILA_ALMACEN` y quitan las líneas viejas del TAB; las variables `DAM_*`, `dam:ignore` y el hook de `dam` siguen valiendo.
+- El historial (este fichero, las ADR viejas y el CHANGELOG publicado) sigue diciendo `dam`: es como se llamaba entonces.
+
+**Qué aprendí:**
+- **Una prueba con otra persona encuentra lo que yo ya no veo.** Yo sé que `ordenar` va con `ejecutar` y que sin carpeta usa la de pruebas; él no, y era lo primero que probaba.
+- **El nombre también es parte de la interfaz.** Si confunde a quien lo usa, es un fallo igual que un mensaje que no se entiende.

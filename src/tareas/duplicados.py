@@ -1,11 +1,11 @@
-"""dam duplicados: ficheros repetidos (mismo contenido) y carpetas que son copia de otra.
+"""mochila duplicados: ficheros repetidos (mismo contenido) y carpetas que son copia de otra.
 
 Solo LEE: no mueve ni borra nada. Para saber si dos ficheros son iguales compara su contenido
 (huella SHA-256), no el nombre. Para ir rápido, primero agrupa por tamaño y solo calcula la
 huella de los que coinciden; y antes de leer un fichero entero, compara su principio.
 
 No lee los ficheros de OneDrive «solo en la nube» (leerlos los descargaría) y se salta lo mismo
-que dam inventario: enlaces, carpetas del sistema, .git, carpetas regenerables y de programas.
+que mochila inventario: enlaces, carpetas del sistema, .git, carpetas regenerables y de programas.
 """
 
 from __future__ import annotations
@@ -221,7 +221,7 @@ def a_markdown(informe: Informe, top: int = 15) -> str:
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M")
     lineas = [
         f"# Duplicados de `{informe.carpeta}`", "",
-        f"Generado con `dam duplicados` el {fecha}. Se ha comparado el contenido (SHA-256): no se ha tocado nada.", "",
+        f"Generado con `mochila duplicados` el {fecha}. Se ha comparado el contenido (SHA-256): no se ha tocado nada.", "",
         f"- **{informe.ficheros}** ficheros revisados ({tamano_legible(informe.tamano)})",
         f"- **{len(informe.grupos)}** grupos de ficheros repetidos · dejando una copia de cada, "
         f"se liberarían **{tamano_legible(informe.sobra)}**",

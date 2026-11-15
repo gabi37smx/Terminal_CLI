@@ -1,10 +1,10 @@
-"""dam configurar: pone TUS asignaturas en acciones.json (como adduser, que pregunta y configura).
+"""mochila configurar: pone TUS asignaturas en acciones.json (como adduser, que pregunta y configura).
 
 Aquí solo está la lógica, sin preguntas por pantalla (esas están en cli.py), para poder probarla:
 - `aplicar` cambia las acciones «ordenar» y «clasificar» de una plantilla por tus asignaturas.
 - `guardar` valida el resultado entero y lo escribe, con copia del fichero anterior.
 - `carpetas_que_faltan` / `crear_carpetas` preparan asignaturas/ en tu almacén.
-- La ruta del almacén pasa a ser la de tu ciclo (~/ASIR-almacen...) si era una de las que pone dam.
+- La ruta del almacén pasa a ser la de tu ciclo (~/ASIR-almacen...) si era una de las que pone mochila.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ _CURSO_EN_TEXTO = re.compile(r"\b(de?l? )?(?:[12]º de )?(?:SMX|DAM|DAW|ASIR)\b|
 
 
 def perfil(datos: dict) -> dict | None:
-    """Lo que guardó la última vez dam configurar: {"ciclo": "dam", "cursos": [1]} (o None)."""
+    """Lo que guardó la última vez mochila configurar: {"ciclo": "dam", "cursos": [1]} (o None)."""
     p = datos.get("perfil")
     return p if isinstance(p, dict) else None
 
@@ -119,7 +119,7 @@ def carpetas_que_faltan(base: Path, asignaturas: list[str]) -> list[str]:
 
 
 def crear_carpetas(base: Path, asignaturas: list[str]) -> None:
-    """Crea asignaturas/NOMBRE con un .gitkeep (git no sube carpetas vacías: así dam sync las lleva a GitHub)."""
+    """Crea asignaturas/NOMBRE con un .gitkeep (git no sube carpetas vacías: así mochila sync las lleva a GitHub)."""
     for nombre in asignaturas:
         carpeta = base / nombre
         carpeta.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,4 @@
-"""dam entregar. Proyectos de mentira en tmp_path; la clave falsa se monta por trozos."""
+"""mochila entregar. Proyectos de mentira en tmp_path; la clave falsa se monta por trozos."""
 import subprocess
 import zipfile
 from datetime import date

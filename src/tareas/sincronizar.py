@@ -85,7 +85,7 @@ def traducir_error(texto: str) -> str:
                 'git config --global user.email "tu@correo"')
     if any(x in t for x in ("non-fast-forward", "fetch first", "[rejected]", "failed to push")):
         return ("La rama está desactualizada: hay cambios en GitHub que no tienes. "
-                "Usa `dam sync --integrar` o descárgalos primero.")
+                "Usa `mochila sync --integrar` o descárgalos primero.")
     if "conflict" in t:
         return "Hay un conflicto de fusión real: hay que resolverlo a mano (git status te dice dónde)."
     if "not a git repository" in t:
@@ -145,7 +145,7 @@ class Almacen:
             raise TareasError(
                 f"No existe la asignatura «{asignatura}» en {base}. "
                 f"Hay: {', '.join(disponibles) or 'ninguna'}. "
-                'Si lo que querías era poner un mensaje, usa: dam sync -m "tu mensaje"'
+                'Si lo que querías era poner un mensaje, usa: mochila sync -m "tu mensaje"'
             )
         return f"{self.carpeta_asignaturas}/{asignatura}"
 
@@ -280,7 +280,7 @@ class Almacen:
                 "pendiente",
                 ["No hago nada automático: tienes cambios sin subir Y hay cambios nuevos en GitHub.",
                  "Si quieres que los una (guarda lo tuyo y hace pull --rebase; si hay conflicto lo deshace): "
-                 "dam sync --integrar"],
+                 "mochila sync --integrar"],
                 detalle=self._stat(s), simulado=simular,
             )
         if simular:

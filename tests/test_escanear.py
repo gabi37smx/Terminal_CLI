@@ -75,8 +75,9 @@ def test_no_avisa_con_marcadores_ni_codigo(linea):
     assert escanear.analizar_linea(linea) == []
 
 
-def test_dam_ignore_salta_la_linea():
-    assert escanear.analizar_linea(FALSAS["github"] + "  # dam:ignore") == []
+def test_mochila_ignore_salta_la_linea():
+    assert escanear.analizar_linea(FALSAS["github"] + "  # mochila:ignore") == []
+    assert escanear.analizar_linea(FALSAS["github"] + "  # dam:ignore") == []  # el nombre antiguo sigue valiendo
 
 
 def test_la_muestra_nunca_es_el_secreto_entero():

@@ -34,7 +34,7 @@ def test_instalar_y_quitar(repo):
     destino = repo / ".git/hooks/pre-commit"
     assert "Hook instalado" in hook.instalar(repo)
     texto = destino.read_bytes().decode("utf-8")
-    assert hook.MARCA in texto and "dam scan-secrets --staged" in texto and "\r" not in texto
+    assert hook.MARCA in texto and "mochila scan-secrets --staged" in texto and "\r" not in texto
     if sys.platform != "win32":
         assert destino.stat().st_mode & 0o111
     hook.instalar(repo)                       # repetir no da error
@@ -46,12 +46,23 @@ def test_no_pisa_un_hook_ajeno(repo):
     destino = repo / ".git/hooks/pre-commit"
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_text("#!/bin/sh\necho mio\n")
-    with pytest.raises(TareasError, match="no es de dam"):
+    with pytest.raises(TareasError, match="no es de mochila"):
         hook.instalar(repo)
     with pytest.raises(TareasError, match="no lo toco"):
         hook.quitar(repo)
     hook.instalar(repo, forzar=True)
     assert hook.MARCA in destino.read_text()
+
+
+def test_el_hook_de_cuando_se_llamaba_dam_tambien_es_nuestro(repo):
+    # Los almacenes que ya tenían el hook de «dam» se pasan al de mochila sin --forzar
+    destino = repo / ".git/hooks/pre-commit"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_text("#!/bin/sh\n# dam-hook: scan-secrets\ndam scan-secrets --staged\n")
+    hook.instalar(repo)
+    assert hook.MARCA in destino.read_text() and "mochila scan-secrets" in destino.read_text()
+    destino.write_text("#!/bin/sh\n# dam-hook: scan-secrets\n")
+    assert hook.quitar(repo) == "Hook quitado."
 
 
 def test_fuera_de_un_repo(tmp_path):
@@ -67,7 +78,7 @@ def test_cli(repo):
     assert run.invoke(app, ["instalar-hook", str(repo / "nada")]).exit_code == 1
 
 
-@pytest.mark.skipif(shutil.which("dam") is None, reason="el comando dam no está en el PATH de los tests")
+@pytest.mark.skipif(shutil.which("mochila") is None, reason="el comando mochila no está en el PATH de los tests")
 def test_el_hook_bloquea_un_commit_con_clave_y_deja_pasar_uno_limpio(repo):
     hook.instalar(repo)
     (repo / "bien.md").write_text("hola", encoding="utf-8")

@@ -1,4 +1,4 @@
-"""dam inventario: qué hay en una carpeta antes de organizarla.
+"""mochila inventario: qué hay en una carpeta antes de organizarla.
 
 Solo LEE nombres, tamaños, fechas y atributos: no abre el contenido de ningún fichero (salvo
 .git/config para saber si un repo tiene remoto) y no mueve ni borra nada.
@@ -168,7 +168,7 @@ def _es_enlace(ruta: Path) -> bool:
 def tamano_carpeta(carpeta: Path, ignorar: frozenset[str] = frozenset()) -> Medida:
     """Lo que ocupa una carpeta entera (en el disco y en la nube), sin seguir enlaces.
 
-    «ignorar»: nombres de fichero en minúsculas que no cuentan (dam readme no cuenta los README.md).
+    «ignorar»: nombres de fichero en minúsculas que no cuentan (mochila readme no cuenta los README.md).
     """
     medida = Medida()
     for raiz, carpetas, ficheros in carpeta.walk(on_error=lambda e: None):
@@ -314,7 +314,7 @@ def a_markdown(informe: Informe, top: int = 15) -> str:
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M")
     lineas = [
         f"# Inventario de `{informe.carpeta}`", "",
-        f"Generado con `dam inventario` el {fecha}. Solo se han leído nombres y tamaños: no se ha tocado nada.", "",
+        f"Generado con `mochila inventario` el {fecha}. Solo se han leído nombres y tamaños: no se ha tocado nada.", "",
         f"- **{informe.ficheros}** ficheros en **{informe.carpetas}** carpetas · "
         f"**{tamano_legible(informe.tamano)}** en el disco · {tamano_legible(informe.tamano_nube)} solo en la nube",
         f"- Recuperable sin perder nada: basura {tamano_legible(en_disco(informe.basura))} · "

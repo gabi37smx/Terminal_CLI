@@ -1,4 +1,4 @@
-"""dam readme: tabla «Qué hay dentro» en cada README, sin tocar lo que escribe el alumno."""
+"""mochila readme: tabla «Qué hay dentro» en cada README, sin tocar lo que escribe el alumno."""
 from datetime import date
 
 import pytest

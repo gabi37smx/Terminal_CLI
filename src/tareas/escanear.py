@@ -92,7 +92,7 @@ def _parece_secreto(valor: str) -> bool:
 
 def analizar_linea(texto: str) -> list[tuple[str, str, str]]:
     """Devuelve [(tipo, valor_crudo, confianza)]. El valor crudo no debe salir de este módulo."""
-    if "dam:ignore" in texto:
+    if "mochila:ignore" in texto or "dam:ignore" in texto:  # dam: su nombre antiguo
         return []
     encontrados = []
     for tipo, patron, confianza in PATRONES:
@@ -163,7 +163,7 @@ def escanear_arbol(raiz: Path, solo_alta: bool = False,
                    ficheros: list[Path] | None = None) -> tuple[list[Hallazgo], int, int]:
     """Devuelve (hallazgos, ficheros_revisados, ficheros_omitidos).
 
-    Sin «ficheros» revisa lo que se subiría a git; con ella, solo esa lista (la usa dam entregar).
+    Sin «ficheros» revisa lo que se subiría a git; con ella, solo esa lista (la usa mochila entregar).
     """
     hallazgos, revisados, omitidos = [], 0, 0
     for ruta in ficheros if ficheros is not None else ficheros_del_proyecto(raiz):
