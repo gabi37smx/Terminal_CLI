@@ -88,6 +88,9 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Arreglado
 
+- `instalar.cmd` en Windows 11 LTSC: si la política de PowerShell no deja activar el TAB, ahora lo
+  repite al final, donde se ve (antes se perdía entre la salida). Y si falta Git o Node.js, da su
+  web antes que `winget`, que LTSC no trae (#46).
 - Al leer algunos PDF (resúmenes, `ordenar`), pypdf llenaba la terminal de avisos como «fontTools is
   required...» aunque el texto salía bien. Ahora solo se ven sus errores de verdad.
 - Lo que no entendió el compañero de la instalación cruzada: `mochila ordenar` dice que `ordenar` es
