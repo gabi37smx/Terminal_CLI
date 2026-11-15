@@ -320,11 +320,11 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("mochila ejecutar -h", "Todas las opciones de ejecutar"),
     ],
     "ejecutar": [
-        ("mochila ejecutar ordenar --simular", "Enseña cómo ordenaría, sin tocar nada"),
-        ("mochila ejecutar ordenar", "Lo hace de verdad: enseña la tabla y pregunta s/N"),
+        ("mochila ejecutar ordenar . --simular", "Cómo ordenaría la carpeta en la que estás, sin tocar nada"),
+        ("mochila ejecutar ordenar .", "Lo hace de verdad: enseña la tabla y pregunta s/N"),
         ("mochila ejecutar limpiar-temporales ~/pruebas-tareas", "Usa otra carpeta en vez del origen de la acción"),
         ("mochila ejecutar convertir-webp ~/Descargas/portada.png", "Solo ese fichero, no toda la carpeta"),
-        ("mochila ejecutar convertir-webp --si", "Sin preguntar (solo si estás seguro)"),
+        ("mochila ejecutar convertir-webp . --si", "Sin preguntar (solo si estás seguro)"),
     ],
     "configurar-ia": [
         ("mochila configurar-ia", "Te pregunta: modelos gratis de OpenCode o el servidor del centro"),
@@ -371,39 +371,112 @@ def _resumen(cmd: Any) -> str:
     return " ".join(((cmd.help or "").strip().split("\n\n") or [""])[0].split())
 
 
-def mostrar_ayuda() -> None:
-    """Ayuda general corta: una tabla con cada comando y una descripción de una línea."""
+# Lo primero que hace casi todo el mundo: sale en la ayuda corta y en los primeros pasos de la larga
+MAS_USADO = [
+    ("mochila ejecutar ordenar . --simular", "Adónde iría cada fichero (no mueve)"),
+    ("mochila ejecutar ordenar .", "Mueve cada apunte a su asignatura"),
+    ("mochila ejecutar resumir-tema APUNTE.pdf", "Resumen con IA al lado del apunte"),
+    ("mochila sync", "Sube lo nuevo y baja lo de otro PC"),
+    ("mochila acciones", "Las acciones que puedes ejecutar"),
+]
+
+PRIMEROS_PASOS = [
+    ("mochila configurar", "Una vez: tu ciclo, tu curso y tus asignaturas"),
+    ("mochila crear-almacen", "Una vez: tu almacén de apuntes en GitHub (privado)"),
+    ("mochila ejecutar ordenar . --simular", "En tu carpeta de Descargas: mira adónde iría cada cosa"),
+    ("mochila ejecutar ordenar .", "Si te parece bien, lo hace (y te pregunta antes)"),
+    ("mochila sync", "Lo sube: en clase, en casa y en el USB tendrás lo mismo"),
+]
+
+# El ejemplo de cada comando en la guía (mochila help), cuando el primero de EJEMPLOS no es el más útil
+EJEMPLO_GUIA: dict[str, Optional[str]] = {
+    "configurar": "mochila configurar --ciclo daw --curso 1 --simular",
+    "listar": "mochila listar ~/Downloads",
+    "validar": None,
+    "acciones": None,
+    "configurar-ia": "mochila configurar-ia --proveedor opencode",
+    "comprobar-ia": None,
+    "crear-almacen": None,
+}
+
+TRUCOS = [
+    ("Un punto, «.»", "es la carpeta en la que estás: mochila ejecutar ordenar ."),
+    ("--simular", "enseña qué haría sin tocar nada. Úsalo siempre la primera vez."),
+    ("--si", "no pregunta (solo si estás seguro)."),
+    ("ejecutar", "lanza una ACCIÓN de acciones.json (ordenar, resumir-tema...): mira cuáles con mochila acciones."),
+    ("TAB", "completa comandos, acciones y asignaturas: escribe «mochila ej» y pulsa TAB."),
+    ("--config RUTA", "usa otro acciones.json (va antes del comando)."),
+]
+
+
+def _comandos_por_grupo() -> list[tuple[str, str, list[str]]]:
+    """GRUPOS con solo los comandos que existen, y al final los nuevos que aún no estén en GRUPOS."""
     comandos = typer.main.get_command(app).commands
-    consola.print(
-        "[bold]mochila[/bold] — automatiza tareas con ficheros y mantiene tu almacén "
-        "de apuntes sincronizado."
-    )
-    consola.print(
-        "\n[bold]Uso:[/bold]  mochila COMANDO [ARGUMENTOS] [OPCIONES]"
-        "   [dim](o «tareas»: es el mismo programa con otro nombre)[/dim]\n"
-    )
-
     agrupados = {n for _, _, nombres in GRUPOS for n in nombres}
-    resto = [n for n in comandos if n not in agrupados]  # comandos nuevos que falten en GRUPOS
+    resto = [n for n in comandos if n not in agrupados]
     grupos = GRUPOS + ([("Más", "", resto)] if resto else [])
-    tabla = Table(box=box.ROUNDED, header_style="bold")
-    tabla.add_column("Tema", no_wrap=True)
-    tabla.add_column("Comando", style="bold cyan", no_wrap=True)
-    tabla.add_column("Qué hace")
-    for i, (tema, para, nombres) in enumerate(grupos):
-        primera = [f"[bold magenta]{escape(tema)}[/bold magenta]", f"[dim]{escape(para)}[/dim]"]
-        for j, nombre in enumerate(n for n in nombres if n in comandos):
-            tabla.add_row(primera[j] if j < 2 else "", escape(f"mochila {nombre}"), escape(_resumen(comandos[nombre])))
-        if i < len(grupos) - 1:
-            tabla.add_section()  # una raya entre temas
-    consola.print(tabla)
+    return [(tema, para, [n for n in nombres if n in comandos]) for tema, para, nombres in grupos]
 
-    consola.print("\nUsar otro acciones.json:  [bold]mochila --config RUTA COMANDO[/bold]")
-    consola.print(
-        "Activa el TAB:            [bold]instalar.sh[/bold] o [bold]instalar.ps1[/bold] si clonaste el repo; "
-        "si no: [bold]mochila --install-completion[/bold]"
-    )
-    consola.print("Ver el script del TAB:    [bold]mochila --show-completion[/bold]")
+
+def _tabla_de_ordenes(filas: list[tuple[str, str]]) -> Table:
+    tabla = Table(box=None, show_header=False, padding=(0, 0, 0, 2))
+    tabla.add_column(style="bold cyan", no_wrap=True)
+    tabla.add_column()
+    for orden, que in filas:
+        tabla.add_row(escape(orden), escape(que))
+    return tabla
+
+
+def _cabecera() -> None:
+    consola.print("[bold]mochila[/bold] — tus apuntes ordenados y sincronizados entre clase, casa y el USB.")
+    consola.print("\n[bold]Uso:[/bold]  mochila COMANDO [ARGUMENTOS] [OPCIONES]")
+    consola.print("[dim]      (o «tareas»: es el mismo programa con otro nombre)[/dim]")
+
+
+def mostrar_ayuda() -> None:
+    """Ayuda CORTA (mochila, -h, --help): lo más usado y todos los comandos, en una pantalla."""
+    _cabecera()
+    consola.print("\n[bold]Lo más usado:[/bold]")
+    consola.print(_tabla_de_ordenes(MAS_USADO))
+    consola.print("\n[bold]Todos los comandos:[/bold]")
+    tabla = Table(box=None, show_header=False, padding=(0, 2, 0, 2))
+    tabla.add_column(style="bold magenta", no_wrap=True)
+    tabla.add_column(style="cyan")
+    for tema, _, nombres in _comandos_por_grupo():
+        tabla.add_row(escape(tema), escape(" · ".join(nombres)))
+    consola.print(tabla)
+    consola.print("\n[bold]Más ayuda:[/bold]  [bold]mochila help[/bold] (guía con ejemplos)")
+    consola.print("            [bold]mochila help COMANDO[/bold] (todo sobre un comando)")
+    consola.print("[dim]TAB: instalar.sh o instalar.ps1 si clonaste el repo;[/dim]")
+    consola.print("[dim]     si no: mochila --install-completion[/dim]")
+
+
+def mostrar_guia() -> None:
+    """Ayuda LARGA (mochila help): primeros pasos, qué hace cada comando con un ejemplo, y trucos."""
+    comandos = typer.main.get_command(app).commands
+    _cabecera()
+    consola.print("\n[bold]Primeros pasos[/bold] (una vez instalado):")
+    consola.print(_tabla_de_ordenes([(f"{i}. {orden}", que) for i, (orden, que) in enumerate(PRIMEROS_PASOS, 1)]))
+
+    consola.print("\n[bold]Todos los comandos[/bold], con un ejemplo de cada uno:")
+    for tema, para, nombres in _comandos_por_grupo():
+        consola.print(f"\n[bold magenta]{escape(tema)}[/bold magenta]" + (f" [dim]— {escape(para)}[/dim]" if para else ""))
+        for nombre in nombres:
+            consola.print(f"  [bold cyan]mochila {escape(nombre)}[/bold cyan]  {escape(_resumen(comandos[nombre]))}")
+            # El ejemplo más útil (entero, para copiarlo): el elegido para la guía o el primero que lleva
+            # algo más que el comando a secas. None en EJEMPLO_GUIA = basta con el comando.
+            ejemplo = EJEMPLO_GUIA.get(nombre, "") if nombre in EJEMPLO_GUIA else next(
+                (c for c, _ in EJEMPLOS.get(nombre, []) if c != f"mochila {nombre}"), "")
+            if ejemplo:
+                consola.print(f"      [dim]$ {escape(ejemplo)}[/dim]", soft_wrap=True)
+
+    consola.print("\n[bold]Trucos:[/bold]")
+    consola.print(_tabla_de_ordenes(TRUCOS))
+    consola.print("\nTodo sobre un comando (opciones y más ejemplos): [bold]mochila help COMANDO[/bold] "
+                  "o [bold]mochila COMANDO -h[/bold]")
+    consola.print("Activa el TAB: [bold]instalar.sh[/bold] o [bold]instalar.ps1[/bold] si clonaste el repo; "
+                  "si no: [bold]mochila --install-completion[/bold]. Ver su script: "
+                  "[bold]mochila --show-completion[/bold]")
 
 
 @app.callback(invoke_without_command=True)
@@ -472,9 +545,9 @@ def ayuda(
         typer.Argument(metavar="COMANDO", help="Comando del que quieres la ayuda (sin él, la lista de comandos)."),
     ] = None,
 ) -> None:
-    """Esta lista, o la ayuda y ejemplos de un comando: mochila help COMANDO."""
+    """La guía con ejemplos de cada comando, o todo sobre uno: mochila help COMANDO."""
     if nombre is None:
-        mostrar_ayuda()
+        mostrar_guia()
         return
     comandos = typer.main.get_command(app).commands
     if nombre not in comandos:

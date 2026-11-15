@@ -17,7 +17,7 @@ function Tiene($programa) { [bool](Get-Command $programa -ErrorAction SilentlyCo
 # 1. git -------------------------------------------------------------------
 Paso "Compruebo git"
 if (-not (Tiene git)) {
-    Parar "No tienes git. Instálalo (winget install --id Git.Git -e) y vuelve a ejecutar este script."
+    Parar "No tienes git. Bájalo de https://git-scm.com/download/win (o: winget install --id Git.Git -e) y vuelve a ejecutar este script."
 }
 Ok (git --version)
 
@@ -74,11 +74,13 @@ Paso "Activo el autocompletado con TAB"
 # Process), así que Get-ExecutionPolicy a secas diría siempre «Bypass». Miro el resto de ámbitos
 # en el orden en que manda Windows; si ninguno está definido, Windows usa Restricted.
 $Politica = 'Restricted'
+$SinTab = $false  # para repetir el aviso al final: en medio de toda la salida no se ve
 foreach ($Ambito in 'MachinePolicy', 'UserPolicy', 'CurrentUser', 'LocalMachine') {
     $p = Get-ExecutionPolicy -Scope $Ambito
     if ($p -ne 'Undefined') { $Politica = $p; break }
 }
 if ($Politica -eq 'Restricted' -or $Politica -eq 'AllSigned') {
+    $SinTab = $true
     Aviso "PowerShell no deja cargar scripts (política $Politica), así que el TAB no funcionaría."
     Aviso "Si lo quieres, ejecuta una vez:  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"
     Aviso "y vuelve a lanzar este instalador. (RemoteSigned deja ejecutar tus scripts, no los descargados.)"
@@ -234,7 +236,8 @@ if (Test-Path (Join-Path $HOME ".config\mochila\ia.json")) {
                 if ($LASTEXITCODE -ne 0) { Aviso "npm no ha podido instalar OpenCode." }
                 $env:Path = "$env:APPDATA\npm;$env:Path"   # ahí deja npm sus comandos: que esta ventana lo vea ya
             } else {
-                Aviso "Para instalar OpenCode necesito npm (Node.js): winget install OpenJS.NodeJS.LTS"
+                # Windows LTSC no trae winget: primero la web, que vale en todos
+                Aviso "Para instalar OpenCode necesito npm: instala Node.js LTS de https://nodejs.org (o: winget install OpenJS.NodeJS.LTS)"
                 Aviso "Después, cierra esta ventana y repite el instalador: lo que ya está hecho se salta."
             }
         }
@@ -253,4 +256,11 @@ Paso "Compruebo que todo funciona"
 uv run mochila --config "$Config" validar
 
 Write-Host ""
-Write-Host "Listo. Prueba:  mochila --help   y   mochila status"
+Write-Host "Listo. Cierra esta ventana, abre otra PowerShell y prueba:  mochila   y   mochila help"
+if ($SinTab) {
+    # Windows 11 LTSC y otros vienen así: en la instalación cruzada el aviso de arriba pasó desapercibido
+    Write-Host ""
+    Aviso "Ojo: el TAB NO está activado. Tu PowerShell no deja cargar scripts. Para tenerlo, una vez:"
+    Aviso "    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"
+    Aviso "y vuelve a lanzar .\instalar.cmd (lo que ya está hecho se salta)."
+}
