@@ -17,6 +17,12 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Añadido
 
+- `resumir-tema` hace resúmenes **a la medida del tema**: lee el tema entero (de uno largo, un trozo
+  de cada página, no solo las primeras) y pide una viñeta por cada 2 páginas, entre 6 y 40, en
+  apartados. Antes, de un tema de 71 páginas salían 6 viñetas. El `.resumen.md` se guarda **al lado
+  del apunte** (en su asignatura y su unidad), no en `pruebas-tareas/resumenes`. El tiempo máximo
+  de espera del modelo sube a 5 minutos.
+
 - `ordenar` **crea la carpeta de la unidad** si el apunte dice de cuál es («UD1», «Tema 4») y aún no
   está: `UD01`, `UD02`... o con el estilo de las que ya tengas («Tema 2»). Con `"crear_unidades": false`
   solo usa las que existen.

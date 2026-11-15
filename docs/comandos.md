@@ -49,7 +49,7 @@ mochila sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `renombrar-capturas` | renombrar | — | Renombra capturas con fecha y número |
 | `copiar-entregas` | copiar | — | Copia entregas y prácticas a una carpeta de seguridad |
 | `mover-zips` | mover | — | Mueve los `.zip` a la subcarpeta `comprimidos` |
-| `resumir-tema` | resumir | sí | Resume cada tema en un `.resumen.md` (en castellano aunque el apunte esté en valenciano) |
+| `resumir-tema` | resumir | sí | Resume cada tema en un `.resumen.md` al lado del apunte (en castellano aunque esté en valenciano), más largo cuanto más largo es el tema |
 | `nombrar-descargas` | renombrar-ia | sí | Pone nombre por su contenido a `escaneo_0042.pdf`, `documento (3).pdf`... |
 | `clasificar-asignatura` | clasificar | sí | Lleva cada apunte a la carpeta de su asignatura (o a `otros`) |
 

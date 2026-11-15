@@ -239,6 +239,50 @@ def leer_texto(fichero: Path, tope: int) -> str:
     return texto.strip()[:tope]
 
 
+CARACTERES_POR_PAGINA = 2500  # para calcular las páginas de lo que no es un PDF (.txt, .md, .odt...)
+
+
+def _repartir(trozos: list[str], tope: int) -> str:
+    """Junta los trozos sin pasar de `tope`, dando a cada uno la misma parte (lo que sobra a uno, pasa a otros).
+
+    Así, de un tema de 70 páginas llega algo de TODAS (los títulos de cada diapositiva van arriba),
+    no solo de las primeras.
+    """
+    if sum(len(t) for t in trozos) <= tope:
+        return "\n".join(trozos)
+    limites = [0] * len(trozos)
+    restante = tope
+    orden = sorted(range(len(trozos)), key=lambda i: len(trozos[i]))
+    for k, i in enumerate(orden):
+        limites[i] = min(len(trozos[i]), restante // (len(trozos) - k))
+        restante -= limites[i]
+    return "\n".join(t[:limite] for t, limite in zip(trozos, limites) if limite)
+
+
+def leer_documento(fichero: Path, tope: int) -> tuple[str, int]:
+    """(texto, páginas) del documento ENTERO: si es largo, un trozo de cada página hasta `tope` caracteres.
+
+    Las páginas son las del PDF; en lo demás, una por cada 2500 caracteres.
+    """
+    if fichero.suffix.lower() == ".pdf":
+        try:
+            from pypdf import PdfReader
+
+            paginas = [(p.extract_text() or "").strip() for p in PdfReader(str(fichero)).pages]
+        except Exception:  # PDF roto o cifrado: para la IA es como si no tuviera texto
+            return "", 0
+        return _repartir([p for p in paginas if p], tope).strip(), len(paginas)
+    completo = leer_texto(fichero, 10 ** 7)  # un .txt o .odt con más de 10 millones de caracteres sería raro
+    paginas = max(1, round(len(completo) / CARACTERES_POR_PAGINA)) if completo else 0
+    trozos = [completo[i:i + CARACTERES_POR_PAGINA] for i in range(0, len(completo), CARACTERES_POR_PAGINA)]
+    return _repartir(trozos, tope).strip(), paginas
+
+
+def vinetas_para(paginas: int) -> int:
+    """Lo largo que debe ser el resumen: una viñeta por cada 2 páginas, entre 6 y 40."""
+    return max(6, min(40, round(paginas / 2)))
+
+
 class AccionIA(Accion):
     """Base de las acciones que preguntan a un modelo. El proveedor lo pone el motor."""
 
@@ -256,10 +300,10 @@ class AccionIA(Accion):
         n = len(texto)
         return f"enviaría {n} caracteres (~{n // 4} tokens)"
 
-    def preguntar(self, sistema: str, texto: str, max_tokens: int = 800) -> Respuesta:
+    def preguntar(self, sistema: str, texto: str, max_tokens: int = 800, extra: str = "") -> Respuesta:
         if self.proveedor is None:
             raise IANoDisponible(f"«{self.nombre}» necesita IA y no hay proveedor")
-        instrucciones = self.config.get("instrucciones", "")
+        instrucciones = " ".join(x for x in (self.config.get("instrucciones", ""), extra) if x)
         usuario = f"{instrucciones}\n\n<documento>\n{texto}\n</documento>"
         return self.proveedor.completar(sistema, usuario, max_tokens)
 
@@ -271,14 +315,19 @@ class Resumir(AccionIA):
     tipo = "resumir"
 
     def aplicar(self, fichero, n, simular):
-        texto = self.texto(fichero)
+        texto, paginas = leer_documento(fichero, self.config.get("max_caracteres", 40000))
         if not texto:
             return Resultado(fichero, None, "saltado", SIN_TEXTO)
+        # Sin «destino», el resumen se queda al lado del apunte: en su asignatura (y en su unidad)
         carpeta = self._carpeta_destino(fichero)
         destino = destino_libre(carpeta / f"{fichero.stem}.resumen.md", self._reservados)
+        vinetas = vinetas_para(paginas)
         if simular:  # --simular no llama al modelo: solo dice cuánto mandaría
-            return Resultado(fichero, destino, "simulado", self.presupuesto(texto))
-        r = self.preguntar(SISTEMA_RESUMIR, texto)
+            return Resultado(fichero, destino, "simulado",
+                             f"{paginas} pág. → unas {vinetas} viñetas; {self.presupuesto(texto)}")
+        extension = (f"El apunte tiene {paginas} páginas: el resumen debe tener unas {vinetas} viñetas en total, "
+                     "repartidas en apartados (## Título) que sigan el orden del tema.")
+        r = self.preguntar(SISTEMA_RESUMIR, texto, max_tokens=min(4000, 400 + 80 * vinetas), extra=extension)
         if not r.texto:
             return Resultado(fichero, None, "saltado", "el modelo no ha devuelto nada")
         carpeta.mkdir(parents=True, exist_ok=True)

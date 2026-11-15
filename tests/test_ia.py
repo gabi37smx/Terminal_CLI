@@ -448,3 +448,43 @@ def test_el_certificado_de_opencode_sirve_si_no_hay_centro_ia_ca(monkeypatch, tm
     monkeypatch.setenv("CENTRO_IA_CA", str(tmp_path / "tampoco.crt"))
     with pytest.raises(IANoDisponible, match="revisa CENTRO_IA_CA"):
         ProveedorCentro.desde_entorno()  # CENTRO_IA_CA manda
+
+
+# ---------- resúmenes a la medida del tema (15-nov: 71 páginas daban 6 viñetas) ----------
+def test_repartir_da_algo_de_cada_pagina():
+    from tareas.acciones import _repartir
+
+    paginas = ["A" * 5000, "titulo B " + "b" * 5000, "C corto"]
+    texto = _repartir(paginas, 3000)
+    assert len(texto) <= 3000 + 2  # + los saltos de línea
+    assert "A" in texto and "titulo B" in texto and "C corto" in texto  # ninguna se queda fuera
+    assert _repartir(["uno", "dos"], 100) == "uno\ndos"  # si cabe todo, todo
+
+
+def test_vinetas_segun_las_paginas():
+    from tareas.acciones import vinetas_para
+
+    assert vinetas_para(3) == 6       # un tema corto: mínimo 6
+    assert vinetas_para(71) == 36     # el de Bases de datos: unas 36
+    assert vinetas_para(300) == 40    # máximo 40
+
+
+def test_el_resumen_va_al_lado_del_apunte_y_pide_lo_largo(tmp_path, modelo_falso):
+    unidad = tmp_path / "almacen" / "asignaturas" / "bases-datos" / "UD02"
+    unidad.mkdir(parents=True)
+    (unidad / "model-er.txt").write_text("entidad relacion " * 4000, encoding="utf-8")  # 68000 car. = 27 pág.
+    a = accion("resumir", instrucciones="Resume.")  # sin «destino»
+    a.proveedor = modelo_falso("## Entidades" + chr(10) + "- una entidad es...")
+    [r] = a.ejecutar([unidad / "model-er.txt"], simular=False)
+    assert r.destino == unidad / "model-er.resumen.md"  # en su asignatura y su unidad, no en pruebas-tareas
+    _, usuario, tope_salida = a.proveedor.llamadas[0]
+    assert usuario.startswith("Resume. El apunte tiene 27 páginas") and "unas 14 viñetas" in usuario
+    assert "## Título" in usuario and tope_salida > 800  # deja contestar más largo que antes
+
+
+def test_simular_dice_paginas_y_vinetas(tmp_path, modelo_falso):
+    (tmp_path / "t.txt").write_text("x " * 10000, encoding="utf-8")
+    a = accion("resumir")
+    a.proveedor = modelo_falso()
+    [r] = a.ejecutar([tmp_path / "t.txt"], simular=True)
+    assert r.nota.startswith("8 pág. → unas 6 viñetas") and not a.proveedor.llamadas
