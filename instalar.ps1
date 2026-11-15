@@ -68,14 +68,19 @@ if ($Politica -eq 'Restricted' -or $Politica -eq 'AllSigned') {
     Aviso "y vuelve a lanzar este instalador. (RemoteSigned deja ejecutar tus scripts, no los descargados.)"
 } else {
     $ScriptTab = Join-Path $HOME ".config\dam\completado.ps1"
+    # En un Windows recién instalado aún no existe .config\dam (acciones.json se crea en el paso 6b)
+    New-Item -ItemType Directory -Force (Split-Path $ScriptTab) | Out-Null
     # Con esta variable, dam no ejecuta nada: solo escribe el script de autocompletado
     $env:_DAM_COMPLETE = "source_powershell"
     $Texto = & (Join-Path $CarpetaBin "dam.exe")
     Remove-Item Env:_DAM_COMPLETE
-    if ($LASTEXITCODE -ne 0 -or -not $Texto) {
+    if ($LASTEXITCODE -eq 0 -and $Texto) {
+        Set-Content -Path $ScriptTab -Value ($Texto -join "`r`n") -Encoding UTF8
+    }
+    if (-not (Test-Path $ScriptTab)) {
+        # Sin el script no toco el perfil: cada PowerShell nueva daría un error en rojo
         Aviso "No he podido generar el autocompletado."
     } else {
-        Set-Content -Path $ScriptTab -Value ($Texto -join "`r`n") -Encoding UTF8
         $Linea = ". `"$ScriptTab`"  # autocompletado de dam (lo añadió instalar.ps1)"
         # Perfil de Windows PowerShell y, si lo tienes, el de PowerShell 7 (pwsh)
         $Perfiles = @($PROFILE.CurrentUserAllHosts)

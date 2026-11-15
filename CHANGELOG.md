@@ -58,6 +58,9 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Arreglado
 
+- `instalar.cmd` en un Windows recién instalado ya no da un error en rojo al activar el TAB: crea la
+  carpeta `.config\dam` antes de guardar el script, y si no puede generarlo no toca tu perfil de
+  PowerShell. Lo encontró la instalación cruzada con un compañero de ASIR.
 - `dam doctor` en tu carpeta personal ya no la revisa entera (salían como «secretos» los certificados
   de `.cache` y tardaba): avisa de que no es un proyecto y te dice qué proyectos hay dentro.
 - `dam --help | head` (o cualquier salida cortada) en Windows ya no acaba con una traza de una pantalla.
