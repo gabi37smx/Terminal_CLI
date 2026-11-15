@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import logging
 import os
 import re
 import shutil
@@ -16,6 +17,10 @@ from pathlib import Path
 from .errores import AccionNoValida, IANoDisponible
 from .ia import ProveedorIA, Respuesta
 from .inventario import es_basura, tipo_de
+
+# pypdf avisa por logging de cosas que ya arregla él solo (p. ej. «fontTools is required...» con
+# algunas fuentes): el texto sale igual, pero llenaba la terminal de líneas. Solo se ven sus errores.
+logging.getLogger("pypdf").setLevel(logging.ERROR)
 
 
 ESTADOS = {"hecho", "simulado", "saltado", "error"}

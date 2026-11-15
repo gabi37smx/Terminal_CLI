@@ -4,6 +4,7 @@ para los errores HTTP del ProveedorCentro. Ninguna prueba habla con el servidor 
 from __future__ import annotations
 
 import json
+import logging
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -75,6 +76,14 @@ def test_leer_texto_corta_al_tope_y_un_pdf_sin_texto_da_vacio(tmp_path):
     assert leer_texto(tmp_path / "escaneo.pdf", 1000) == ""
     (tmp_path / "roto.pdf").write_bytes(b"esto no es un pdf")
     assert leer_texto(tmp_path / "roto.pdf", 1000) == ""
+
+
+def test_los_avisos_de_pypdf_no_salen_pero_sus_errores_si(caplog):
+    # Así avisa pypdf de «fontTools is required...»: un warning en el logger de su módulo
+    logging.getLogger("pypdf._cmap").warning("fontTools is required to fully parse...")
+    assert caplog.records == []
+    logging.getLogger("pypdf._reader").error("PDF roto de verdad")
+    assert [r.levelname for r in caplog.records] == ["ERROR"]
 
 
 # ---------- resumir ----------
