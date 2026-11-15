@@ -19,20 +19,20 @@ def aislado(monkeypatch, tmp_path, tmp_path_factory):
 
     - Sin variables del servidor del centro y sin leer el .env de la carpeta: aunque tengas
       tu clave puesta en este equipo, ninguna prueba la ve ni gasta un solo token.
-    - Sin DAM_ALMACEN: en mi portátil apunta a mi almacén de verdad, y ninguna prueba debe verlo.
+    - Sin MOCHILA_ALMACEN (ni DAM_ALMACEN, su nombre antiguo): en mi portátil apunta a mi almacén de verdad, y ninguna prueba debe verlo.
     - HOME y USERPROFILE (Windows) en una carpeta temporal: «~/...» nunca es tu carpeta personal.
       La carpeta no se crea, para no cambiar lo que hay en tmp_path.
-    - Tampoco ven tu ~/.config/dam/ia.json (lo que elegiste con dam configurar-ia) ni tu
+    - Tampoco ven tu ~/.config/mochila/ia.json (lo que elegiste con mochila configurar-ia) ni tu
       configuración de OpenCode: las dos van a una carpeta temporal."""
-    for variable in ("CENTRO_IA_URL", "CENTRO_IA_KEY", "CENTRO_IA_CA", "CENTRO_IA_MODELO", "DAM_IA", "DAM_IA_MODELO",
-                     "DAM_ALMACEN", "NODE_EXTRA_CA_CERTS"):
+    for variable in ("CENTRO_IA_URL", "CENTRO_IA_KEY", "CENTRO_IA_CA", "CENTRO_IA_MODELO", "NODE_EXTRA_CA_CERTS",
+                     *(f"{p}_{v}" for p in ("MOCHILA", "DAM") for v in ("IA", "IA_MODELO", "IA_CONFIG", "ALMACEN"))):
         monkeypatch.delenv(variable, raising=False)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
     monkeypatch.setattr(ia, "_leer_dotenv", lambda: None)
     temporal = tmp_path_factory.mktemp("config-ia")
-    monkeypatch.setenv("DAM_IA_CONFIG", str(temporal / "ia.json"))
+    monkeypatch.setenv("MOCHILA_IA_CONFIG", str(temporal / "ia.json"))
     # No XDG_CONFIG_HOME: en Linux git también la lee y las pruebas de sync perderían tu identidad
     monkeypatch.setattr(configurar_ia, "_base_config", lambda: temporal / "config")
 

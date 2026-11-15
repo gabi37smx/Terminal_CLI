@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +12,14 @@ from . import URL_EJEMPLO_ACCIONES, URL_REPO
 from .errores import AccionNoValida, ConfigError
 
 NOMBRE_FICHERO = "acciones.json"
+CARPETA_CONFIG = Path(".config") / "mochila"  # dentro de tu carpeta personal
+
+
+def entorno(nombre: str) -> str:
+    """La variable MOCHILA_<nombre> o, si no está, DAM_<nombre>: así se llamaba antes de ser mochila."""
+    return (os.environ.get(f"MOCHILA_{nombre}") or os.environ.get(f"DAM_{nombre}") or "").strip()
+
+
 TIPOS = {"mover", "copiar", "renombrar", "borrar", "ordenar", "convertir", "resumir", "renombrar-ia", "clasificar"}
 TIPOS_IA = {"resumir", "renombrar-ia", "clasificar"}  # las que preguntan a un modelo (ver ia.py)
 CAMPOS_IA = ("instrucciones", "max_caracteres", "categorias")
@@ -29,7 +38,7 @@ PROHIBIDOS_EN_NOMBRES = '<>:"/\\|?*'  # Windows no admite estos caracteres en no
 
 def sitios_de_busqueda() -> list[Path]:
     """Dónde se busca acciones.json si no se pasa --config."""
-    return [Path.cwd() / NOMBRE_FICHERO, Path.home() / ".config" / "dam" / NOMBRE_FICHERO]
+    return [Path.cwd() / NOMBRE_FICHERO, Path.home() / CARPETA_CONFIG / NOMBRE_FICHERO]
 
 
 def buscar(ruta: Path | None) -> Path:
@@ -71,7 +80,7 @@ def _leer_json(ruta: Path) -> dict:
 
 
 def leer_json(ruta: Path) -> dict:
-    """Lee el fichero sin validar las acciones (dam configurar lo usa como plantilla)."""
+    """Lee el fichero sin validar las acciones (mochila configurar lo usa como plantilla)."""
     return _leer_json(ruta)
 
 
@@ -241,13 +250,13 @@ def _validar_almacen(almacen: object) -> None:
 
 
 def _validar_perfil(perfil: object) -> None:
-    """«perfil» lo escribe dam configurar: qué estudias, para proponértelo la próxima vez."""
+    """«perfil» lo escribe mochila configurar: qué estudias, para proponértelo la próxima vez."""
     if perfil is None:
         return
     cursos = perfil.get("cursos") if isinstance(perfil, dict) else None
     if not (isinstance(perfil, dict) and _texto(perfil.get("ciclo")) and isinstance(cursos, list)
             and cursos and all(c in (1, 2) and not isinstance(c, bool) for c in cursos)):
-        raise ConfigError("«perfil» debe ser {\"ciclo\": \"dam\", \"cursos\": [1]}: repítelo con dam configurar")
+        raise ConfigError("«perfil» debe ser {\"ciclo\": \"dam\", \"cursos\": [1]}: repítelo con mochila configurar")
 
 
 def leer(ruta: Path) -> dict:
@@ -256,7 +265,7 @@ def leer(ruta: Path) -> dict:
 
 
 def validar_datos(datos: dict, nombre: str = NOMBRE_FICHERO) -> dict:
-    """Valida un acciones.json ya leído (dam configurar lo usa ANTES de guardarlo)."""
+    """Valida un acciones.json ya leído (mochila configurar lo usa ANTES de guardarlo)."""
     if datos.get("version") != 1:
         raise ConfigError(
             f"{nombre}: falta «version»: 1 (o es una versión que no conozco: {datos.get('version')!r})"

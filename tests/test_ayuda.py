@@ -22,12 +22,12 @@ def test_ayuda_general_lista_todo(args, monkeypatch):
     r = run.invoke(app, args)
     assert r.exit_code == 0
     for nombre in COMANDOS:
-        assert f"dam {nombre}" in r.output
-    for texto in ("dam help COMANDO", "--config"):
+        assert f"mochila {nombre}" in r.output
+    for texto in ("mochila help COMANDO", "--config"):
         assert texto in r.output
-    # La ayuda general es corta: las opciones y los ejemplos van en dam help COMANDO
+    # La ayuda general es corta: las opciones y los ejemplos van en mochila help COMANDO
     assert "--integrar" not in r.output
-    assert len(r.output.splitlines()) < 43  # 41 con dam configurar-ia (12-nov), 42 con dam crear-almacen (13-nov)
+    assert len(r.output.splitlines()) < 43  # 41 con mochila configurar-ia (12-nov), 42 con mochila crear-almacen (13-nov)
     assert "Traceback" not in r.output
 
 
@@ -37,7 +37,7 @@ def test_ayuda_de_cada_comando(nombre, flag):
     r = run.invoke(app, [nombre, flag])
     assert r.exit_code == 0, r.output
     assert "Ejemplos" in r.output
-    assert f"dam {nombre}" in r.output
+    assert f"mochila {nombre}" in r.output
     assert "Traceback" not in r.output
 
 
@@ -76,10 +76,10 @@ from tareas.cli import ruta_con_comillas_metidas  # noqa: E402
 
 
 @pytest.mark.parametrize("argumentos, esperado", [
-    (["doctor", r'C:\Users\HP\PROJECTE TERMINAL CLI"'], r'dam doctor "C:\Users\HP\PROJECTE TERMINAL CLI"'),
+    (["doctor", r'C:\Users\HP\PROJECTE TERMINAL CLI"'], r'mochila doctor "C:\Users\HP\PROJECTE TERMINAL CLI"'),
     # lo que va detrás se pega a la ruta: se separa otra vez
-    (["entregar", r'C:\mi proyecto" --simular'], r'dam entregar "C:\mi proyecto" --simular'),
-    (["listar", r'.\carpeta"'], r'dam listar ".\carpeta"'),
+    (["entregar", r'C:\mi proyecto" --simular'], r'mochila entregar "C:\mi proyecto" --simular'),
+    (["listar", r'.\carpeta"'], r'mochila listar ".\carpeta"'),
 ])
 def test_detecta_la_ruta_con_comillas_metidas(argumentos, esperado):
     assert ruta_con_comillas_metidas(argumentos) == esperado
@@ -95,10 +95,10 @@ def test_no_molesta_con_argumentos_normales(argumentos):
 
 
 def test_dam_explica_la_barra_final_y_sale_con_2(monkeypatch, capsys):
-    monkeypatch.setattr("sys.argv", ["dam", "doctor", r'C:\Users\HP\mi proyecto"'])
+    monkeypatch.setattr("sys.argv", ["mochila", "doctor", r'C:\Users\HP\mi proyecto"'])
     with pytest.raises(SystemExit) as salida:
         app()
     assert salida.value.code == 2
     texto = " ".join(capsys.readouterr().err.split())  # Rich puede partir la línea
     assert "comillas metidas" in texto
-    assert r'dam doctor "C:\Users\HP\mi proyecto"' in texto
+    assert r'mochila doctor "C:\Users\HP\mi proyecto"' in texto

@@ -1,6 +1,6 @@
 """instalar.ps1 en un Windows recién instalado: se ejecuta de verdad su paso del TAB (4b) con PowerShell.
 
-Lo encontró la instalación cruzada: sin la carpeta .config\\dam, Set-Content fallaba en rojo y aun así
+Lo encontró la instalación cruzada: sin la carpeta .config\\mochila, Set-Content fallaba en rojo y aun así
 se añadía al perfil una línea que cargaba un script inexistente.
 """
 import re
@@ -29,7 +29,7 @@ def ejecutar_paso_tab(casa: Path, perfil: Path, politica: str = "RemoteSigned") 
     bloque = (paso_tab()
               .replace("$HOME", f"'{casa}'")
               .replace("$PROFILE.CurrentUserAllHosts", f"'{perfil}'")
-              .replace('& (Join-Path $CarpetaBin "dam.exe")', f"& '{sys.executable}' -m tareas"))
+              .replace('& (Join-Path $CarpetaBin "mochila.exe")', f"& '{sys.executable}' -m tareas"))
     script = casa / "paso_tab.ps1"
     script.write_text(
         f"function Get-ExecutionPolicy {{ param($Scope) '{politica}' }}\n"
@@ -47,19 +47,19 @@ def ejecutar_paso_tab(casa: Path, perfil: Path, politica: str = "RemoteSigned") 
 
 
 def test_en_un_windows_limpio_crea_la_carpeta_y_el_script(tmp_path):
-    casa = tmp_path / "Moises"
+    casa = tmp_path / "Alumno"
     casa.mkdir()  # sin .config: como un usuario recién creado
     perfil = casa / "Documents" / "WindowsPowerShell" / "profile.ps1"
     r = ejecutar_paso_tab(casa, perfil)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "No se puede encontrar" not in r.stdout + r.stderr
-    script_tab = casa / ".config" / "dam" / "completado.ps1"
+    script_tab = casa / ".config" / "mochila" / "completado.ps1"
     assert "Register-ArgumentCompleter" in script_tab.read_text(encoding="utf-8-sig")
     assert str(script_tab) in perfil.read_text(encoding="utf-8-sig")
 
 
 def test_repetir_el_instalador_no_duplica_la_linea_del_perfil(tmp_path):
-    casa = tmp_path / "Moises"
+    casa = tmp_path / "Alumno"
     casa.mkdir()
     perfil = casa / "profile.ps1"
     ejecutar_paso_tab(casa, perfil)
@@ -68,9 +68,23 @@ def test_repetir_el_instalador_no_duplica_la_linea_del_perfil(tmp_path):
 
 
 def test_con_la_politica_restricted_no_toca_nada_y_explica_como_activarlo(tmp_path):
-    casa = tmp_path / "Moises"
+    casa = tmp_path / "Alumno"
     casa.mkdir()
     perfil = casa / "profile.ps1"
     r = ejecutar_paso_tab(casa, perfil, politica="Restricted")
     assert "Set-ExecutionPolicy -Scope CurrentUser RemoteSigned" in r.stdout
     assert not perfil.exists() and not (casa / ".config").exists()
+
+
+def test_quita_del_perfil_la_linea_del_tab_de_cuando_se_llamaba_dam(tmp_path):
+    casa = tmp_path / "Alumno"
+    casa.mkdir()
+    perfil = casa / "profile.ps1"
+    vieja = f'. "{casa}\.config\dam\completado.ps1"  # autocompletado de dam (lo añadió instalar.ps1)'
+    perfil.write_text(f"Set-Alias ll Get-ChildItem\r\n{vieja}\r\n", encoding="utf-8-sig")
+    r = ejecutar_paso_tab(casa, perfil)
+    assert r.returncode == 0, r.stdout + r.stderr
+    texto = perfil.read_text(encoding="utf-8-sig")
+    assert "autocompletado de dam" not in texto
+    assert "Set-Alias ll Get-ChildItem" in texto  # lo tuyo no se toca
+    assert "autocompletado de mochila" in texto

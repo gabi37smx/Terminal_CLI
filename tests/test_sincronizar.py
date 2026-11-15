@@ -253,7 +253,7 @@ def test_cli_status_no_parte_las_rutas_largas_con_espacios(pcs, monkeypatch):
 
 
 def test_cli_sin_almacen_configurado(tmp_path, monkeypatch):
-    monkeypatch.delenv("DAM_ALMACEN", raising=False)
+    monkeypatch.delenv("MOCHILA_ALMACEN", raising=False)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path)); monkeypatch.setenv("USERPROFILE", str(tmp_path))
     r = CliRunner().invoke(app, ["status"])
@@ -262,6 +262,6 @@ def test_cli_sin_almacen_configurado(tmp_path, monkeypatch):
 
 def test_cli_almacen_por_variable_de_entorno(pcs, monkeypatch):
     clase, _ = pcs
-    monkeypatch.setenv("DAM_ALMACEN", str(clase.ruta))
+    monkeypatch.setenv("MOCHILA_ALMACEN", str(clase.ruta))
     r = CliRunner().invoke(app, ["status"])
     assert r.exit_code == 0 and "Todo está actualizado" in r.output

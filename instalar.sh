@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Instala y configura dam en Linux o macOS.
+# Instala y configura mochila en Linux o macOS.
 # Uso (desde la carpeta del repositorio clonado):  bash instalar.sh
 # Se puede ejecutar todas las veces que quieras: lo que ya está hecho se salta.
 set -euo pipefail
 
 cd "$(dirname "$0")"   # trabaja siempre desde la carpeta del repositorio
-PATH_ORIGINAL="$PATH"  # para saber después si tu terminal ya encuentra «dam»
+PATH_ORIGINAL="$PATH"  # para saber después si tu terminal ya encuentra «mochila»
 
 paso()  { printf '\n==> %s\n' "$1"; }
 ok()    { printf '    [ok] %s\n' "$1"; }
@@ -36,14 +36,14 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 ok "$(uv --version)"
 
-# 3. Dependencias y comando dam --------------------------------------------
+# 3. Dependencias y comando mochila --------------------------------------------
 paso "Instalo las dependencias (uv descarga Python 3.12 si hace falta)"
 uv sync
 
-paso "Instalo el comando dam para todo el sistema"
+paso "Instalo el comando mochila para todo el sistema"
 uv tool install --editable . --force
 CARPETA_BIN="$(uv tool dir --bin)"
-# Tu terminal (bash o zsh) y su fichero de arranque: aquí van el PATH, el TAB y DAM_ALMACEN
+# Tu terminal (bash o zsh) y su fichero de arranque: aquí van el PATH, el TAB y MOCHILA_ALMACEN
 case "$(basename "${SHELL:-}")" in
     bash) TERMINAL=bash; RC="$HOME/.bashrc" ;;
     zsh)  TERMINAL=zsh;  RC="$HOME/.zshrc" ;;
@@ -51,13 +51,14 @@ case "$(basename "${SHELL:-}")" in
 esac
 # Ojo: arriba añadí ~/.local/bin al PATH de ESTE script, así que «uv tool update-shell» (y el
 # instalador de uv) creen que ya está y no lo apuntan en ningún sitio. Pasó en un Linux de clase
-# recién instalado: «dam» no se encontraba ni abriendo otra terminal. Por eso miro el PATH que
+# recién instalado: «mochila» no se encontraba ni abriendo otra terminal. Por eso miro el PATH que
 # tenías al empezar y lo apunto yo en tu fichero de arranque.
-MARCA_PATH="# Para que la terminal encuentre dam (lo añadió instalar.sh)"
+MARCA_PATH="# Para que la terminal encuentre mochila (lo añadió instalar.sh)"
 # Con bash o zsh lo apunto SIEMPRE (una vez): un «export PATH=...» escrito a mano solo dura en esa
 # terminal, y si mirara solo el PATH de ahora me lo saltaría y en la siguiente terminal no estaría.
 if [ -n "$TERMINAL" ]; then
-    if grep -qF "$MARCA_PATH" "$RC" 2>/dev/null; then
+    # (la marca vieja es de cuando se llamaba dam: ese PATH sigue valiendo, no lo repito)
+    if grep -qF -e "$MARCA_PATH" -e "# Para que la terminal encuentre dam (lo añadió instalar.sh)" "$RC" 2>/dev/null; then
         ok "$RC ya pone $CARPETA_BIN en el PATH"
     else
         {
@@ -77,43 +78,57 @@ else
         *)
             # Otra terminal: que lo haga uv, pero con el PATH de antes para que no se lo salte
             PATH="$PATH_ORIGINAL" "$(command -v uv)" tool update-shell                 || aviso "Añade tú $CARPETA_BIN al PATH de tu terminal."
-            aviso "Al terminar, cierra esta terminal y abre otra para que «dam» funcione."
+            aviso "Al terminar, cierra esta terminal y abre otra para que «mochila» funcione."
             ;;
     esac
 fi
 
 # 4. Dónde van tus acciones (las configura el paso 6b, con el almacén ya clonado)
-CONFIG="$HOME/.config/dam/acciones.json"
+CONFIG="$HOME/.config/mochila/acciones.json"
+
+# Antes se llamaba «dam»: lo que ya elegiste (acciones.json, ia.json) se copia a ~/.config/mochila.
+# La carpeta vieja se queda como copia de seguridad; puedes borrarla cuando quieras.
+if [ -d "$HOME/.config/dam" ] && [ ! -e "$(dirname "$CONFIG")" ]; then
+    cp -R "$HOME/.config/dam" "$(dirname "$CONFIG")"
+    rm -f "$(dirname "$CONFIG")"/completado.*
+    ok "Lo que tenías de dam pasa a $(dirname "$CONFIG")"
+fi
+# Y en tu fichero de arranque, las líneas del TAB de dam (cargaban un script que ya no se usa)
+if [ -n "${RC:-}" ] && grep -qF ".config/dam/completado." "$RC" 2>/dev/null; then
+    grep -vF -e "# Autocompletado de dam (lo añadió instalar.sh)" -e ".config/dam/completado." "$RC" > "$RC.mochila-tmp" \
+        && cat "$RC.mochila-tmp" > "$RC" && rm -f "$RC.mochila-tmp"
+    ok "Quitado de $RC el TAB de dam"
+fi
 
 # 4b. Autocompletado con TAB -----------------------------------------------
-# No uso «dam --install-completion»: miraría la terminal de ESTE script (bash), y en macOS la
+# No uso «mochila --install-completion»: miraría la terminal de ESTE script (bash), y en macOS la
 # tuya es zsh. Así se mira la tuya ($SHELL) y se puede repetir sin duplicar nada.
 paso "Activo el autocompletado con TAB"
 if [ -z "$TERMINAL" ]; then
-    aviso "Tu terminal (${SHELL:-desconocida}) no es bash ni zsh: actívalo a mano con  dam --install-completion"
+    aviso "Tu terminal (${SHELL:-desconocida}) no es bash ni zsh: actívalo a mano con  mochila --install-completion"
 else
-    SCRIPT_TAB="$HOME/.config/dam/completado.$TERMINAL"
+    SCRIPT_TAB="$HOME/.config/mochila/completado.$TERMINAL"
     mkdir -p "$(dirname "$SCRIPT_TAB")"
-    # Con esta variable, dam no ejecuta nada: solo escribe el script de autocompletado
-    if _DAM_COMPLETE="source_$TERMINAL" "$CARPETA_BIN/dam" > "$SCRIPT_TAB"; then
+    # Con esta variable, mochila no ejecuta nada: solo escribe el script de autocompletado
+    if _MOCHILA_COMPLETE="source_$TERMINAL" "$CARPETA_BIN/mochila" > "$SCRIPT_TAB"; then
         if ! grep -qF "$SCRIPT_TAB" "$RC" 2>/dev/null; then
             {
                 echo ""
-                echo "# Autocompletado de dam (lo añadió instalar.sh)"
+                echo "# Autocompletado de mochila (lo añadió instalar.sh)"
                 if [ "$TERMINAL" = zsh ] && ! grep -q compinit "$RC" 2>/dev/null; then
                     echo "autoload -Uz compinit && compinit"
                 fi
                 echo "[ -f \"$SCRIPT_TAB\" ] && source \"$SCRIPT_TAB\""
             } >> "$RC"
         fi
-        ok "TAB activado para $TERMINAL (en $RC). En una terminal nueva prueba: dam ej<TAB>"
+        ok "TAB activado para $TERMINAL (en $RC). En una terminal nueva prueba: mochila ej<TAB>"
     else
-        aviso "No he podido generar el autocompletado. Puedes probar a mano: dam --install-completion"
+        aviso "No he podido generar el autocompletado. Puedes probar a mano: mochila --install-completion"
     fi
 fi
 
 # 5. git: identidad y credenciales -----------------------------------------
-paso "Preparo git para los commits de dam sync"
+paso "Preparo git para los commits de mochila sync"
 if [ -z "$(git config --global user.name || true)" ]; then
     nombre=""
     read -rp "    Tu nombre para los commits: " nombre || true
@@ -155,11 +170,11 @@ fi
 
 # 6. Almacén de apuntes ----------------------------------------------------
 # Solo se busca si ya lo tienes. Si no, se baja o se crea en el paso 6b, después de elegir el ciclo:
-# se llama como tu ciclo (DAM-almacen, ASIR-almacen...) y dam te ayuda a crearlo (ADR-0005).
+# se llama como tu ciclo (DAM-almacen, ASIR-almacen...) y mochila te ayuda a crearlo (ADR-0005).
 paso "Almacén de apuntes"
-ALMACEN="${DAM_ALMACEN:-}"
+ALMACEN="${MOCHILA_ALMACEN:-}"
 if [ -n "$ALMACEN" ]; then
-    ok "Uso el de DAM_ALMACEN: $ALMACEN"
+    ok "Uso el de MOCHILA_ALMACEN: $ALMACEN"
 else
     # ¿Ya está clonado (por ejemplo en ~/Documents o ~/Documentos)? Se busca hasta 3 niveles un repo
     # git cuyo remoto sea CICLO-almacen, se llame como se llame la carpeta.
@@ -175,22 +190,22 @@ else
         ok "Ya lo tienes en $ALMACEN"
         if [ "${#encontrados[@]}" -gt 1 ]; then
             aviso "Hay ${#encontrados[@]} copias del almacén: ${encontrados[*]}"
-            aviso "Uso la primera. Para usar otra: export DAM_ALMACEN=RUTA en $RC"
+            aviso "Uso la primera. Para usar otra: export MOCHILA_ALMACEN=RUTA en $RC"
         fi
-        # dam lo busca en ~/CICLO-almacen (acciones.json): si está en otro sitio, se lo digo con DAM_ALMACEN
+        # mochila lo busca en ~/CICLO-almacen (acciones.json): si está en otro sitio, se lo digo con MOCHILA_ALMACEN
         en_su_sitio=0
         case "$ALMACEN" in
             "$HOME"/SMX-almacen|"$HOME"/DAM-almacen|"$HOME"/DAW-almacen|"$HOME"/ASIR-almacen|"$HOME"/APUNTES-almacen) en_su_sitio=1 ;;
         esac
         if [ "$en_su_sitio" = 0 ] && [ -n "${RC:-}" ]; then
-            if ! grep -q "DAM_ALMACEN=" "$RC" 2>/dev/null; then
-                printf '\n# Dónde está el almacén de apuntes (lo añadió instalar.sh)\nexport DAM_ALMACEN="%s"\n' "$ALMACEN" >> "$RC"
-                ok "Guardado DAM_ALMACEN=$ALMACEN en $RC"
-            elif ! grep -qF "DAM_ALMACEN=\"$ALMACEN\"" "$RC"; then
-                aviso "En $RC ya hay otro DAM_ALMACEN: revísalo a mano (aquí lo he encontrado en $ALMACEN)."
+            if ! grep -q "MOCHILA_ALMACEN=" "$RC" 2>/dev/null; then
+                printf '\n# Dónde está el almacén de apuntes (lo añadió instalar.sh)\nexport MOCHILA_ALMACEN="%s"\n' "$ALMACEN" >> "$RC"
+                ok "Guardado MOCHILA_ALMACEN=$ALMACEN en $RC"
+            elif ! grep -qF "MOCHILA_ALMACEN=\"$ALMACEN\"" "$RC"; then
+                aviso "En $RC ya hay otro MOCHILA_ALMACEN: revísalo a mano (aquí lo he encontrado en $ALMACEN)."
             fi
         fi
-        export DAM_ALMACEN="$ALMACEN"
+        export MOCHILA_ALMACEN="$ALMACEN"
     else
         echo "    Aún no lo tienes en este equipo: después de elegir tu ciclo te ayudo a bajarlo o a crearlo."
     fi
@@ -199,8 +214,8 @@ fi
 # 6b. Tu ciclo, tus asignaturas y tu almacén ---------------------------------
 # Como adduser en Linux: pregunta qué estudias y deja acciones.json a tu medida. Al acabar ofrece
 # preparar el almacén (se llama como tu ciclo). Si no se configura, se prepara igual con crear-almacen.
-paso "Tu ciclo y tus asignaturas (dam configurar)"
-configurar() { uv run dam --config "$CONFIG" configurar --plantilla acciones.json; }
+paso "Tu ciclo y tus asignaturas (mochila configurar)"
+configurar() { uv run mochila --config "$CONFIG" configurar --plantilla acciones.json; }
 configurado=0
 if [ ! -f "$CONFIG" ]; then
     if configurar; then
@@ -209,30 +224,30 @@ if [ ! -f "$CONFIG" ]; then
         mkdir -p "$(dirname "$CONFIG")"
         cp acciones.json "$CONFIG"
         aviso "No se ha configurado: he copiado las acciones de 1º de DAM a $CONFIG."
-        aviso "Cuando quieras, elige tu ciclo con:  dam configurar"
+        aviso "Cuando quieras, elige tu ciclo con:  mochila configurar"
     fi
 elif cmp -s acciones.json "$CONFIG"; then
-    ok "Ya tienes $CONFIG y está al día (para cambiar de ciclo o de curso: dam configurar)"
+    ok "Ya tienes $CONFIG y está al día (para cambiar de ciclo o de curso: mochila configurar)"
 else
     # O ya elegiste tus asignaturas o es de una instalación vieja (le faltarían las acciones nuevas)
     aviso "Tu $CONFIG no es igual que la del repo: ya elegiste tus asignaturas o es de una instalación vieja."
     respuesta=""
     read -rp "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [s/N]: " respuesta || true
     if [ "$respuesta" = "s" ] || [ "$respuesta" = "S" ]; then
-        if configurar; then configurado=1; else aviso "No he cambiado nada: dam seguirá usando la tuya."; fi
+        if configurar; then configurado=1; else aviso "No he cambiado nada: mochila seguirá usando la tuya."; fi
     else
-        aviso "No la toco: dam seguirá usando la tuya."
+        aviso "No la toco: mochila seguirá usando la tuya."
     fi
 fi
 if [ "$configurado" = 0 ]; then
-    paso "Tu almacén de apuntes (dam crear-almacen)"
-    uv run dam --config "$CONFIG" crear-almacen || aviso "Sin almacén de momento. Cuando quieras:  dam crear-almacen"
+    paso "Tu almacén de apuntes (mochila crear-almacen)"
+    uv run mochila --config "$CONFIG" crear-almacen || aviso "Sin almacén de momento. Cuando quieras:  mochila crear-almacen"
 fi
 
 # 6c. IA para las acciones que la usan --------------------------------------
 # Modelos gratis con OpenCode: funcionan en casa y no piden clave (ADR-0004). Se instala la misma
-# versión de OpenCode que usamos en clase: con ella está probado el agente de dam.
-paso "IA para las acciones que la usan (dam configurar-ia)"
+# versión de OpenCode que usamos en clase: con ella está probado el agente de mochila.
+paso "IA para las acciones que la usan (mochila configurar-ia)"
 VERSION_OPENCODE="1.18.35"
 # En WSL se ven los programas de Windows (/mnt/c/...): ese npm instalaría OpenCode en Windows y
 # ese opencode no entiende las rutas de Linux. Solo cuentan los de Linux.
@@ -241,8 +256,8 @@ de_linux() {
     ruta="$(command -v "$1" 2>/dev/null)" || return 1
     case "$ruta" in /mnt/*) return 1 ;; esac
 }
-if [ -f "$HOME/.config/dam/ia.json" ]; then
-    ok "Ya elegiste el modelo (para cambiarlo: dam configurar-ia)"
+if [ -f "$HOME/.config/mochila/ia.json" ]; then
+    ok "Ya elegiste el modelo (para cambiarlo: mochila configurar-ia)"
 else
     if ! de_linux opencode; then
         respuesta=""
@@ -258,14 +273,14 @@ else
         fi
     fi
     if de_linux opencode; then
-        uv run dam configurar-ia || aviso "Sin IA de momento. Cuando quieras: dam configurar-ia"
+        uv run mochila configurar-ia || aviso "Sin IA de momento. Cuando quieras: mochila configurar-ia"
     else
-        aviso "Sin OpenCode, las acciones con IA usan el servidor del centro (o elige con: dam configurar-ia)."
+        aviso "Sin OpenCode, las acciones con IA usan el servidor del centro (o elige con: mochila configurar-ia)."
     fi
 fi
 
 # 7. Comprobación final ----------------------------------------------------
 paso "Compruebo que todo funciona"
-uv run dam --config "$CONFIG" validar
+uv run mochila --config "$CONFIG" validar
 
-printf '\nListo. Prueba:  dam --help   y   dam status\n'
+printf '\nListo. Prueba:  mochila --help   y   mochila status\n'

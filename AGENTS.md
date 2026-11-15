@@ -1,16 +1,16 @@
-# dam · CLI de tareas con ficheros (proyecto de 1º DAM)
+# mochila · CLI de tareas con ficheros (proyecto de 1º DAM)
 
 ## Stack y órdenes
 - Python 3.12 + Typer + Rich (+ Pillow y pypdf), gestionado con uv (src layout, paquete src/tareas).
-- El comando se llama `dam`. Ejecutar: `uv run dam --help` · Validar config: `uv run dam validar` · Pruebas: `uv run pytest`.
+- El comando se llama `mochila`. Ejecutar: `uv run mochila --help` · Validar config: `uv run mochila validar` · Pruebas: `uv run pytest`.
 - Módulos: errores.py, config.py (valida acciones.json), acciones.py (clases Accion), motor.py, sincronizar.py (almacén git), escanear.py (scan-secrets), web.py (test-links y check-headers), hook.py (instalar-hook), doctor.py (revisa un proyecto), pendientes.py (etiquetas y registro de pendientes), entregar.py (zip limpio para entregar), inventario.py (qué hay en una carpeta, solo lee), duplicados.py (ficheros repetidos y carpetas copia, solo lee), readme.py (tabla «Qué hay dentro» de cada README), ciclos.py (asignaturas de SMX, DAM, DAW y ASIR), configurar.py (pone tus asignaturas en acciones.json), almacen_nuevo.py (crear-almacen: baja o crea tu CICLO-almacen), ia.py (ProveedorIA: servidor del centro y modelos gratis de OpenCode), configurar_ia.py (elige el modelo de IA), cli.py (solo interfaz).
 
 ## Normas
 - Mensajes y comentarios en español; código claro antes que listo.
 - pathlib siempre, encoding="utf-8", nada de os.system ni shell=True: tiene que funcionar en Linux, Windows y macOS.
-- git solo con subprocess y lista de argumentos. Nunca ejecutes `dam sync` ni `dam ejecutar`: los ejecuta el alumno.
+- git solo con subprocess y lista de argumentos. Nunca ejecutes `mochila sync` ni `mochila ejecutar`: los ejecuta el alumno.
 - Nunca ejecutes acciones sobre carpetas reales: solo en ~/pruebas-tareas y con --simular. Los tests de sync usan repos temporales (tmp_path), nunca el repo real.
-- `dam test-links` y `dam check-headers` hacen peticiones de red: no los lances contra webs reales; los tests usan un servidor local de mentira.
+- `mochila test-links` y `mochila check-headers` hacen peticiones de red: no los lances contra webs reales; los tests usan un servidor local de mentira.
 - Nunca imprimas ni guardes un secreto entero (ni en mensajes, ni en tests): en los tests, las claves falsas se montan por trozos.
 - No toques .env ni escribas claves en ningún fichero. No hagas git push ni commits: los hace el alumno.
 - Antes de cambiar un fichero, explica en 2-3 líneas qué vas a hacer.

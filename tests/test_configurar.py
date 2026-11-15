@@ -1,6 +1,6 @@
-"""Pruebas de dam configurar y del vocabulario de ciclos (ciclos.py).
+"""Pruebas de mochila configurar y del vocabulario de ciclos (ciclos.py).
 
-Nunca tocan tu almacén ni tu ~/.config: DAM_ALMACEN apunta a una carpeta temporal y el
+Nunca tocan tu almacén ni tu ~/.config: MOCHILA_ALMACEN apunta a una carpeta temporal y el
 acciones.json se guarda con --config en otra.
 """
 
@@ -23,7 +23,7 @@ def entorno(tmp_path, monkeypatch):
     """Almacén de mentira con asignaturas/ vacío y una carpeta para guardar el acciones.json."""
     almacen = tmp_path / "almacen"
     (almacen / "asignaturas").mkdir(parents=True)
-    monkeypatch.setenv("DAM_ALMACEN", str(almacen))
+    monkeypatch.setenv("MOCHILA_ALMACEN", str(almacen))
     monkeypatch.chdir(tmp_path)  # sin acciones.json en la carpeta actual
     return {"almacen": almacen / "asignaturas", "destino": tmp_path / "config" / "acciones.json"}
 
@@ -148,7 +148,7 @@ def test_sin_preguntas_guarda_y_crea_las_carpetas_con_gitkeep(entorno):
     assert datos["perfil"] == {"ciclo": "asir", "cursos": [1]}
     for nombre in ciclos.CICLOS["asir"].cursos[1]:
         assert (entorno["almacen"] / nombre / ".gitkeep").is_file()  # git no sube carpetas vacías
-    assert "dam sync" in plano(r)
+    assert "mochila sync" in plano(r)
 
 
 def test_con_si_no_crea_carpetas_si_no_se_lo_pides(entorno):
@@ -303,10 +303,10 @@ def test_ordenar_al_almacen_sin_git_no_ofrece_sync(tmp_path, monkeypatch):
         "carpetas": {"redes-locales": ["redes"]}, "por_extension": {".pka": "redes-locales"}}]}
     ruta = tmp_path / "acciones.json"
     ruta.write_text(json.dumps(acciones), encoding="utf-8")
-    monkeypatch.setenv("DAM_ALMACEN", str(almacen))
+    monkeypatch.setenv("MOCHILA_ALMACEN", str(almacen))
     r = runner.invoke(app, ["--config", str(ruta), "ejecutar", "ordenar", str(origen)], input="s\n")
     assert r.exit_code == 0, r.output
     assert (almacen / "asignaturas" / "redes-locales" / "practica.pka").is_file()
     salida = " ".join(r.output.split())  # sin los saltos de línea de la consola
     assert "no es un repositorio git" in salida
-    assert "¿Hago ahora dam sync" not in salida
+    assert "¿Hago ahora mochila sync" not in salida

@@ -14,11 +14,11 @@ runner = CliRunner()
 def test_ayuda_principal_tiene_secciones_y_ejemplos():
     r = runner.invoke(app, ["--help"])
     assert r.exit_code == 0
-    for texto in ("Ficheros", "Almacén", "Seguridad", "dam ejecutar", "dam sync"):
+    for texto in ("Ficheros", "Almacén", "Seguridad", "mochila ejecutar", "mochila sync"):
         assert texto in r.output
     # Los ejemplos están en la ayuda de cada comando
     detalle = runner.invoke(app, ["sync", "--help"])
-    assert "dam sync --integrar" in detalle.output
+    assert "mochila sync --integrar" in detalle.output
 
 
 def test_ayuda_sin_argumentos():
@@ -40,7 +40,7 @@ def test_version_con_los_dos_nombres(monkeypatch):
     assert re.fullmatch(r"\d+\.\d+\.\d+", __version__)  # versionado semántico: X.Y.Z
     bin_ = Path.home() / ".local" / "bin"  # rutas del sistema donde corre la prueba
     for argv0, nombre in [
-        (bin_ / "dam", "dam"),
+        (bin_ / "mochila", "mochila"),
         (bin_ / "tareas", "tareas"),
         (bin_ / "tareas.exe", "tareas"),  # así lo llama Windows
         ("tareas", "tareas"),
@@ -50,7 +50,7 @@ def test_version_con_los_dos_nombres(monkeypatch):
 
 
 def test_version_tambien_como_opcion():
-    """En un Linux de clase lo primero que se probó fue «dam --version» y daba error."""
+    """En un Linux de clase lo primero que se probó fue «mochila --version» y daba error."""
     from tareas import __version__
 
     for opcion in ("--version", "-V"):
@@ -67,7 +67,17 @@ def test_pyproject_y_paquete_tienen_la_misma_version():
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
     datos = tomllib.loads(pyproject.read_text(encoding="utf-8"))
     assert datos["project"]["version"] == __version__
-    assert datos["project"]["scripts"]["tareas"] == datos["project"]["scripts"]["dam"]
+    assert datos["project"]["scripts"]["tareas"] == datos["project"]["scripts"]["mochila"]
+    assert "dam" not in datos["project"]["scripts"]  # el comando ya no se llama dam: confundía a los de DAW
+
+
+def test_las_variables_con_el_nombre_antiguo_siguen_valiendo(monkeypatch):
+    from tareas import config
+
+    monkeypatch.setenv("DAM_ALMACEN", "/viejo")
+    assert config.entorno("ALMACEN") == "/viejo"
+    monkeypatch.setenv("MOCHILA_ALMACEN", "/nuevo")
+    assert config.entorno("ALMACEN") == "/nuevo"  # si están las dos, manda la nueva
 
 
 @pytest.mark.parametrize(
@@ -107,13 +117,13 @@ def test_traducir_error_click(ingles, espanol):
 def test_la_ayuda_dice_que_tareas_es_el_mismo_programa_y_el_tab_sin_clonar():  # issue #20
     salida = " ".join(runner.invoke(app, ["--help"]).output.split())
     assert "«tareas»: es el mismo programa" in salida
-    assert "si clonaste el repo" in salida and "dam --install-completion" in salida
+    assert "si clonaste el repo" in salida and "mochila --install-completion" in salida
 
 
 # ---------- Un código de salida por prueba (Sesión 4, paso 5) ----------
 def test_codigo_0_la_ayuda_funciona():
     r = runner.invoke(app, ["--help"])
-    assert r.exit_code == 0 and "dam ejecutar" in r.output
+    assert r.exit_code == 0 and "mochila ejecutar" in r.output
 
 
 def test_codigo_1_accion_que_no_existe(escribir_config, tmp_path):
@@ -142,7 +152,7 @@ def test_codigo_4_ia_sin_clave_y_las_demas_siguen(escribir_config, tmp_path):
     assert r.exit_code == 4 and "Las acciones sin IA siguen funcionando" in salida and "Traceback" not in salida
 
 
-# ---------- «dam --help | head» en Windows ----------
+# ---------- «mochila --help | head» en Windows ----------
 def _ayuda_que_falla(monkeypatch, error, salida_cerrada):
     from tareas import cli
     def romper():
@@ -150,7 +160,7 @@ def _ayuda_que_falla(monkeypatch, error, salida_cerrada):
     monkeypatch.setattr(cli, "mostrar_ayuda", romper)
     monkeypatch.setattr(cli, "_salida_cerrada", lambda: salida_cerrada)
     monkeypatch.setattr(cli.os, "dup2", lambda *a: None)  # no tocar la salida de pytest
-    monkeypatch.setattr("sys.argv", ["dam", "--help"])
+    monkeypatch.setattr("sys.argv", ["mochila", "--help"])
     return cli.app
 
 

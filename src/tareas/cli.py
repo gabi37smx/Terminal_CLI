@@ -1,4 +1,4 @@
-"""Interfaz de línea de órdenes de dam: aquí solo hay órdenes, opciones y salida por pantalla."""
+"""Interfaz de línea de órdenes de mochila: aquí solo hay órdenes, opciones y salida por pantalla."""
 
 import functools
 import os
@@ -41,7 +41,7 @@ def _forzar_utf8() -> None:
 
 _forzar_utf8()
 
-# Textos de la ayuda de cada comando (dam COMANDO --help) en español
+# Textos de la ayuda de cada comando (mochila COMANDO --help) en español
 rich_utils.ARGUMENTS_PANEL_TITLE = "Argumentos"
 rich_utils.OPTIONS_PANEL_TITLE = "Opciones"
 rich_utils.COMMANDS_PANEL_TITLE = "Comandos"
@@ -112,7 +112,7 @@ def ruta_con_comillas_metidas(argumentos: list[str]) -> Optional[str]:
             ruta = ruta.rstrip("\\/") or ruta
             partes = [_citar(a) for a in argumentos[:i]] + [f'"{ruta}"']
             partes += resto.split() + [_citar(a) for a in argumentos[i + 1:]]
-            return "dam " + " ".join(partes)
+            return "mochila " + " ".join(partes)
     return None
 
 
@@ -129,8 +129,8 @@ class Dam(typer.Typer):
         try:
             return super().__call__(*args, **kwargs)
         except OSError as e:
-            # «dam --help | head»: quien leía se fue antes de acabar. En Linux llega BrokenPipeError
-            # (Rich ya lo trata); en Windows, OSError 22 y una traza enorme. No es un fallo de dam.
+            # «mochila --help | head»: quien leía se fue antes de acabar. En Linux llega BrokenPipeError
+            # (Rich ya lo trata); en Windows, OSError 22 y una traza enorme. No es un fallo de mochila.
             if not (isinstance(e, BrokenPipeError) or _salida_cerrada()):
                 raise
             try:  # que Python no se queje al cerrar intentando vaciar la salida rota
@@ -150,7 +150,7 @@ def _salida_cerrada() -> bool:
 
 
 app = Dam(
-    help="dam: automatiza tareas con ficheros y mantiene tu almacén de apuntes sincronizado.",
+    help="mochila: automatiza tareas con ficheros y mantiene tu almacén de apuntes sincronizado.",
     no_args_is_help=False,
     add_completion=True,  # --install-completion / --show-completion y el TAB (ver completar_*)
     rich_markup_mode="rich",
@@ -172,7 +172,7 @@ def controlar_errores(funcion):
         except TareasError as e:
             consola_err.print(f"[red]✘ {escape(str(e))}[/red]")
             if isinstance(e, IANoDisponible):
-                consola_err.print("Las acciones sin IA siguen funcionando: mira cuáles son con «dam acciones».")
+                consola_err.print("Las acciones sin IA siguen funcionando: mira cuáles son con «mochila acciones».")
             raise typer.Exit(e.codigo_salida) from None
 
     return envoltorio
@@ -191,120 +191,120 @@ def confirmar(pregunta: str) -> None:
 
 
 # ---------- ayuda ----------
-# Ejemplos por comando: salen en `dam` (ayuda general) y al final de `dam COMANDO --help`.
+# Ejemplos por comando: salen en `mochila` (ayuda general) y al final de `mochila COMANDO --help`.
 # Hay un test que obliga a que cada comando nuevo tenga los suyos.
 EJEMPLOS: dict[str, list[tuple[str, str]]] = {
     "configurar": [
-        ("dam configurar", "Te pregunta ciclo, curso y asignaturas, y deja acciones.json a tu medida"),
-        ("dam configurar --ciclo asix --curso 2 --simular", "Enseña cómo quedaría para 2º de ASIR/ASIX, sin guardar"),
-        ('dam configurar --ciclo smx --curso 1 --nueva "fol=fol,contrato" --si', "Sin preguntas, con una asignatura más"),
-        ("dam configurar --plantilla acciones.json", "Parte del acciones.json del repo (lo hace el instalador)"),
+        ("mochila configurar", "Te pregunta ciclo, curso y asignaturas, y deja acciones.json a tu medida"),
+        ("mochila configurar --ciclo asix --curso 2 --simular", "Enseña cómo quedaría para 2º de ASIR/ASIX, sin guardar"),
+        ('mochila configurar --ciclo smx --curso 1 --nueva "fol=fol,contrato" --si', "Sin preguntas, con una asignatura más"),
+        ("mochila configurar --plantilla acciones.json", "Parte del acciones.json del repo (lo hace el instalador)"),
     ],
     "scan-secrets": [
-        ("dam scan-secrets", "Revisa la carpeta actual (solo lo que se subiría a git)"),
-        ("dam scan-secrets --staged", "Revisa solo lo preparado con git add: úsalo antes de cada commit"),
-        ("dam scan-secrets --historial", "Revisa TODO el historial de git (cero claves, exige la rúbrica)"),
-        ("dam scan-secrets ~/DAM-almacen --alta", "Otra carpeta, solo hallazgos seguros"),
+        ("mochila scan-secrets", "Revisa la carpeta actual (solo lo que se subiría a git)"),
+        ("mochila scan-secrets --staged", "Revisa solo lo preparado con git add: úsalo antes de cada commit"),
+        ("mochila scan-secrets --historial", "Revisa TODO el historial de git (cero claves, exige la rúbrica)"),
+        ("mochila scan-secrets ~/DAM-almacen --alta", "Otra carpeta, solo hallazgos seguros"),
     ],
     "instalar-hook": [
-        ("dam instalar-hook", "Revisa claves en cada git commit del repositorio actual"),
-        ("dam instalar-hook ~/DAM-almacen", "En otro repositorio"),
-        ("dam instalar-hook --quitar", "Lo desactiva"),
+        ("mochila instalar-hook", "Revisa claves en cada git commit del repositorio actual"),
+        ("mochila instalar-hook ~/DAM-almacen", "En otro repositorio"),
+        ("mochila instalar-hook --quitar", "Lo desactiva"),
     ],
     "doctor": [
-        ("dam doctor", "Revisa el proyecto de la carpeta actual"),
-        ("dam doctor ~/Electrician", "Revisa otro proyecto (no cambia nada)"),
+        ("mochila doctor", "Revisa el proyecto de la carpeta actual"),
+        ("mochila doctor ~/Electrician", "Revisa otro proyecto (no cambia nada)"),
     ],
     "pendientes": [
-        ("dam pendientes ~/Electrician", "Etiquetas por fichero, lo que está sin verificar y el registro de pendientes"),
-        ("dam pendientes ~/Electrician --quien Gabi", "Solo lo que te toca a ti (y lo de «Todos»)"),
-        ("dam pendientes . --resumen", "Solo los números, sin las listas"),
+        ("mochila pendientes ~/Electrician", "Etiquetas por fichero, lo que está sin verificar y el registro de pendientes"),
+        ("mochila pendientes ~/Electrician --quien Gabi", "Solo lo que te toca a ti (y lo de «Todos»)"),
+        ("mochila pendientes . --resumen", "Solo los números, sin las listas"),
     ],
     "entregar": [
-        ("dam entregar ~/Electrician --simular", "Enseña qué entraría en el zip y qué se queda fuera, sin crearlo"),
-        ("dam entregar ~/Electrician", "Crea Electrician_AAAA-MM-DD.zip al lado de la carpeta"),
-        ("dam entregar . --destino ~/Escritorio", "El zip de la carpeta actual, en otra carpeta"),
-        ('dam entregar . --nombre "Vidal_Gabriel_practica3"', "Con el nombre que pida el profesor"),
+        ("mochila entregar ~/Electrician --simular", "Enseña qué entraría en el zip y qué se queda fuera, sin crearlo"),
+        ("mochila entregar ~/Electrician", "Crea Electrician_AAAA-MM-DD.zip al lado de la carpeta"),
+        ("mochila entregar . --destino ~/Escritorio", "El zip de la carpeta actual, en otra carpeta"),
+        ('mochila entregar . --nombre "Vidal_Gabriel_practica3"', "Con el nombre que pida el profesor"),
     ],
     "inventario": [
-        ("dam inventario ~/Desktop", "Qué hay en el Escritorio: tamaños, repos, tipos, instaladores y basura"),
-        ("dam inventario ~ --guardar ~/inventario.md", "Todo tu usuario, con el informe completo en un .md"),
-        ("dam inventario ~/Downloads --top 30", "Enseña 30 filas por lista en vez de 15"),
+        ("mochila inventario ~/Desktop", "Qué hay en el Escritorio: tamaños, repos, tipos, instaladores y basura"),
+        ("mochila inventario ~ --guardar ~/inventario.md", "Todo tu usuario, con el informe completo en un .md"),
+        ("mochila inventario ~/Downloads --top 30", "Enseña 30 filas por lista en vez de 15"),
     ],
     "duplicados": [
-        ("dam duplicados ~/Datos", "Ficheros repetidos y carpetas que son copia de otra (no borra nada)"),
-        ("dam duplicados ~/Datos --guardar ~/duplicados.md", "Con el informe en un .md para repasarlo con calma"),
-        ("dam duplicados ~/Downloads --top 50", "Enseña los 50 grupos más grandes en vez de 15"),
+        ("mochila duplicados ~/Datos", "Ficheros repetidos y carpetas que son copia de otra (no borra nada)"),
+        ("mochila duplicados ~/Datos --guardar ~/duplicados.md", "Con el informe en un .md para repasarlo con calma"),
+        ("mochila duplicados ~/Downloads --top 50", "Enseña los 50 grupos más grandes en vez de 15"),
     ],
     "readme": [
-        ("dam readme ~/Datos --simular", "Enseña qué README crearía o pondría al día, sin tocar nada"),
-        ("dam readme ~/Datos", "Lo hace de verdad: enseña la lista y pregunta s/N"),
-        ("dam readme ~/Datos/SMX --niveles 1", "Solo SMX y sus carpetas de primer nivel"),
+        ("mochila readme ~/Datos --simular", "Enseña qué README crearía o pondría al día, sin tocar nada"),
+        ("mochila readme ~/Datos", "Lo hace de verdad: enseña la lista y pregunta s/N"),
+        ("mochila readme ~/Datos/SMX --niveles 1", "Solo SMX y sus carpetas de primer nivel"),
     ],
     "test-links": [
-        ("dam test-links ~/portfolio", "Revisa todos los .html de la carpeta (enlaces internos y externos)"),
-        ("dam test-links index.html", "Una sola página"),
-        ("dam test-links ~/portfolio --sin-externos", "Solo enlaces internos: no necesita internet"),
-        ("dam test-links https://tu-web.com", "Una página ya publicada"),
+        ("mochila test-links ~/portfolio", "Revisa todos los .html de la carpeta (enlaces internos y externos)"),
+        ("mochila test-links index.html", "Una sola página"),
+        ("mochila test-links ~/portfolio --sin-externos", "Solo enlaces internos: no necesita internet"),
+        ("mochila test-links https://tu-web.com", "Una página ya publicada"),
     ],
     "check-headers": [
-        ("dam check-headers https://tu-web.com", "Cabeceras de seguridad de tu web"),
-        ("dam check-headers https://tu-api.onrender.com --timeout 60", "Render gratis tarda en despertar: dale más tiempo"),
+        ("mochila check-headers https://tu-web.com", "Cabeceras de seguridad de tu web"),
+        ("mochila check-headers https://tu-api.onrender.com --timeout 60", "Render gratis tarda en despertar: dale más tiempo"),
     ],
     "version": [
-        ("dam version", "Muestra la versión instalada"),
+        ("mochila version", "Muestra la versión instalada"),
     ],
     "help": [
-        ("dam help", "La lista de comandos (lo mismo que dam --help)"),
-        ("dam help sync", "La ayuda detallada de un comando (lo mismo que dam sync --help)"),
+        ("mochila help", "La lista de comandos (lo mismo que mochila --help)"),
+        ("mochila help sync", "La ayuda detallada de un comando (lo mismo que mochila sync --help)"),
     ],
     "listar": [
-        ("dam listar", "Lista la carpeta actual"),
-        ("dam listar ~/DAM-almacen", "Lista una carpeta (~ también vale en Windows)"),
-        ('dam listar "C:\\Users\\HP\\Desktop\\DAM"', "Rutas con espacios, entre comillas"),
+        ("mochila listar", "Lista la carpeta actual"),
+        ("mochila listar ~/DAM-almacen", "Lista una carpeta (~ también vale en Windows)"),
+        ('mochila listar "C:\\Users\\HP\\Desktop\\DAM"', "Rutas con espacios, entre comillas"),
     ],
     "validar": [
-        ("dam validar", "Comprueba el acciones.json que usa dam"),
-        ("dam --config pruebas/roto.json validar", "Comprueba otro fichero (--config va ANTES del comando)"),
+        ("mochila validar", "Comprueba el acciones.json que usa mochila"),
+        ("mochila --config pruebas/roto.json validar", "Comprueba otro fichero (--config va ANTES del comando)"),
     ],
     "acciones": [
-        ("dam acciones", "Tabla con el nombre, tipo y descripción de cada acción"),
-        ("dam --config ~/prueba-smx/acciones.json acciones", "Las de otro acciones.json (--config va ANTES del comando)"),
-        ("dam ejecutar convertir-webp ~/Descargas --simular", "Después, usa una por su nombre: primero simulando"),
-        ("dam ejecutar convertir-webp ~/Descargas/portada.png", "Solo un fichero, no toda la carpeta"),
-        ("dam ejecutar -h", "Todas las opciones de ejecutar"),
+        ("mochila acciones", "Tabla con el nombre, tipo y descripción de cada acción"),
+        ("mochila --config ~/prueba-smx/acciones.json acciones", "Las de otro acciones.json (--config va ANTES del comando)"),
+        ("mochila ejecutar convertir-webp ~/Descargas --simular", "Después, usa una por su nombre: primero simulando"),
+        ("mochila ejecutar convertir-webp ~/Descargas/portada.png", "Solo un fichero, no toda la carpeta"),
+        ("mochila ejecutar -h", "Todas las opciones de ejecutar"),
     ],
     "ejecutar": [
-        ("dam ejecutar ordenar --simular", "Enseña cómo ordenaría, sin tocar nada"),
-        ("dam ejecutar ordenar", "Lo hace de verdad: enseña la tabla y pregunta s/N"),
-        ("dam ejecutar limpiar-temporales ~/pruebas-tareas", "Usa otra carpeta en vez del origen de la acción"),
-        ("dam ejecutar convertir-webp ~/Descargas/portada.png", "Solo ese fichero, no toda la carpeta"),
-        ("dam ejecutar convertir-webp --si", "Sin preguntar (solo si estás seguro)"),
+        ("mochila ejecutar ordenar --simular", "Enseña cómo ordenaría, sin tocar nada"),
+        ("mochila ejecutar ordenar", "Lo hace de verdad: enseña la tabla y pregunta s/N"),
+        ("mochila ejecutar limpiar-temporales ~/pruebas-tareas", "Usa otra carpeta en vez del origen de la acción"),
+        ("mochila ejecutar convertir-webp ~/Descargas/portada.png", "Solo ese fichero, no toda la carpeta"),
+        ("mochila ejecutar convertir-webp --si", "Sin preguntar (solo si estás seguro)"),
     ],
     "configurar-ia": [
-        ("dam configurar-ia", "Te pregunta: modelos gratis de OpenCode o el servidor del centro"),
-        ("dam configurar-ia --proveedor opencode --modelo opencode/glm-5.3-flash-free", "Ese modelo gratis, sin elegir de la lista"),
-        ("dam configurar-ia --proveedor centro", "Vuelve al servidor del centro"),
+        ("mochila configurar-ia", "Te pregunta: modelos gratis de OpenCode o el servidor del centro"),
+        ("mochila configurar-ia --proveedor opencode --modelo opencode/glm-5.3-flash-free", "Ese modelo gratis, sin elegir de la lista"),
+        ("mochila configurar-ia --proveedor centro", "Vuelve al servidor del centro"),
     ],
     "comprobar-ia": [
-        ("dam comprobar-ia", "¿Responde el modelo que usa dam? Enseña cuál es, nunca la clave"),
-        ("DAM_IA=centro dam comprobar-ia", "Solo esta vez, con el servidor del centro (en PowerShell: $env:DAM_IA=\"centro\")"),
+        ("mochila comprobar-ia", "¿Responde el modelo que usa mochila? Enseña cuál es, nunca la clave"),
+        ("MOCHILA_IA=centro mochila comprobar-ia", "Solo esta vez, con el servidor del centro (en PowerShell: $env:MOCHILA_IA=\"centro\")"),
     ],
     "crear-almacen": [
-        ("dam crear-almacen", "Baja tu almacén de GitHub o te ayuda a crearlo (privado y con el nombre de tu ciclo)"),
-        ("dam --config acciones.json crear-almacen", "Con las asignaturas de otro acciones.json"),
+        ("mochila crear-almacen", "Baja tu almacén de GitHub o te ayuda a crearlo (privado y con el nombre de tu ciclo)"),
+        ("mochila --config acciones.json crear-almacen", "Con las asignaturas de otro acciones.json"),
     ],
     "status": [
-        ("dam status", "Qué has cambiado y qué hay nuevo en GitHub (no modifica nada)"),
-        ("dam status programacion", "Mira solo la asignatura programacion"),
-        ("dam status --almacen D:\\DAM-almacen", "Almacén en otra ruta (por ejemplo, el USB)"),
+        ("mochila status", "Qué has cambiado y qué hay nuevo en GitHub (no modifica nada)"),
+        ("mochila status programacion", "Mira solo la asignatura programacion"),
+        ("mochila status --almacen D:\\DAM-almacen", "Almacén en otra ruta (por ejemplo, el USB)"),
     ],
     "sync": [
-        ("dam sync --simular", "Enseña qué haría, sin tocar nada"),
-        ("dam sync", "Sube o baja según toque, con mensaje automático"),
-        ('dam sync -m "lo que he hecho"', "Todo el almacén, con tu mensaje"),
-        ('dam sync programacion -m "tema 3"', "Solo asignaturas/programacion"),
-        ("dam sync --integrar", "Cambios en los dos lados: guarda lo tuyo, une y sube"),
+        ("mochila sync --simular", "Enseña qué haría, sin tocar nada"),
+        ("mochila sync", "Sube o baja según toque, con mensaje automático"),
+        ('mochila sync -m "lo que he hecho"', "Todo el almacén, con tu mensaje"),
+        ('mochila sync programacion -m "tema 3"', "Solo asignaturas/programacion"),
+        ("mochila sync --integrar", "Cambios en los dos lados: guarda lo tuyo, une y sube"),
     ],
 }
 
@@ -330,11 +330,11 @@ def mostrar_ayuda() -> None:
     """Ayuda general corta: una tabla con cada comando y una descripción de una línea."""
     comandos = typer.main.get_command(app).commands
     consola.print(
-        "[bold]dam[/bold] — automatiza tareas con ficheros y mantiene tu almacén "
+        "[bold]mochila[/bold] — automatiza tareas con ficheros y mantiene tu almacén "
         "de apuntes sincronizado."
     )
     consola.print(
-        "\n[bold]Uso:[/bold]  dam COMANDO [ARGUMENTOS] [OPCIONES]"
+        "\n[bold]Uso:[/bold]  mochila COMANDO [ARGUMENTOS] [OPCIONES]"
         "   [dim](o «tareas»: es el mismo programa con otro nombre)[/dim]\n"
     )
 
@@ -348,17 +348,17 @@ def mostrar_ayuda() -> None:
     for i, (tema, para, nombres) in enumerate(grupos):
         primera = [f"[bold magenta]{escape(tema)}[/bold magenta]", f"[dim]{escape(para)}[/dim]"]
         for j, nombre in enumerate(n for n in nombres if n in comandos):
-            tabla.add_row(primera[j] if j < 2 else "", escape(f"dam {nombre}"), escape(_resumen(comandos[nombre])))
+            tabla.add_row(primera[j] if j < 2 else "", escape(f"mochila {nombre}"), escape(_resumen(comandos[nombre])))
         if i < len(grupos) - 1:
             tabla.add_section()  # una raya entre temas
     consola.print(tabla)
 
-    consola.print("\nUsar otro acciones.json:  [bold]dam --config RUTA COMANDO[/bold]")
+    consola.print("\nUsar otro acciones.json:  [bold]mochila --config RUTA COMANDO[/bold]")
     consola.print(
-        "Activa el TAB:            [bold]instalar.sh[/bold] / [bold]instalar.ps1[/bold] si clonaste el repo; "
-        "si no (Linux y macOS): [bold]dam --install-completion[/bold]"
+        "Activa el TAB:            [bold]instalar.sh[/bold] o [bold]instalar.ps1[/bold] si clonaste el repo; "
+        "si no: [bold]mochila --install-completion[/bold]"
     )
-    consola.print("Ver el script del TAB:    [bold]dam --show-completion[/bold]")
+    consola.print("Ver el script del TAB:    [bold]mochila --show-completion[/bold]")
 
 
 @app.callback(invoke_without_command=True)
@@ -369,7 +369,7 @@ def principal(
         typer.Option(
             "--config",
             metavar="RUTA",
-            help="Usa otro acciones.json (por defecto: ./acciones.json o ~/.config/dam/).",
+            help="Usa otro acciones.json (por defecto: ./acciones.json o ~/.config/mochila/).",
         ),
     ] = None,
     ayuda: Annotated[
@@ -378,7 +378,7 @@ def principal(
     ] = False,
     ver_version: Annotated[
         bool,
-        typer.Option("-V", "--version", help="Muestra la versión y sale (lo mismo que dam version).", is_eager=True),
+        typer.Option("-V", "--version", help="Muestra la versión y sale (lo mismo que mochila version).", is_eager=True),
     ] = False,
 ):
     if ver_version:
@@ -414,8 +414,8 @@ def comando(funcion=None, *, nombre: Optional[str] = None):
 @comando
 def version() -> None:
     """Muestra la versión instalada."""
-    # El mismo programa se instala como «dam» y como «tareas» (el nombre de la spec v0)
-    nombre = "tareas" if Path(sys.argv[0]).stem.lower() == "tareas" else "dam"
+    # El mismo programa se instala como «mochila» y como «tareas» (el nombre de la spec v0)
+    nombre = "tareas" if Path(sys.argv[0]).stem.lower() == "tareas" else "mochila"
     consola.print(f"{nombre} {__version__}")
 
 
@@ -427,15 +427,15 @@ def ayuda(
         typer.Argument(metavar="COMANDO", help="Comando del que quieres la ayuda (sin él, la lista de comandos)."),
     ] = None,
 ) -> None:
-    """Esta lista, o las opciones y ejemplos de un comando: dam help COMANDO."""
+    """Esta lista, o la ayuda y ejemplos de un comando: mochila help COMANDO."""
     if nombre is None:
         mostrar_ayuda()
         return
     comandos = typer.main.get_command(app).commands
     if nombre not in comandos:
-        consola.print(f"[red]No existe el comando «{escape(nombre)}».[/red] Mira la lista con: dam help")
+        consola.print(f"[red]No existe el comando «{escape(nombre)}».[/red] Mira la lista con: mochila help")
         raise typer.Exit(2)  # 2 = uso incorrecto, como el resto de errores de uso
-    # Pide a ese comando su propia ayuda, igual que si escribieras «dam NOMBRE --help»
+    # Pide a ese comando su propia ayuda, igual que si escribieras «mochila NOMBRE --help»
     comandos[nombre].make_context(nombre, ["--help"], parent=ctx.parent)
 
 
@@ -496,11 +496,11 @@ def validar(ctx: typer.Context) -> None:
 def acciones(ctx: typer.Context) -> None:
     """Lista las acciones definidas en acciones.json.
 
-    Muestra el nombre (el que escribes en «dam ejecutar NOMBRE»), el tipo y la descripción.
+    Muestra el nombre (el que escribes en «mochila ejecutar NOMBRE»), el tipo y la descripción.
 
     Tipos sin IA: mover, copiar, renombrar, borrar, ordenar (por asignatura) y convertir (a WebP).
 
-    Tipos con IA (columna IA): resumir, renombrar-ia y clasificar. Necesitan un modelo: los gratis de OpenCode o el servidor del centro (elige con dam configurar-ia y compruébalo con dam comprobar-ia); las demás funcionan sin red.
+    Tipos con IA (columna IA): resumir, renombrar-ia y clasificar. Necesitan un modelo: los gratis de OpenCode o el servidor del centro (elige con mochila configurar-ia y compruébalo con mochila comprobar-ia); las demás funcionan sin red.
     """
     lista = config.cargar(config.buscar(ctx.obj))
     tabla = Table(title="Acciones disponibles")
@@ -512,17 +512,17 @@ def acciones(ctx: typer.Context) -> None:
         ia = "[magenta]sí[/magenta]" if a["tipo"] in config.TIPOS_IA else "—"
         tabla.add_row(escape(a["nombre"]), a["tipo"], ia, escape(a["descripcion"]))
     consola.print(tabla)
-    consola.print("Para usar una: [bold]dam ejecutar NOMBRE CARPETA --simular[/bold] (o un solo fichero en vez de "
-                  "la carpeta). Ejemplos: [bold]dam acciones -h[/bold]")
+    consola.print("Para usar una: [bold]mochila ejecutar NOMBRE CARPETA --simular[/bold] (o un solo fichero en vez de "
+                  "la carpeta). Ejemplos: [bold]mochila acciones -h[/bold]")
 
 
 # ---------- Autocompletado con TAB ----------
-# Al pulsar TAB la terminal ejecuta dam por debajo y enseña lo que devuelven estas funciones.
+# Al pulsar TAB la terminal ejecuta mochila por debajo y enseña lo que devuelven estas funciones.
 # Nunca deben fallar ni escribir nada: si algo va mal, simplemente no sugieren nada.
 
 # Script de PowerShell: el de Typer, con dos arreglos. Con el original, un TAB en una ruta
-# devolvía una línea vacía, PowerShell daba error y las variables _DAM_COMPLETE... se quedaban
-# puestas: desde entonces, cada «dam» de esa ventana solo imprimía una línea en blanco.
+# devolvía una línea vacía, PowerShell daba error y las variables _MOCHILA_COMPLETE... se quedaban
+# puestas: desde entonces, cada «mochila» de esa ventana solo imprimía una línea en blanco.
 #   1. Se salta las sugerencias vacías (PowerShell no acepta una sugerencia vacía).
 #   2. try/finally: borra SIEMPRE las variables, aunque algo falle o pulses Ctrl+C.
 # Sin sugerencias, PowerShell completa la ruta él solo, como siempre.
@@ -568,7 +568,7 @@ def _config_al_completar(ctx: typer.Context) -> Optional[Path]:
 
 
 def completar_acciones(ctx: typer.Context, incomplete: str) -> list[tuple[str, str]]:
-    """TAB en «dam ejecutar NOMBRE»: los nombres de acciones.json, con su descripción."""
+    """TAB en «mochila ejecutar NOMBRE»: los nombres de acciones.json, con su descripción."""
     try:
         lista = config.cargar(config.buscar(_config_al_completar(ctx)))
     except (TareasError, OSError):
@@ -577,7 +577,7 @@ def completar_acciones(ctx: typer.Context, incomplete: str) -> list[tuple[str, s
 
 
 def completar_asignaturas(ctx: typer.Context, incomplete: str) -> list[str]:
-    """TAB en «dam status/sync ASIGNATURA»: las carpetas que hay dentro de asignaturas/ del almacén."""
+    """TAB en «mochila status/sync ASIGNATURA»: las carpetas que hay dentro de asignaturas/ del almacén."""
     ctx.obj = _config_al_completar(ctx)
     opcion = ctx.params.get("almacen")
     try:
@@ -632,7 +632,7 @@ def pintar_tabla(nombre: str, resultados, simular: bool) -> None:
 @controlar_errores
 def ejecutar(
     ctx: typer.Context,
-    nombre: Annotated[str, typer.Argument(metavar="NOMBRE", help="Nombre de la acción (ver: dam acciones)", autocompletion=completar_acciones)],
+    nombre: Annotated[str, typer.Argument(metavar="NOMBRE", help="Nombre de la acción (ver: mochila acciones)", autocompletion=completar_acciones)],
     carpeta: Annotated[Optional[Path], typer.Argument(metavar="CARPETA|FICHERO", help="Carpeta sobre la que actuar, o un solo fichero (por defecto, el origen de la acción).")] = None,
     simular: Annotated[bool, typer.Option("--simular", help="Enseña qué haría sin tocar nada.")] = False,
     si: Annotated[bool, typer.Option("--si", help="No pregunta antes de actuar (solo si estás seguro).")] = False,
@@ -645,7 +645,7 @@ def ejecutar(
 
     Nunca sobrescribe: si el destino ya existe, añade « (1)». Sale con 1 si algún fichero falla.
 
-    Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén (y dentro, a la carpeta de su unidad si ya existe: «unitat 1», «UD01», «Tema 1»...) y, al acabar, pregunta si quieres hacer dam sync (con --si no lo hace: te lo recuerda).
+    Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén (y dentro, a la carpeta de su unidad si ya existe: «unitat 1», «UD01», «Tema 1»...) y, al acabar, pregunta si quieres hacer mochila sync (con --si no lo hace: te lo recuerda).
 
     Con «por_tipo»: "~/Datos/POR-TIPO", lo que no es de ninguna asignatura va a POR-TIPO/DOCUMENTOS, IMAGENES, COMPRIMIDOS... Los ficheros del sistema, temporales y descargas a medias (desktop.ini, .crdownload, .part...) no se mueven nunca.
     """
@@ -660,8 +660,8 @@ def ejecutar(
         asignaturas = almacen.ruta / almacen.carpeta_asignaturas
         if not asignaturas.is_dir():
             raise TareasError(f"No encuentro las asignaturas de tu almacén en «{asignaturas}». "
-                              "Revisa la variable DAM_ALMACEN o «almacen» en acciones.json. "
-                              "Si el almacén es nuevo, dam configurar te ofrece crear las carpetas de asignatura.")
+                              "Revisa la variable MOCHILA_ALMACEN o «almacen» en acciones.json. "
+                              "Si el almacén es nuevo, mochila configurar te ofrece crear las carpetas de asignatura.")
         accion.config["destino"] = str(asignaturas)
     if not ficheros:
         consola.print("Ningún fichero cumple el filtro: no hay nada que hacer.")
@@ -683,13 +683,13 @@ def ejecutar(
     if almacen is not None and hechos:
         if not (almacen.ruta / ".git").exists():  # p. ej. un almacén de prueba: los apuntes se quedan ahí
             consola.print(f"[yellow]Tu almacén ({escape(str(almacen.ruta))}) no es un repositorio git:[/yellow] "
-                          "los apuntes ya están en él, pero dam sync no puede subirlos. Para eso, clónalo de GitHub.")
+                          "los apuntes ya están en él, pero mochila sync no puede subirlos. Para eso, clónalo de GitHub.")
         elif si:
-            consola.print("Para subir los apuntes a GitHub: [bold]dam sync[/bold]")
-        elif preguntar(f"¿Hago ahora dam sync para subir {hechos} apunte(s) nuevo(s) a GitHub?"):
+            consola.print("Para subir los apuntes a GitHub: [bold]mochila sync[/bold]")
+        elif preguntar(f"¿Hago ahora mochila sync para subir {hechos} apunte(s) nuevo(s) a GitHub?"):
             _pintar_sync(almacen.sincronizar(None, f"ordenar: {hechos} apunte(s) nuevo(s)"))
         else:
-            consola.print("Vale. Cuando quieras subirlos: [bold]dam sync[/bold]")
+            consola.print("Vale. Cuando quieras subirlos: [bold]mochila sync[/bold]")
     if accion.corte_ia is not None:  # la IA se cayó a mitad: lo hecho, hecho; el resto, sin tocar
         raise accion.corte_ia
     if any(r.estado == "error" for r in resultados):
@@ -701,7 +701,7 @@ def ejecutar(
 def comprobar_ia() -> None:
     """Comprueba que responde el modelo de IA (nunca enseña la clave).
 
-    Usa lo que elegiste con dam configurar-ia: los modelos gratis de OpenCode o el servidor del centro. Con el del centro lee CENTRO_IA_URL, CENTRO_IA_KEY, CENTRO_IA_CA y CENTRO_IA_MODELO de tu terminal o de un .env (mira .env.example).
+    Usa lo que elegiste con mochila configurar-ia: los modelos gratis de OpenCode o el servidor del centro. Con el del centro lee CENTRO_IA_URL, CENTRO_IA_KEY, CENTRO_IA_CA y CENTRO_IA_MODELO de tu terminal o de un .env (mira .env.example).
 
     Hace una pregunta mínima al modelo. Sale con 4 si no responde: sin clave, sin red, sin certificado, sin opencode...
     """
@@ -758,9 +758,9 @@ def configurar_ia(
 ) -> None:
     """Elige el modelo de IA: gratis con OpenCode o el del centro.
 
-    Con OpenCode no hace falta clave y funciona en casa: te enseña los modelos gratis que hay hoy (los recomendados no guardan lo que les mandas), hace una pregunta mínima y lo guarda en ~/.config/dam/ia.json. Si quieres, también lo pone como modelo por defecto de OpenCode (~/.config/opencode/opencode.json, con copia del anterior).
+    Con OpenCode no hace falta clave y funciona en casa: te enseña los modelos gratis que hay hoy (los recomendados no guardan lo que les mandas), hace una pregunta mínima y lo guarda en ~/.config/mochila/ia.json. Si quieres, también lo pone como modelo por defecto de OpenCode (~/.config/opencode/opencode.json, con copia del anterior).
 
-    dam usa OpenCode con un agente propio sin herramientas: el modelo solo devuelve texto y no puede leer, cambiar ni ejecutar nada. Lo lanza el instalador. Para cambiar solo en una terminal: DAM_IA=centro (o opencode).
+    mochila usa OpenCode con un agente propio sin herramientas: el modelo solo devuelve texto y no puede leer, cambiar ni ejecutar nada. Lo lanza el instalador. Para cambiar solo en una terminal: MOCHILA_IA=centro (o opencode).
     """
     try:
         actual = ia.leer_ajustes()
@@ -769,7 +769,7 @@ def configurar_ia(
     if proveedor is None:
         proveedor = (actual.get("proveedor") or "opencode") if si else _pedir_proveedor(actual.get("proveedor"))
         if proveedor is None:
-            consola.print("No cambio nada. Cuando quieras: [bold]dam configurar-ia[/bold]")
+            consola.print("No cambio nada. Cuando quieras: [bold]mochila configurar-ia[/bold]")
             return
     proveedor = proveedor.strip().lower()
     if proveedor not in ia.PROVEEDORES:
@@ -780,7 +780,7 @@ def configurar_ia(
         if not si and not (os.environ.get("CENTRO_IA_URL") and os.environ.get("CENTRO_IA_KEY")):
             for nombre, datos in ia.servidores_opencode().items():
                 if preguntar(f"OpenCode ya tiene el servidor «{datos['titulo']}» ({datos['url']}). "
-                             "¿Lo uso también en dam? La clave se queda en OpenCode: no la copio"):
+                             "¿Lo uso también en mochila? La clave se queda en OpenCode: no la copio"):
                     ajustes["opencode"] = nombre
                     break
         ruta = ia.guardar_ajustes(ajustes)
@@ -793,7 +793,7 @@ def configurar_ia(
                               "(mira .env.example).")
         else:
             consola.print("Necesita CENTRO_IA_URL, CENTRO_IA_KEY y CENTRO_IA_CA (mira .env.example).")
-        consola.print("Compruébalo desde la red del instituto con: [bold]dam comprobar-ia[/bold]")
+        consola.print("Compruébalo desde la red del instituto con: [bold]mochila comprobar-ia[/bold]")
         return
 
     ejecutable = ia.ProveedorOpenCode().ejecutable()
@@ -864,7 +864,7 @@ def _elegir_plantilla(plantilla: Optional[Path], destino: Path) -> Path:
             return candidato
     raise ConfigError(
         f"No tengo acciones de partida. Descarga el ejemplo ({URL_EJEMPLO_ACCIONES}) "
-        "y repite con --plantilla RUTA, o lanza dam configurar desde la carpeta del repositorio."
+        "y repite con --plantilla RUTA, o lanza mochila configurar desde la carpeta del repositorio."
     )
 
 
@@ -965,9 +965,9 @@ def configurar(
 ) -> None:
     """Pregunta tu ciclo y curso y pone tus asignaturas en acciones.json.
 
-    Como adduser en Linux: eliges ciclo (SMX, DAM, DAW, ASIR/ASIX u otro) y curso, y dam ya sabe qué asignaturas tienes. Puedes quitar y añadir las que quieras. Con eso rellena las carpetas y palabras clave de «ordenar» y las categorías de «clasificar».
+    Como adduser en Linux: eliges ciclo (SMX, DAM, DAW, ASIR/ASIX u otro) y curso, y mochila ya sabe qué asignaturas tienes. Puedes quitar y añadir las que quieras. Con eso rellena las carpetas y palabras clave de «ordenar» y las categorías de «clasificar».
 
-    Guarda en ~/.config/dam/acciones.json (o en el de --config), con una copia del anterior. Si eliges las mismas asignaturas que ya tenías, esas acciones no cambian. Al acabar, ofrece crear las carpetas que falten en tu almacén.
+    Guarda en ~/.config/mochila/acciones.json (o en el de --config), con una copia del anterior. Si eliges las mismas asignaturas que ya tenías, esas acciones no cambian. Al acabar, ofrece crear las carpetas que falten en tu almacén.
 
     Lo lanza el instalador. Repítelo cuando cambies de curso: te propone lo de la última vez.
     """
@@ -1042,8 +1042,8 @@ def configurar(
     if copia:
         consola.print(f"  La versión anterior está en {escape(str(copia))}")
     if ctx.obj is None and (Path.cwd() / config.NOMBRE_FICHERO).is_file() and Path.cwd() / config.NOMBRE_FICHERO != destino:
-        consola.print("[yellow]Ojo: en esta carpeta hay otro acciones.json y aquí dam usa ese. "
-                      "Fuera de esta carpeta, dam usa el que acabo de guardar.[/yellow]")
+        consola.print("[yellow]Ojo: en esta carpeta hay otro acciones.json y aquí mochila usa ese. "
+                      "Fuera de esta carpeta, mochila usa el que acabo de guardar.[/yellow]")
 
     # 4. Carpetas en el almacén
     try:
@@ -1053,14 +1053,14 @@ def configurar(
     base_asignaturas = almacen.ruta / almacen.carpeta_asignaturas if almacen else None
     if base_asignaturas is None or not almacen.ruta.is_dir():
         if almacen is None or almacen.ruta.exists() or si:
-            consola.print("Aún no tienes tu almacén de apuntes en este equipo. Prepáralo con: [bold]dam crear-almacen[/bold]")
+            consola.print("Aún no tienes tu almacén de apuntes en este equipo. Prepáralo con: [bold]mochila crear-almacen[/bold]")
         elif preguntar("\nAún no tienes tu almacén de apuntes en este equipo. ¿Te lo preparo ahora?"):
             try:
                 _crear_almacen(ctx, list(asignaturas), ciclo)
             except TareasError as e:  # lo de acciones.json ya está guardado: eso no se pierde
                 consola.print(f"[yellow]{escape(str(e))}[/yellow]")
         else:
-            consola.print("Cuando quieras: [bold]dam crear-almacen[/bold]")
+            consola.print("Cuando quieras: [bold]mochila crear-almacen[/bold]")
         return
     faltan = configurar_mod.carpetas_que_faltan(base_asignaturas, list(asignaturas))
     if not faltan:
@@ -1068,7 +1068,7 @@ def configurar(
     elif crear_carpetas or (not si and preguntar(f"¿Creo en tu almacén las carpetas que faltan ({', '.join(faltan)})?")):
         configurar_mod.crear_carpetas(base_asignaturas, faltan)
         consola.print(f"[green]✔ Creadas {len(faltan)} carpetas en {escape(str(base_asignaturas))}[/green]. "
-                      "Súbelas con: dam sync")
+                      "Súbelas con: mochila sync")
     else:
         consola.print(f"[yellow]Faltan en tu almacén: {escape(', '.join(faltan))}.[/yellow] "
                       "«ordenar» no mete ficheros en asignaturas sin carpeta (créalas con --crear-carpetas).")
@@ -1089,7 +1089,7 @@ def _pedir_usuario_github() -> str | None:
 
 
 def _crear_almacen(ctx: typer.Context, asignaturas: list[str], ciclo: str | None) -> bool:
-    """Lo de dam crear-almacen (dam configurar también lo ofrece). Devuelve si hay almacén al acabar."""
+    """Lo de mochila crear-almacen (mochila configurar también lo ofrece). Devuelve si hay almacén al acabar."""
     almacen = _abrir_almacen(ctx, None)
     repo = almacen_nuevo.nombre(ciclo)
     if (almacen.ruta / ".git").exists():
@@ -1099,11 +1099,11 @@ def _crear_almacen(ctx: typer.Context, asignaturas: list[str], ciclo: str | None
         return False
     else:
         consola.print(f"\nTu almacén es un repo [bold]privado[/bold] de GitHub, [bold]{repo}[/bold], con una carpeta "
-                      f"por asignatura. Irá en {escape(str(almacen.ruta))} y, con dam sync, lo tendrás igual "
+                      f"por asignatura. Irá en {escape(str(almacen.ruta))} y, con mochila sync, lo tendrás igual "
                       "en clase, en casa y en el USB.")
         usuario = _pedir_usuario_github()
         if usuario is None:
-            consola.print("Saltado. Cuando quieras: [bold]dam crear-almacen[/bold]")
+            consola.print("Saltado. Cuando quieras: [bold]mochila crear-almacen[/bold]")
             return False
         if not preguntar(f"¿Ya tienes el repo {repo} en tu GitHub?"):
             url = almacen_nuevo.url_crear(repo)
@@ -1127,7 +1127,7 @@ def _crear_almacen(ctx: typer.Context, asignaturas: list[str], ciclo: str | None
             raise GitError(
                 f"No he podido bajar {repo}. Si pone «Repository not found»: revisa el usuario, que el repo se llame "
                 f"{repo} y que ya lo hayas creado (GitHub esconde así los repos privados). Si pone «Invalid username "
-                "or token»: en Password va el token, no la contraseña. Para repetirlo: dam crear-almacen"
+                "or token»: en Password va el token, no la contraseña. Para repetirlo: mochila crear-almacen"
             )
         consola.print(f"[green]✔ Tu almacén está en {escape(str(almacen.ruta))}[/green]")
 
@@ -1137,11 +1137,11 @@ def _crear_almacen(ctx: typer.Context, asignaturas: list[str], ciclo: str | None
         configurar_mod.crear_carpetas(base, faltan)
         consola.print(f"[green]✔ Creadas {len(faltan)} carpetas de asignatura[/green] en {escape(str(base))}")
     if faltan and almacen_nuevo.esta_vacio(almacen.ruta):
-        consola.print("Es un almacén nuevo: subo las carpetas a GitHub (solo esta vez; después, dam sync).")
+        consola.print("Es un almacén nuevo: subo las carpetas a GitHub (solo esta vez; después, mochila sync).")
         almacen_nuevo.primera_subida(almacen.ruta)
-        consola.print("[green]✔ Subido. A partir de ahora: dam ejecutar ordenar y dam sync[/green]")
+        consola.print("[green]✔ Subido. A partir de ahora: mochila ejecutar ordenar y mochila sync[/green]")
     elif faltan:
-        consola.print("Súbelas con: [bold]dam sync[/bold]")
+        consola.print("Súbelas con: [bold]mochila sync[/bold]")
     return True
 
 
@@ -1149,11 +1149,11 @@ def _almacen_de_tu_ciclo(datos: dict, ciclo: str, fichero: Path) -> None:
     """Si acciones.json se quedó con el almacén de otro ciclo, lo pone en el tuyo.
 
     13-nov, PC1411: en el instalador dije «n» a rehacer acciones.json (ciclo DAW, pero la ruta seguía en
-    ~/DAM-almacen) y crear-almacen iba a clonar DAW-almacen en ~/DAM-almacen. Con DAM_ALMACEN, o si en
+    ~/DAM-almacen) y crear-almacen iba a clonar DAW-almacen en ~/DAM-almacen. Con MOCHILA_ALMACEN, o si en
     esa ruta ya hay un repo, no se toca nada: es tu almacén de verdad.
     """
     almacen = datos.get("almacen")
-    if os.environ.get("DAM_ALMACEN") or not (isinstance(almacen, dict) and isinstance(almacen.get("ruta"), str)):
+    if config.entorno("ALMACEN") or not (isinstance(almacen, dict) and isinstance(almacen.get("ruta"), str)):
         return
     nueva = almacen_nuevo.ruta_para(almacen["ruta"], ciclo)
     if nueva == almacen["ruta"] or (Path(almacen["ruta"]).expanduser() / ".git").exists():
@@ -1169,9 +1169,9 @@ def _almacen_de_tu_ciclo(datos: dict, ciclo: str, fichero: Path) -> None:
 def crear_almacen_cmd(ctx: typer.Context) -> None:
     """Baja tu almacén de GitHub o te ayuda a crearlo.
 
-    El almacén es un repo privado tuyo con una carpeta por asignatura, y se llama como tu ciclo (DAM-almacen, ASIR-almacen...). Si aún no lo tienes, abre GitHub con el nombre y «privado» ya puestos: solo pulsas «Create repository». Después lo clona, crea las carpetas de tus asignaturas (las de dam configurar) y, si es nuevo, las sube.
+    El almacén es un repo privado tuyo con una carpeta por asignatura, y se llama como tu ciclo (DAM-almacen, ASIR-almacen...). Si aún no lo tienes, abre GitHub con el nombre y «privado» ya puestos: solo pulsas «Create repository». Después lo clona, crea las carpetas de tus asignaturas (las de mochila configurar) y, si es nuevo, las sube.
 
-    dam nunca ve tu contraseña ni tu token: los pide git. Si ya lo tienes, solo crea las carpetas que falten. Lo lanza el instalador.
+    mochila nunca ve tu contraseña ni tu token: los pide git. Si ya lo tienes, solo crea las carpetas que falten. Lo lanza el instalador.
     """
     fichero = config.buscar(ctx.obj)
     datos = config.leer_json(fichero)
@@ -1179,7 +1179,7 @@ def crear_almacen_cmd(ctx: typer.Context) -> None:
     asignaturas = list(configurar_mod.asignaturas_actuales(datos))
     if not perfil.get("ciclo"):
         consola.print("[yellow]Aún no has elegido tu ciclo: el almacén se llamará APUNTES-almacen. "
-                      "Para que lleve el de tu ciclo, antes: dam configurar[/yellow]")
+                      "Para que lleve el de tu ciclo, antes: mochila configurar[/yellow]")
     else:
         _almacen_de_tu_ciclo(datos, perfil["ciclo"], fichero)
     if not _crear_almacen(ctx, asignaturas, perfil.get("ciclo")):
@@ -1192,15 +1192,15 @@ OpcionAlmacen = Annotated[
     typer.Option(
         "--almacen",
         metavar="RUTA",
-        help="Carpeta del almacén. Si no la pones: variable DAM_ALMACEN o «almacen» de acciones.json.",
+        help="Carpeta del almacén. Si no la pones: variable MOCHILA_ALMACEN o «almacen» de acciones.json.",
     ),
 ]
 
 
 def _abrir_almacen(ctx: typer.Context, opcion: Optional[Path]) -> sincronizar.Almacen:
     ruta, carpeta = opcion, "asignaturas"
-    if ruta is None and os.environ.get("DAM_ALMACEN"):
-        ruta = Path(os.environ["DAM_ALMACEN"])
+    if ruta is None and config.entorno("ALMACEN"):
+        ruta = Path(config.entorno("ALMACEN"))
     if ruta is None:
         try:
             fichero = config.buscar(ctx.obj)
@@ -1214,7 +1214,7 @@ def _abrir_almacen(ctx: typer.Context, opcion: Optional[Path]) -> sincronizar.Al
     if ruta is None:
         raise ConfigError(
             "No sé dónde está tu almacén. Añade «almacen»: {\"ruta\": \"~/DAM-almacen\"} a "
-            "acciones.json, usa --almacen RUTA o define la variable DAM_ALMACEN."
+            "acciones.json, usa --almacen RUTA o define la variable MOCHILA_ALMACEN."
         )
     return sincronizar.Almacen(ruta, carpeta)
 
@@ -1301,7 +1301,7 @@ def sync(
 
 
 def _pintar_sync(informe: sincronizar.InformeSync) -> None:
-    """Lo que cuenta dam sync (también lo usa ordenar cuando sincroniza al acabar)."""
+    """Lo que cuenta mochila sync (también lo usa ordenar cuando sincroniza al acabar)."""
     for linea in informe.mensajes:
         color = "yellow" if informe.estado == "pendiente" else "green"
         consola.print(f"[{color}]{escape(linea)}[/{color}]")
@@ -1322,7 +1322,7 @@ def scan_secrets(
 
     Revisa lo que se subiría a git (los ficheros ignorados no cuentan) y detecta MongoDB, GitHub, Gemini o Google, Resend, AWS, Slack, claves sk-, claves privadas, ficheros .env sin ignorar y asignaciones sospechosas como password = ...
 
-    Nunca imprime un secreto entero: solo las primeras letras y la longitud. Sale con 0 si está limpio y con 1 si encuentra algo. Para saltarte un falso aviso añade dam:ignore en esa línea.
+    Nunca imprime un secreto entero: solo las primeras letras y la longitud. Sale con 0 si está limpio y con 1 si encuentra algo. Para saltarte un falso aviso añade mochila:ignore en esa línea.
 
     Si una clave ya llegó a GitHub, bórrala Y cámbiala (revócala en el servicio): seguirá en el historial.
     """
@@ -1366,14 +1366,14 @@ def pintar_hallazgos(hallazgos: list[escanear.Hallazgo], titulo: str) -> None:
 @controlar_errores
 def instalar_hook(
     ruta: Annotated[Path, typer.Argument(metavar="REPO", help="Repositorio donde instalarlo (por defecto, el actual).")] = Path("."),
-    quitar: Annotated[bool, typer.Option("--quitar", help="Desinstala el hook (solo si es de dam).")] = False,
-    forzar: Annotated[bool, typer.Option("--forzar", help="Reemplaza un hook pre-commit que no sea de dam.")] = False,
+    quitar: Annotated[bool, typer.Option("--quitar", help="Desinstala el hook (solo si es de mochila).")] = False,
+    forzar: Annotated[bool, typer.Option("--forzar", help="Reemplaza un hook pre-commit que no sea de mochila.")] = False,
 ) -> None:
     """Revisa claves en cada git commit, sin acordarte.
 
-    Instala un hook pre-commit que ejecuta «dam scan-secrets --staged» justo antes de cada commit y lo cancela si encuentra algo. Se instala una vez por repositorio.
+    Instala un hook pre-commit que ejecuta «mochila scan-secrets --staged» justo antes de cada commit y lo cancela si encuentra algo. Se instala una vez por repositorio.
 
-    No pisa un hook que no sea de dam (salvo --forzar). Si «dam» no está en el PATH, avisa pero no bloquea. Para saltarlo una vez: git commit --no-verify.
+    No pisa un hook que no sea de mochila (salvo --forzar). Si «mochila» no está en el PATH, avisa pero no bloquea. Para saltarlo una vez: git commit --no-verify.
     """
     ruta = ruta.expanduser()
     mensaje = hook.quitar(ruta) if quitar else hook.instalar(ruta, forzar)
@@ -1395,10 +1395,10 @@ def doctor(
     """
     raiz = carpeta.expanduser()
     if doctor_mod.es_carpeta_personal(raiz):
-        consola.print("[yellow]⚠ Estás en tu carpeta personal, no en un proyecto.[/yellow] dam doctor revisa "
+        consola.print("[yellow]⚠ Estás en tu carpeta personal, no en un proyecto.[/yellow] mochila doctor revisa "
                       "un proyecto: entra en su carpeta (cd) o dime cuál.")
         for repo in doctor_mod.proyectos_visibles(raiz.resolve()):
-            consola.print(f'  dam doctor "{escape(str(raiz.resolve() / repo))}"', soft_wrap=True)  # entera, para copiarla
+            consola.print(f'  mochila doctor "{escape(str(raiz.resolve() / repo))}"', soft_wrap=True)  # entera, para copiarla
         raise typer.Exit(1)
     informe = doctor_mod.revisar(carpeta)
     tabla = Table(title=f"Revisión de {escape(str(informe.carpeta))}")
@@ -1414,7 +1414,7 @@ def doctor(
     consola.print(f"{informe.correctas} de {len(informe.aplicables)} comprobaciones bien.")
     for repo in informe.repos_dentro:
         consola.print(f'[yellow]⚠ Parece la carpeta de fuera. Revisa el proyecto:[/yellow]  '
-                      f'dam doctor "{escape(str(informe.carpeta / repo))}"', soft_wrap=True)
+                      f'mochila doctor "{escape(str(informe.carpeta / repo))}"', soft_wrap=True)
     if informe.fallan_basicas:
         consola.print(f"[red]✘ Falla lo básico: {escape(', '.join(informe.fallan_basicas))}[/red]")
         raise typer.Exit(1)
@@ -1499,7 +1499,7 @@ def pendientes(
 
     Si hay un pendientes.md con una tabla de columnas #, Dato, Responsable y Estado, resume el registro y lista lo abierto (Pendiente o En curso).
 
-    No cuenta las líneas de leyenda, los enlaces \\[Pendiente](x.md), docs/historico/ ni las líneas con dam:ignore. No cambia nada.
+    No cuenta las líneas de leyenda, los enlaces \\[Pendiente](x.md), docs/historico/ ni las líneas con mochila:ignore. No cambia nada.
     """
     informe = pendientes_mod.revisar(carpeta)
     consola.print(f"[bold]Documentación de[/bold] {escape(str(informe.carpeta))}: {len(informe.ficheros)} ficheros .md")
@@ -1553,7 +1553,7 @@ def entregar(
         pintar_hallazgos(plan.hallazgos, "Posibles secretos dentro de la entrega")
     if plan.bloqueado:
         consola.print("[red]✘ Hay secretos dentro: no creo el zip.[/red] Sácalos a .env (y ponlo en .gitignore) "
-                      "o, si es un falso aviso, añade dam:ignore en esa línea.")
+                      "o, si es un falso aviso, añade mochila:ignore en esa línea.")
         raise typer.Exit(1)
     if plan.hallazgos:
         consola.print("[yellow]⚠ Revisa los avisos de arriba antes de entregar.[/yellow]")
@@ -1686,7 +1686,7 @@ def duplicados(
 
     Primero enseña las carpetas en las que TODOS los ficheros tienen otra copia fuera (las primeras candidatas a borrar) y después los grupos de ficheros repetidos, de más a menos espacio. Marca las copias que están dentro de un repo git: esas se quitan con un commit.
 
-    No lee los ficheros «solo en la nube» de OneDrive (se descargarían) y se salta lo mismo que dam inventario (AppData, enlaces, .git, .venv, node_modules...).
+    No lee los ficheros «solo en la nube» de OneDrive (se descargarían) y se salta lo mismo que mochila inventario (AppData, enlaces, .git, .venv, node_modules...).
     """
     if guardar is not None:
         guardar = guardar.expanduser()
@@ -1742,7 +1742,7 @@ def duplicados(
     if informe.sin_acceso:
         consola.print(f"[yellow]⚠ Sin permiso de lectura: {len(informe.sin_acceso)} rutas (detalle en --guardar).[/yellow]")
     if informe.grupos:
-        consola.print("\n[bold]dam duplicados no borra nada.[/bold] Antes de borrar, decide qué copia guardas; "
+        consola.print("\n[bold]mochila duplicados no borra nada.[/bold] Antes de borrar, decide qué copia guardas; "
                       "si la que sobra está en un repo, quítala con un commit. Mejor a la Papelera que borrar del todo.")
 
     if guardar is not None:

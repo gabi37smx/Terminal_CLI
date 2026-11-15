@@ -188,7 +188,7 @@ def test_accion_o_carpeta_inexistente(tmp_path):
         m.ejecutar("a", tmp_path / "x", True)
 
 
-def test_un_fichero_suelto_solo_convierte_ese(tmp_path):  # 12-nov: «dam ejecutar convertir-webp portada.png»
+def test_un_fichero_suelto_solo_convierte_ese(tmp_path):  # 12-nov: «mochila ejecutar convertir-webp portada.png»
     foto(tmp_path / "portada.png")
     foto(tmp_path / "otra.jpg", "JPEG")
     m = motor(tmp_path, tipo="convertir", filtro={"extensiones": [".jpg", ".png"]})
@@ -226,10 +226,10 @@ def test_cli_ejecutar_un_fichero_y_ayuda_de_acciones(tmp_path):
     assert r.exit_code == 0, r.output
     assert (tmp_path / "portada.webp").exists() and not (tmp_path / "otra.webp").exists()
     ayuda = " ".join(runner.invoke(app, ["acciones", "-h"]).output.split())
-    assert "dam ejecutar convertir-webp ~/Descargas/portada.png" in ayuda
-    assert "dam ejecutar -h" in ayuda
+    assert "mochila ejecutar convertir-webp ~/Descargas/portada.png" in ayuda
+    assert "mochila ejecutar -h" in ayuda
     lista = " ".join(runner.invoke(app, ["--config", str(cfg), "acciones"]).output.split())
-    assert "Para usar una: dam ejecutar NOMBRE CARPETA --simular" in lista
+    assert "Para usar una: mochila ejecutar NOMBRE CARPETA --simular" in lista
 
 
 def test_fabrica_no_usa_if_por_tipo():
@@ -284,7 +284,7 @@ def test_cli_ordenar_con_confirmar_muestra_tabla_y_cuenta_solo_los_que_se_mueven
     assert r.exit_code == 0 and (tmp_path / "sistemas" / "linux.txt").exists()
 
 
-# ---------- ordenar al almacén y dam sync al acabar ----------
+# ---------- ordenar al almacén y mochila sync al acabar ----------
 @pytest.fixture
 def al_almacen(tmp_path, monkeypatch):
     """Descargas con dos apuntes, un almacén de mentira (sin git) y una acción con «al_almacen»."""
@@ -295,8 +295,8 @@ def al_almacen(tmp_path, monkeypatch):
     (descargas / "misterio.txt").write_text("x", encoding="utf-8")
     almacen = tmp_path / "DAM-almacen"
     (almacen / "asignaturas" / "sistemas").mkdir(parents=True)  # bases-datos no está en el almacén
-    (almacen / ".git").mkdir()  # parece un repositorio (sync es de mentira): si no, no ofrece dam sync
-    monkeypatch.setenv("DAM_ALMACEN", str(almacen))
+    (almacen / ".git").mkdir()  # parece un repositorio (sync es de mentira): si no, no ofrece mochila sync
+    monkeypatch.setenv("MOCHILA_ALMACEN", str(almacen))
     cfg = tmp_path / "a.json"
     cfg.write_text(json.dumps({"version": 1, "acciones": [
         {"nombre": "ordenar", "descripcion": "d", "tipo": "ordenar", "al_almacen": True, "confirmar": True,
@@ -328,7 +328,7 @@ def test_ordenar_al_almacen_y_no_sincroniza(al_almacen):
     assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
     assert (descargas / "apuntes sql.txt").exists()  # su asignatura no está en el almacén: no se inventa
     assert not (almacen / "asignaturas" / "bases-datos").exists()
-    assert "dam sync" in r.output and "Cuando quieras" in r.output and not llamadas
+    assert "mochila sync" in r.output and "Cuando quieras" in r.output and not llamadas
 
 
 def test_ordenar_al_almacen_y_sincroniza(al_almacen):
@@ -344,12 +344,12 @@ def test_ordenar_al_almacen_con_si_no_pregunta_ni_sincroniza(al_almacen):
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--si"])
     assert r.exit_code == 0, r.output
     assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
-    assert "dam sync" in r.output and not llamadas
+    assert "mochila sync" in r.output and not llamadas
 
 
 def test_ordenar_al_almacen_sin_almacen(al_almacen, tmp_path, monkeypatch):
     descargas, almacen, cfg, llamadas = al_almacen
-    monkeypatch.setenv("DAM_ALMACEN", str(tmp_path / "no-esta"))
+    monkeypatch.setenv("MOCHILA_ALMACEN", str(tmp_path / "no-esta"))
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--si"])
     assert r.exit_code == 1 and "No encuentro las asignaturas" in r.output
     assert (descargas / "linux tema 1.pdf").exists()
@@ -402,5 +402,5 @@ def test_ordenar_al_almacen_y_por_tipo(al_almacen, tmp_path):
     assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
     assert (tmp_path / "Datos" / "POR-TIPO" / "DOCUMENTOS" / "misterio.txt").exists()
     assert (descargas / "desktop.ini").exists()
-    # dam sync solo cuenta lo que ha entrado en el almacén
+    # mochila sync solo cuenta lo que ha entrado en el almacén
     assert llamadas == [(almacen, None, "ordenar: 1 apunte(s) nuevo(s)")]

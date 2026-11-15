@@ -51,7 +51,7 @@ def test_sync_con_opcion_m_para_todo_el_almacen(pcs):
 
 def test_asignatura_inexistente_sugiere_la_opcion_m(pcs):
     clase, _ = pcs
-    with pytest.raises(TareasError, match=r'dam sync -m'):
+    with pytest.raises(TareasError, match=r'mochila sync -m'):
         clase.sincronizar("tema 3", None)
 
 

@@ -1,4 +1,4 @@
-"""dam inventario. Carpetas de mentira en tmp_path: nunca se recorre el PC de verdad."""
+"""mochila inventario. Carpetas de mentira en tmp_path: nunca se recorre el PC de verdad."""
 import os
 from pathlib import Path
 

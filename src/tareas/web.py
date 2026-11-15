@@ -22,7 +22,7 @@ from urllib.parse import quote, unquote, urljoin, urlsplit
 
 from .errores import TareasError
 
-USER_AGENT = "dam/1.0 (revisor de enlaces; +https://github.com/gabi37smx/Terminal_CLI)"
+USER_AGENT = "mochila/1.0 (revisor de enlaces; +https://github.com/gabi37smx/Terminal_CLI)"
 CARPETAS_IGNORADAS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache"}
 EXTENSIONES_HTML = {".html", ".htm"}
 # Webs que no dejan comprobar a robots (LinkedIn devuelve 999): se avisa, no se da por roto

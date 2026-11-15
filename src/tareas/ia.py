@@ -2,7 +2,7 @@
 
 ProveedorIA es la interfaz (clase abstracta). ProveedorCentro habla con el servidor del centro
 (API de chat de OpenAI) con httpx. ProveedorOpenCode usa los modelos gratis de OpenCode con
-«opencode run». crear_proveedor() elige uno según lo que guardó dam configurar-ia.
+«opencode run». crear_proveedor() elige uno según lo que guardó mochila configurar-ia.
 Las acciones no importan httpx: si mañana cambia el servidor, o en las pruebas no hay red, se cambia
 la clase de abajo sin tocar las acciones.
 
@@ -28,7 +28,7 @@ from pathlib import Path
 import httpx
 from dotenv import find_dotenv, load_dotenv
 
-from . import URL_REPO
+from . import URL_REPO, config
 from .errores import IANoDisponible
 
 # El que trae el OpenCode del centro (13-nov: el antiguo «qwen3.8-flash-next» ya da 403)
@@ -98,7 +98,7 @@ class ProveedorCentro(ProveedorIA):
     def desde_entorno() -> ProveedorCentro:
         """Fábrica: lee .env (si lo hay) y las variables de entorno.
 
-        Si faltan la URL o la clave y en dam configurar-ia dijiste que use el servidor que ya tiene
+        Si faltan la URL o la clave y en mochila configurar-ia dijiste que use el servidor que ya tiene
         OpenCode, las lee de la configuración de OpenCode en ese momento (no se copian a ningún sitio).
         Las variables mandan siempre. Certificado: CENTRO_IA_CA o, si no, NODE_EXTRA_CA_CERTS (el que
         ya usa OpenCode en clase).
@@ -119,10 +119,10 @@ class ProveedorCentro(ProveedorIA):
             raise IANoDisponible(
                 "Faltan CENTRO_IA_URL o CENTRO_IA_KEY. Defínelas en la terminal "
                 "(export CENTRO_IA_URL=... en Linux y macOS; $env:CENTRO_IA_URL=\"...\" en PowerShell) "
-                "o en un fichero .env en la carpeta desde la que ejecutas dam. "
+                "o en un fichero .env en la carpeta desde la que ejecutas mochila. "
                 f"Qué poner en cada una: {URL_REPO}#ia-opcional-acciones-con-los-modelos-del-centro. "
-                "Si OpenCode ya usa el servidor del centro, dam puede usar sus datos: dam configurar-ia. "
-                "Fuera del instituto puedes usar modelos gratis con OpenCode: dam configurar-ia"
+                "Si OpenCode ya usa el servidor del centro, mochila puede usar sus datos: mochila configurar-ia. "
+                "Fuera del instituto puedes usar modelos gratis con OpenCode: mochila configurar-ia"
             )
         variable_ca = "CENTRO_IA_CA" if os.environ.get("CENTRO_IA_CA") else "NODE_EXTRA_CA_CERTS"
         ca = os.environ.get(variable_ca) or None
@@ -181,11 +181,11 @@ class ProveedorCentro(ProveedorIA):
 
 # ---------- Modelos gratis con OpenCode ----------
 # Los modelos gratis de OpenCode (los que acaban en «-free») solo se pueden usar desde OpenCode: no
-# tienen una API a la que llamar con httpx. Por eso dam lanza «opencode run» con un agente propio que
+# tienen una API a la que llamar con httpx. Por eso mochila lanza «opencode run» con un agente propio que
 # no tiene herramientas: el modelo solo devuelve texto, como con el servidor del centro (ADR-0004).
 
 # Por orden de preferencia. Según opencode.ai/docs/zen, estos no guardan lo que les mandas ni entrenan
-# con ello. Los modelos gratis cambian: dam configurar-ia enseña los que hay ese día.
+# con ello. Los modelos gratis cambian: mochila configurar-ia enseña los que hay ese día.
 RECOMENDADOS = (
     "opencode/deepseek-v4.1-flash-free",
     "opencode/glm-5.3-flash-free",
@@ -193,12 +193,12 @@ RECOMENDADOS = (
 )
 SEGUNDOS_OPENCODE = 180  # un modelo gratis puede tardar: mejor esperar que cortar a mitad
 
-# El agente que usa dam. «read» no se puede quitar (sin ninguna herramienta, la 1.18.35 se queda
+# El agente que usa mochila. «read» no se puede quitar (sin ninguna herramienta, la 1.18.35 se queda
 # colgada), así que se deja solo dentro de su carpeta temporal, que está vacía: external_directory
 # le prohíbe leer fuera. Todo lo demás (editar, ejecutar, navegar...) no existe para él.
 AGENTE_OPENCODE = """\
 ---
-description: Agente de dam (lo crea dam y lo borra al acabar). Solo devuelve texto.
+description: Agente de mochila (lo crea mochila y lo borra al acabar). Solo devuelve texto.
 mode: primary
 temperature: 0.2
 tools:
@@ -241,7 +241,7 @@ class ProveedorOpenCode(ProveedorIA):
             )
         if not ruta:
             raise IANoDisponible(
-                "No encuentro opencode. Vuelve a pasar el instalador de dam (te lo instala) "
+                "No encuentro opencode. Vuelve a pasar el instalador de mochila (te lo instala) "
                 f"o mira cómo instalarlo: {URL_REPO}#ia-gratis-con-opencode"
             )
         return ruta
@@ -250,18 +250,18 @@ class ProveedorOpenCode(ProveedorIA):
         # max_tokens no se puede pasar a «opencode run»: el largo lo limitan las instrucciones
         ejecutable = self.ejecutable()
         inicio = time.perf_counter()
-        with tempfile.TemporaryDirectory(prefix="dam-ia-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="mochila-ia-") as tmp:
             carpeta = Path(tmp)
             agentes = carpeta / ".opencode" / "agents"
             agentes.mkdir(parents=True)
-            (agentes / "dam-ia.md").write_text(AGENTE_OPENCODE + sistema.strip() + "\n", encoding="utf-8")
+            (agentes / "mochila-ia.md").write_text(AGENTE_OPENCODE + sistema.strip() + "\n", encoding="utf-8")
             orden = [
                 ejecutable, "run",
-                "--dir", str(carpeta),  # sin esto, opencode usa la carpeta desde la que lanzaste dam
-                "--agent", "dam-ia",
+                "--dir", str(carpeta),  # sin esto, opencode usa la carpeta desde la que lanzaste mochila
+                "--agent", "mochila-ia",
                 "-m", self.modelo,
                 "--format", "json",
-                "--title", "dam",  # con título no se lo pide a tu «small_model» (que puede ser el del centro)
+                "--title", "mochila",  # con título no se lo pide a tu «small_model» (que puede ser el del centro)
                 "Responde al texto que sigue.",  # el texto va por la entrada estándar: sin límite de largo
             ]
             try:
@@ -281,7 +281,7 @@ class ProveedorOpenCode(ProveedorIA):
             )
         texto = PENSAMIENTO.sub("", texto).strip()
         if not texto:
-            raise IANoDisponible("El modelo de OpenCode no ha devuelto texto (prueba otro con dam configurar-ia)")
+            raise IANoDisponible("El modelo de OpenCode no ha devuelto texto (prueba otro con mochila configurar-ia)")
         return Respuesta(texto, entrada, salida, time.perf_counter() - inicio)
 
 
@@ -313,25 +313,25 @@ def leer_eventos(salida: str) -> tuple[str, int, int, str]:
     return "".join(textos), entrada, salida_tokens, error
 
 
-# ---------- Qué proveedor usa dam ----------
+# ---------- Qué proveedor usa mochila ----------
 PROVEEDORES = ("opencode", "centro")
 
 
 def ruta_ajustes() -> Path:
-    """~/.config/dam/ia.json (o DAM_IA_CONFIG): qué proveedor elegiste con dam configurar-ia."""
-    propia = os.environ.get("DAM_IA_CONFIG", "").strip()
-    return Path(propia).expanduser() if propia else Path.home() / ".config" / "dam" / "ia.json"
+    """~/.config/mochila/ia.json (o MOCHILA_IA_CONFIG): qué proveedor elegiste con mochila configurar-ia."""
+    propia = config.entorno("IA_CONFIG")
+    return Path(propia).expanduser() if propia else Path.home() / config.CARPETA_CONFIG / "ia.json"
 
 
 def leer_ajustes() -> dict:
-    """Lo que guardó dam configurar-ia: {"proveedor": "opencode", "modelo": "..."}. Si no hay, {}."""
+    """Lo que guardó mochila configurar-ia: {"proveedor": "opencode", "modelo": "..."}. Si no hay, {}."""
     ruta = ruta_ajustes()
     try:
         datos = json.loads(ruta.read_text(encoding="utf-8-sig"))
     except FileNotFoundError:
         return {}
     except (OSError, ValueError):
-        raise IANoDisponible(f"{ruta} está roto: vuelve a elegir con dam configurar-ia") from None
+        raise IANoDisponible(f"{ruta} está roto: vuelve a elegir con mochila configurar-ia") from None
     return datos if isinstance(datos, dict) else {}
 
 
@@ -349,7 +349,7 @@ def servidores_opencode() -> dict[str, dict]:
 
     {"simarro": {"titulo": "IES ...", "url": "https://.../v1", "clave": "...", "modelo": "Qwen..."}}
     El modelo es el que usa OpenCode por defecto, si es de ese servidor. Si no se puede leer, {}.
-    13-nov: en clase, OpenCode iba con el servidor del centro y dam no, porque cada uno guarda lo suyo.
+    13-nov: en clase, OpenCode iba con el servidor del centro y mochila no, porque cada uno guarda lo suyo.
     """
     from .configurar_ia import _leer, ruta_opencode_global  # aquí dentro: configurar_ia importa ia
     from .errores import ConfigError
@@ -382,15 +382,15 @@ def guardar_ajustes(ajustes: dict) -> Path:
 
 
 def crear_proveedor() -> ProveedorIA:
-    """El proveedor que elegiste con dam configurar-ia. Sin elegir nada, el servidor del centro.
+    """El proveedor que elegiste con mochila configurar-ia. Sin elegir nada, el servidor del centro.
 
-    DAM_IA=centro|opencode (y DAM_IA_MODELO) lo cambian solo en esa terminal: p. ej., en clase.
+    MOCHILA_IA=centro|opencode (y MOCHILA_IA_MODELO) lo cambian solo en esa terminal: p. ej., en clase.
     """
     ajustes = leer_ajustes()
-    eleccion = os.environ.get("DAM_IA", "").strip().lower() or str(ajustes.get("proveedor") or "centro")
+    eleccion = config.entorno("IA").lower() or str(ajustes.get("proveedor") or "centro")
     if eleccion == "opencode":
-        modelo = os.environ.get("DAM_IA_MODELO", "").strip() or ajustes.get("modelo") or RECOMENDADOS[0]
+        modelo = config.entorno("IA_MODELO") or ajustes.get("modelo") or RECOMENDADOS[0]
         return ProveedorOpenCode(modelo)
     if eleccion == "centro":
         return ProveedorCentro.desde_entorno()
-    raise IANoDisponible(f"No conozco el proveedor de IA «{eleccion}»: usa {' o '.join(PROVEEDORES)} (dam configurar-ia)")
+    raise IANoDisponible(f"No conozco el proveedor de IA «{eleccion}»: usa {' o '.join(PROVEEDORES)} (mochila configurar-ia)")

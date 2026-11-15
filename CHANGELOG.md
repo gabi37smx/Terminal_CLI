@@ -8,6 +8,13 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+### Cambiado
+
+- **El comando se llama `mochila`** (antes `dam`): a un compañero de DAW le confundía que se llamara
+  como otro ciclo (ADR-0006). `tareas` sigue valiendo. Tu configuración pasa a `~/.config/mochila`
+  y las variables a `MOCHILA_ALMACEN`, `MOCHILA_IA`...; al repetir el instalador se copia lo que ya
+  tenías, y las variables `DAM_…`, `dam:ignore` y el hook de `dam` siguen funcionando.
+
 ### Añadido
 
 - Si OpenCode ya usa el servidor del centro, `dam configurar-ia` ofrece usar esos mismos datos: no

@@ -1,4 +1,4 @@
-"""dam pendientes. Documentación de mentira en tmp_path."""
+"""mochila pendientes. Documentación de mentira en tmp_path."""
 from pathlib import Path
 
 import pytest
@@ -21,7 +21,7 @@ El problema es pasar el cuaderno al ordenador. **[Hipótesis]**
 Cuánto tiempo exactamente: **[Pendiente]**.
 Documentación: [Pendiente](docs/pendientes.md)
 Capterra lo confirma. **[Verificado]**
-Esto no cuenta [Pendiente] dam:ignore
+Esto no cuenta [Pendiente] mochila:ignore
 """
 
 ARQUITECTURA = """Etiquetas: **[Verificado]** (con fuente y fecha), **[Hipótesis]**, **[Pendiente]**.
@@ -78,7 +78,7 @@ def test_no_cuenta_leyendas_enlaces_ignorados_historico_ni_otros_ficheros(proyec
     lineas = {(e.fichero, e.linea) for e in informe.etiquetas}
     assert not {("README.md", n) for n in (4, 5, 6)} & lineas  # «Cómo leer esta ficha»
     assert ("docs/arquitectura.md", 1) not in lineas  # «Etiquetas: [Verificado]..., [Hipótesis], [Pendiente]»
-    assert ("README.md", 11) not in lineas and ("README.md", 13) not in lineas  # enlace y dam:ignore
+    assert ("README.md", 11) not in lineas and ("README.md", 13) not in lineas  # enlace y mochila:ignore
     assert not any("historico" in e.fichero for e in informe.etiquetas)
     assert "notas.txt" not in informe.ficheros
 

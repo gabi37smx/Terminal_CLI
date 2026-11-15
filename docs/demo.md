@@ -1,11 +1,11 @@
-# Demo de `dam` para clase (≈ 2 minutos)
+# Demo de `mochila` para clase (≈ 2 minutos)
 
 Chuleta para enseñar las comprobaciones de seguridad sin tener que recordar nada.
-`dam` está instalado globalmente: todos los comandos se lanzan **desde cualquier carpeta**.
+`mochila` está instalado globalmente: todos los comandos se lanzan **desde cualquier carpeta**.
 
 ## Qué digo (y qué no)
 
-> «`dam` automatiza comprobaciones básicas de seguridad: que no se filtren claves en mis repos
+> «`mochila` automatiza comprobaciones básicas de seguridad: que no se filtren claves en mis repos
 > y que mis servidores envíen las cabeceras de protección. No es una auditoría completa.»
 
 - **Sí comprueba:** claves y tokens en el código y en el historial de git (`scan-secrets`), cabeceras de
@@ -25,31 +25,31 @@ Chuleta para enseñar las comprobaciones de seguridad sin tener que recordar nad
 
 **1. La herramienta y su ayuda**
 ```powershell
-dam -h
-dam check-headers -h
+mochila -h
+mochila check-headers -h
 ```
 
 **2. Cero claves en el historial** (lo pide la rúbrica)
 ```powershell
-dam scan-secrets --historial
-dam scan-secrets "C:\Users\HP\Desktop\DAM\PROGRAMACIÓ IA\1 PROJECTE\portfolio-backend" --historial
+mochila scan-secrets --historial
+mochila scan-secrets "C:\Users\HP\Desktop\DAM\PROGRAMACIÓ IA\1 PROJECTE\portfolio-backend" --historial
 ```
 
 **3. El hook: no me puedo colar una clave en un commit**
 ```powershell
-dam instalar-hook "C:\Users\HP\Desktop\DAM\PROGRAMACIÓ IA\1 PROJECTE\portfolio-backend"
+mochila instalar-hook "C:\Users\HP\Desktop\DAM\PROGRAMACIÓ IA\1 PROJECTE\portfolio-backend"
 ```
-Cada `git commit` ejecuta `dam scan-secrets --staged` y lo cancela si encuentra una clave.
+Cada `git commit` ejecuta `mochila scan-secrets --staged` y lo cancela si encuentra una clave.
 
 **4. Cabeceras del backend: el antes y el después**
 ```powershell
-dam check-headers https://portfolio-backend-m07q.onrender.com --timeout 60
+mochila check-headers https://portfolio-backend-m07q.onrender.com --timeout 60
 ```
 Render gratis tarda en despertar: por eso `--timeout 60`.
 
 **5. Enlaces de la web publicada**
 ```powershell
-dam test-links https://gabi37smx.github.io/mi-web/
+mochila test-links https://gabi37smx.github.io/mi-web/
 ```
 Los avisos de LinkedIn (código 999) no son enlaces rotos: LinkedIn bloquea las comprobaciones automáticas.
 
@@ -71,5 +71,5 @@ Los avisos de LinkedIn (código 999) no son enlaces rotos: LinkedIn bloquea las 
 
 **Lo que puede preguntar el profe:**
 - *¿Por qué `'unsafe-inline'` en `style-src`?* El `<style>` de `admin.html` va en línea. El riesgo de CSS en línea es
-  mucho menor que el de JS, y `script-src` sí lo prohíbe (eso es lo que mira `dam`).
+  mucho menor que el de JS, y `script-src` sí lo prohíbe (eso es lo que mira `mochila`).
 - *¿Por qué no sale CSP en GitHub Pages?* GitHub Pages no deja configurar cabeceras. Solo se podría con un `<meta http-equiv>`.

@@ -1,4 +1,4 @@
-﻿# Instala y configura dam en Windows.
+﻿# Instala y configura mochila en Windows.
 # Uso: doble clic en instalar.cmd, o desde PowerShell:
 #   powershell -ExecutionPolicy Bypass -File instalar.ps1
 # Se puede ejecutar todas las veces que quieras: lo que ya está hecho se salta.
@@ -6,7 +6,7 @@
 
 $ErrorActionPreference = 'Continue'   # los fallos de git/uv se comprueban con $LASTEXITCODE
 Set-Location $PSScriptRoot            # trabaja siempre desde la carpeta del repositorio
-$PathOriginal = $env:Path             # para saber después si tu terminal ya encuentra «dam»
+$PathOriginal = $env:Path             # para saber después si tu terminal ya encuentra «mochila»
 
 function Paso($texto)  { Write-Host ""; Write-Host "==> $texto" }
 function Ok($texto)    { Write-Host "    [ok] $texto" }
@@ -31,27 +31,43 @@ if (-not (Tiene uv)) {
 }
 Ok (uv --version)
 
-# 3. Dependencias y comando dam --------------------------------------------
+# 3. Dependencias y comando mochila --------------------------------------------
 Paso "Instalo las dependencias (uv descarga Python 3.12 si hace falta)"
 uv sync
 if ($LASTEXITCODE -ne 0) { Parar "uv sync ha fallado (mira el mensaje de arriba)." }
 
-Paso "Instalo el comando dam para todo el sistema"
+Paso "Instalo el comando mochila para todo el sistema"
 uv tool install --editable . --force
-if ($LASTEXITCODE -ne 0) { Parar "No he podido instalar el comando dam." }
+if ($LASTEXITCODE -ne 0) { Parar "No he podido instalar el comando mochila." }
 $CarpetaBin = (uv tool dir --bin).Trim()
 if (($PathOriginal -split ';') -contains $CarpetaBin) {
     Ok "Tu terminal ya encuentra los comandos de $CarpetaBin"
 } else {
     uv tool update-shell
-    Aviso "Al terminar, cierra esta terminal y abre otra para que «dam» funcione."
+    Aviso "Al terminar, cierra esta terminal y abre otra para que «mochila» funcione."
 }
 
 # 4. Dónde van tus acciones (las configura el paso 6b, con el almacén ya clonado)
-$Config = Join-Path $HOME ".config\dam\acciones.json"
+$Config = Join-Path $HOME ".config\mochila\acciones.json"
+
+# Antes se llamaba «dam»: lo que ya elegiste (acciones.json, ia.json) se copia a .config\mochila.
+# La carpeta vieja se queda como copia de seguridad; puedes borrarla cuando quieras.
+$ConfigVieja = Join-Path $HOME ".config\dam"
+if ((Test-Path $ConfigVieja) -and -not (Test-Path (Split-Path $Config))) {
+    Copy-Item -Recurse $ConfigVieja (Split-Path $Config)
+    Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path (Split-Path $Config) "completado.ps1")
+    Ok "Lo que tenías de dam pasa a $(Split-Path $Config)"
+}
+$AlmacenViejo = [Environment]::GetEnvironmentVariable('DAM_ALMACEN', 'User')
+if ($AlmacenViejo -and -not [Environment]::GetEnvironmentVariable('MOCHILA_ALMACEN', 'User')) {
+    [Environment]::SetEnvironmentVariable('MOCHILA_ALMACEN', $AlmacenViejo, 'User')
+    [Environment]::SetEnvironmentVariable('DAM_ALMACEN', $null, 'User')
+    $env:MOCHILA_ALMACEN = $AlmacenViejo
+    Ok "La variable DAM_ALMACEN pasa a llamarse MOCHILA_ALMACEN"
+}
 
 # 4b. Autocompletado con TAB -----------------------------------------------
-# No uso «dam --install-completion»: cambiaría la política de PowerShell a Unrestricted
+# No uso «mochila --install-completion»: cambiaría la política de PowerShell a Unrestricted
 # y añadiría el script al perfil cada vez que lo ejecutaras.
 Paso "Activo el autocompletado con TAB"
 # La política de una terminal NORMAL: este script corre con -ExecutionPolicy Bypass (ámbito
@@ -67,13 +83,13 @@ if ($Politica -eq 'Restricted' -or $Politica -eq 'AllSigned') {
     Aviso "Si lo quieres, ejecuta una vez:  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"
     Aviso "y vuelve a lanzar este instalador. (RemoteSigned deja ejecutar tus scripts, no los descargados.)"
 } else {
-    $ScriptTab = Join-Path $HOME ".config\dam\completado.ps1"
-    # En un Windows recién instalado aún no existe .config\dam (acciones.json se crea en el paso 6b)
+    $ScriptTab = Join-Path $HOME ".config\mochila\completado.ps1"
+    # En un Windows recién instalado aún no existe .config\mochila (acciones.json se crea en el paso 6b)
     New-Item -ItemType Directory -Force (Split-Path $ScriptTab) | Out-Null
-    # Con esta variable, dam no ejecuta nada: solo escribe el script de autocompletado
-    $env:_DAM_COMPLETE = "source_powershell"
-    $Texto = & (Join-Path $CarpetaBin "dam.exe")
-    Remove-Item Env:_DAM_COMPLETE
+    # Con esta variable, mochila no ejecuta nada: solo escribe el script de autocompletado
+    $env:_MOCHILA_COMPLETE = "source_powershell"
+    $Texto = & (Join-Path $CarpetaBin "mochila.exe")
+    Remove-Item Env:_MOCHILA_COMPLETE
     if ($LASTEXITCODE -eq 0 -and $Texto) {
         Set-Content -Path $ScriptTab -Value ($Texto -join "`r`n") -Encoding UTF8
     }
@@ -81,24 +97,28 @@ if ($Politica -eq 'Restricted' -or $Politica -eq 'AllSigned') {
         # Sin el script no toco el perfil: cada PowerShell nueva daría un error en rojo
         Aviso "No he podido generar el autocompletado."
     } else {
-        $Linea = ". `"$ScriptTab`"  # autocompletado de dam (lo añadió instalar.ps1)"
+        $Linea = ". `"$ScriptTab`"  # autocompletado de mochila (lo añadió instalar.ps1)"
         # Perfil de Windows PowerShell y, si lo tienes, el de PowerShell 7 (pwsh)
         $Perfiles = @($PROFILE.CurrentUserAllHosts)
         if (Tiene pwsh) { $Perfiles += (pwsh -NoProfile -Command '$PROFILE.CurrentUserAllHosts') }
         foreach ($Perfil in ($Perfiles | Select-Object -Unique)) {
             if (-not (Test-Path $Perfil)) { New-Item -ItemType File -Force $Perfil | Out-Null }
+            # La línea de cuando se llamaba dam carga un script que ya no se usa: fuera
+            $Lineas = @(Get-Content -Path $Perfil -Encoding UTF8)
+            $SinVieja = @($Lineas | Where-Object { $_ -notmatch 'autocompletado de dam \(lo añadió instalar\.ps1\)' })
+            if ($SinVieja.Count -ne $Lineas.Count) { Set-Content -Path $Perfil -Value $SinVieja -Encoding UTF8 }
             if (-not (Select-String -Path $Perfil -SimpleMatch $ScriptTab -Quiet)) {
                 Add-Content -Path $Perfil -Value "`r`n$Linea" -Encoding UTF8
             }
             Ok "TAB activado en $Perfil"
         }
-        Ok "En una terminal nueva prueba: dam ej<TAB>"
+        Ok "En una terminal nueva prueba: mochila ej<TAB>"
     }
 }
 
 # 5. git: identidad --------------------------------------------------------
 # (Las credenciales las guarda el «Git Credential Manager» que trae Git para Windows.)
-Paso "Preparo git para los commits de dam sync"
+Paso "Preparo git para los commits de mochila sync"
 if (-not (git config --global user.name)) {
     $nombre = Read-Host "    Tu nombre para los commits"
     if ($nombre) { git config --global user.name "$nombre" }
@@ -117,13 +137,13 @@ if ($nombre -and $correo) {
 
 # 6. Almacén de apuntes ----------------------------------------------------
 # Solo se busca si ya lo tienes. Si no, se baja o se crea en el paso 6b, después de elegir el ciclo:
-# se llama como tu ciclo (DAM-almacen, ASIR-almacen...) y dam te ayuda a crearlo (ADR-0005).
+# se llama como tu ciclo (DAM-almacen, ASIR-almacen...) y mochila te ayuda a crearlo (ADR-0005).
 Paso "Almacén de apuntes"
-$Almacen = $env:DAM_ALMACEN
-if (-not $Almacen) { $Almacen = [Environment]::GetEnvironmentVariable('DAM_ALMACEN', 'User') }
+$Almacen = $env:MOCHILA_ALMACEN
+if (-not $Almacen) { $Almacen = [Environment]::GetEnvironmentVariable('MOCHILA_ALMACEN', 'User') }
 if ($Almacen) {
-    $env:DAM_ALMACEN = $Almacen
-    Ok "Uso el de DAM_ALMACEN: $Almacen"
+    $env:MOCHILA_ALMACEN = $Almacen
+    Ok "Uso el de MOCHILA_ALMACEN: $Almacen"
 } else {
     # ¿Ya está clonado (por ejemplo en Documentos)? Se busca hasta 3 niveles dentro de tu carpeta
     # personal un repo git cuyo remoto sea CICLO-almacen, se llame como se llame la carpeta.
@@ -147,16 +167,16 @@ if ($Almacen) {
         Ok "Ya lo tienes en $Almacen"
         if ($Encontrados.Count -gt 1) {
             Aviso "Hay $($Encontrados.Count) copias del almacén: $($Encontrados -join ', ')"
-            Aviso "Uso la primera. Para usar otra, cambia la variable DAM_ALMACEN de tu usuario."
+            Aviso "Uso la primera. Para usar otra, cambia la variable MOCHILA_ALMACEN de tu usuario."
         }
         $EnSuSitio = 'SMX', 'DAM', 'DAW', 'ASIR', 'APUNTES' | ForEach-Object { Join-Path $HOME "$_-almacen" }
         if ($Almacen -notin $EnSuSitio) {
-            # dam lo busca en ~/CICLO-almacen (acciones.json): si está en otro sitio, se lo digo con
-            # DAM_ALMACEN como variable de tu usuario (la ven PowerShell, cmd y Git Bash)
-            [Environment]::SetEnvironmentVariable('DAM_ALMACEN', $Almacen, 'User')
-            Ok "Guardado DAM_ALMACEN=$Almacen en las variables de tu usuario"
+            # mochila lo busca en ~/CICLO-almacen (acciones.json): si está en otro sitio, se lo digo con
+            # MOCHILA_ALMACEN como variable de tu usuario (la ven PowerShell, cmd y Git Bash)
+            [Environment]::SetEnvironmentVariable('MOCHILA_ALMACEN', $Almacen, 'User')
+            Ok "Guardado MOCHILA_ALMACEN=$Almacen en las variables de tu usuario"
         }
-        $env:DAM_ALMACEN = $Almacen
+        $env:MOCHILA_ALMACEN = $Almacen
     } else {
         Write-Host "    Aún no lo tienes en este equipo: después de elegir tu ciclo te ayudo a bajarlo o a crearlo."
     }
@@ -165,45 +185,45 @@ if ($Almacen) {
 # 6b. Tu ciclo, tus asignaturas y tu almacén ---------------------------------
 # Como adduser en Linux: pregunta qué estudias y deja acciones.json a tu medida. Al acabar ofrece
 # preparar el almacén (se llama como tu ciclo). Si no se configura, se prepara igual con crear-almacen.
-Paso "Tu ciclo y tus asignaturas (dam configurar)"
+Paso "Tu ciclo y tus asignaturas (mochila configurar)"
 # Sin función: en PowerShell lo que escribe una función es su resultado y no se verían las preguntas
 $Configurado = $false
 if (-not (Test-Path $Config)) {
-    uv run dam --config "$Config" configurar --plantilla acciones.json
+    uv run mochila --config "$Config" configurar --plantilla acciones.json
     if ($LASTEXITCODE -eq 0) {
         $Configurado = $true
     } else {
         New-Item -ItemType Directory -Force (Split-Path $Config) | Out-Null
         Copy-Item acciones.json $Config
         Aviso "No se ha configurado: he copiado las acciones de 1º de DAM a $Config."
-        Aviso "Cuando quieras, elige tu ciclo con:  dam configurar"
+        Aviso "Cuando quieras, elige tu ciclo con:  mochila configurar"
     }
 } elseif ((Get-FileHash acciones.json).Hash -eq (Get-FileHash $Config).Hash) {
-    Ok "Ya tienes $Config y está al día (para cambiar de ciclo o de curso: dam configurar)"
+    Ok "Ya tienes $Config y está al día (para cambiar de ciclo o de curso: mochila configurar)"
 } else {
     # O ya elegiste tus asignaturas o es de una instalación vieja (le faltarían las acciones nuevas)
     Aviso "Tu $Config no es igual que la del repo: ya elegiste tus asignaturas o es de una instalación vieja."
     $respuesta = Read-Host "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [s/N]"
     if ($respuesta -eq 's') {
-        uv run dam --config "$Config" configurar --plantilla acciones.json
-        if ($LASTEXITCODE -eq 0) { $Configurado = $true } else { Aviso "No he cambiado nada: dam seguirá usando la tuya." }
+        uv run mochila --config "$Config" configurar --plantilla acciones.json
+        if ($LASTEXITCODE -eq 0) { $Configurado = $true } else { Aviso "No he cambiado nada: mochila seguirá usando la tuya." }
     } else {
-        Aviso "No la toco: dam seguirá usando la tuya."
+        Aviso "No la toco: mochila seguirá usando la tuya."
     }
 }
 if (-not $Configurado) {
-    Paso "Tu almacén de apuntes (dam crear-almacen)"
-    uv run dam --config "$Config" crear-almacen
-    if ($LASTEXITCODE -ne 0) { Aviso "Sin almacén de momento. Cuando quieras:  dam crear-almacen" }
+    Paso "Tu almacén de apuntes (mochila crear-almacen)"
+    uv run mochila --config "$Config" crear-almacen
+    if ($LASTEXITCODE -ne 0) { Aviso "Sin almacén de momento. Cuando quieras:  mochila crear-almacen" }
 }
 
 # 6c. IA para las acciones que la usan --------------------------------------
 # Modelos gratis con OpenCode: funcionan en casa y no piden clave (ADR-0004). Se instala la misma
-# versión de OpenCode que usamos en clase: con ella está probado el agente de dam.
-Paso "IA para las acciones que la usan (dam configurar-ia)"
+# versión de OpenCode que usamos en clase: con ella está probado el agente de mochila.
+Paso "IA para las acciones que la usan (mochila configurar-ia)"
 $VersionOpenCode = "1.18.35"
-if (Test-Path (Join-Path $HOME ".config\dam\ia.json")) {
-    Ok "Ya elegiste el modelo (para cambiarlo: dam configurar-ia)"
+if (Test-Path (Join-Path $HOME ".config\mochila\ia.json")) {
+    Ok "Ya elegiste el modelo (para cambiarlo: mochila configurar-ia)"
 } else {
     if (-not (Tiene opencode)) {
         $respuesta = Read-Host "    Para usar modelos de IA gratis hace falta OpenCode. ¿Lo instalo? [S/n]"
@@ -220,16 +240,16 @@ if (Test-Path (Join-Path $HOME ".config\dam\ia.json")) {
     }
     if (Tiene opencode) {
         # Sin función: así se ven las preguntas (como en el paso 6b)
-        uv run dam configurar-ia
-        if ($LASTEXITCODE -ne 0) { Aviso "Sin IA de momento. Cuando quieras: dam configurar-ia" }
+        uv run mochila configurar-ia
+        if ($LASTEXITCODE -ne 0) { Aviso "Sin IA de momento. Cuando quieras: mochila configurar-ia" }
     } else {
-        Aviso "Sin OpenCode, las acciones con IA usan el servidor del centro (o elige con: dam configurar-ia)."
+        Aviso "Sin OpenCode, las acciones con IA usan el servidor del centro (o elige con: mochila configurar-ia)."
     }
 }
 
 # 7. Comprobación final ----------------------------------------------------
 Paso "Compruebo que todo funciona"
-uv run dam --config "$Config" validar
+uv run mochila --config "$Config" validar
 
 Write-Host ""
-Write-Host "Listo. Prueba:  dam --help   y   dam status"
+Write-Host "Listo. Prueba:  mochila --help   y   mochila status"

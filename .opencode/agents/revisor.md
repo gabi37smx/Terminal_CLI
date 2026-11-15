@@ -1,5 +1,5 @@
 ---
-description: Revisa el código de la CLI dam sin modificar nada y señala errores, casos feos y problemas multiplataforma
+description: Revisa el código de la CLI mochila sin modificar nada y señala errores, casos feos y problemas multiplataforma
 # all (no subagent): así sirve como @revisor y también para «opencode run --agent revisor»
 # en scripts/revisar.sh. Con subagent, opencode run lo ignora y usa el agente por defecto.
 mode: all

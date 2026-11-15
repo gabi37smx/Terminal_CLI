@@ -9,15 +9,15 @@ run = CliRunner()
 
 
 def tab(linea: str, env: dict | None = None) -> list[str]:
-    """Lo que dam sugeriría al pulsar TAB al final de «linea»."""
+    """Lo que mochila sugeriría al pulsar TAB al final de «linea»."""
     palabras = linea.split(" ")
     entorno = {
-        "_DAM_COMPLETE": "complete_bash",
+        "_MOCHILA_COMPLETE": "complete_bash",
         "COMP_WORDS": linea,
         "COMP_CWORD": str(len(palabras) - 1),
         **(env or {}),
     }
-    r = run.invoke(app, [], env=entorno, prog_name="dam")
+    r = run.invoke(app, [], env=entorno, prog_name="mochila")
     assert r.exit_code == 0, r.output
     assert "Traceback" not in r.output
     return r.output.split()
@@ -30,26 +30,26 @@ def escribir_config(carpeta, acciones):
 
 
 def test_completa_los_comandos():
-    assert {"status", "sync", "scan-secrets"} <= set(tab("dam s"))
+    assert {"status", "sync", "scan-secrets"} <= set(tab("mochila s"))
 
 
 def test_completa_los_nombres_de_las_acciones(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)  # dam busca primero ./acciones.json
+    monkeypatch.chdir(tmp_path)  # mochila busca primero ./acciones.json
     escribir_config(tmp_path, [
         {"nombre": "limpiar", "descripcion": "Borra .tmp", "tipo": "borrar",
          "filtro": {"extensiones": [".tmp"]}},
         {"nombre": "copiar-fotos", "descripcion": "Copia fotos", "tipo": "copiar",
          "destino": "~/pruebas-tareas/copia"},
     ])
-    assert tab("dam ejecutar ") == ["limpiar", "copiar-fotos"]
-    assert tab("dam ejecutar co") == ["copiar-fotos"]
+    assert tab("mochila ejecutar ") == ["limpiar", "copiar-fotos"]
+    assert tab("mochila ejecutar co") == ["copiar-fotos"]
 
 
 def test_con_acciones_json_roto_no_sugiere_nada_ni_falla(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "acciones.json").write_text("{ esto no es json", encoding="utf-8")
-    assert tab("dam ejecutar ") == []
-    assert tab("dam --config no-existe.json ejecutar ") == []
+    assert tab("mochila ejecutar ") == []
+    assert tab("mochila --config no-existe.json ejecutar ") == []
 
 
 def test_completa_las_asignaturas_del_almacen(tmp_path):
@@ -57,14 +57,14 @@ def test_completa_las_asignaturas_del_almacen(tmp_path):
     for nombre in ("programacion", "proyecto", "sistemas", "documentacio", ".oculta"):
         (asignaturas / nombre).mkdir(parents=True)
     (asignaturas / "notas.txt").write_text("no es una carpeta", encoding="utf-8")
-    env = {"DAM_ALMACEN": str(tmp_path)}
+    env = {"MOCHILA_ALMACEN": str(tmp_path)}
     # documentacio nunca se sube, las ocultas tampoco se ofrecen y los ficheros no son asignaturas
-    assert tab("dam status ", env) == ["programacion", "proyecto", "sistemas"]
-    assert tab("dam sync pr", env) == ["programacion", "proyecto"]
+    assert tab("mochila status ", env) == ["programacion", "proyecto", "sistemas"]
+    assert tab("mochila sync pr", env) == ["programacion", "proyecto"]
 
 
 def test_sin_almacen_no_sugiere_nada_ni_falla(tmp_path):
-    assert tab("dam status ", {"DAM_ALMACEN": str(tmp_path / "no-existe")}) == []
+    assert tab("mochila status ", {"MOCHILA_ALMACEN": str(tmp_path / "no-existe")}) == []
 
 
 def test_el_manual_explica_las_opciones_de_autocompletado_en_espanol():
@@ -73,20 +73,20 @@ def test_el_manual_explica_las_opciones_de_autocompletado_en_espanol():
     assert "--show-completion" in r.output
 
 
-# ---------- PowerShell: el script del TAB no debe dejar dam «atascado» ----------
+# ---------- PowerShell: el script del TAB no debe dejar mochila «atascado» ----------
 def script_powershell() -> str:
-    """Lo mismo que hace instalar.ps1: _DAM_COMPLETE=source_powershell y dam escribe el script."""
-    r = run.invoke(app, [], env={"_DAM_COMPLETE": "source_powershell"}, prog_name="dam")
+    """Lo mismo que hace instalar.ps1: _MOCHILA_COMPLETE=source_powershell y mochila escribe el script."""
+    r = run.invoke(app, [], env={"_MOCHILA_COMPLETE": "source_powershell"}, prog_name="mochila")
     assert r.exit_code == 0, r.output
     return r.output
 
 
 def test_el_script_de_powershell_borra_siempre_las_variables():
     script = script_powershell()
-    assert "Register-ArgumentCompleter -Native -CommandName dam" in script
-    # try/finally: aunque algo falle, las variables se borran (si no, dam solo imprime líneas en blanco)
+    assert "Register-ArgumentCompleter -Native -CommandName mochila" in script
+    # try/finally: aunque algo falle, las variables se borran (si no, mochila solo imprime líneas en blanco)
     assert script.index("try {") < script.index("finally {")
-    assert "Remove-Item Env:_DAM_COMPLETE" in script.split("finally {")[1]
+    assert "Remove-Item Env:_MOCHILA_COMPLETE" in script.split("finally {")[1]
     # una sugerencia vacía (TAB en una ruta) hacía fallar a PowerShell: ahora se salta
     assert "IsNullOrWhiteSpace($command)" in script
 
@@ -94,5 +94,5 @@ def test_el_script_de_powershell_borra_siempre_las_variables():
 def test_show_completion_usa_el_mismo_script():
     from typer._completion_shared import get_completion_script
 
-    script = get_completion_script(prog_name="dam", complete_var="_DAM_COMPLETE", shell="pwsh")
+    script = get_completion_script(prog_name="mochila", complete_var="_MOCHILA_COMPLETE", shell="pwsh")
     assert "finally {" in script and "%(" not in script

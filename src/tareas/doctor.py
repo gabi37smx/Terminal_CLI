@@ -1,4 +1,4 @@
-"""dam doctor: revisa que un proyecto esté sano antes de subirlo o entregarlo.
+"""mochila doctor: revisa que un proyecto esté sano antes de subirlo o entregarlo.
 
 Comprobaciones básicas (si falla alguna, sale con 1): git, .gitignore, .env ignorado y sin subir,
 .env.example con las mismas variables, README y sin secretos a la vista. Recomendadas (solo avisan):
@@ -78,7 +78,7 @@ def repos_dentro(raiz: Path) -> list[str]:
 def es_carpeta_personal(raiz: Path) -> bool:
     """¿Es tu carpeta personal (~) y no un repositorio? Ahí no hay un proyecto que revisar.
 
-    13-nov, en clase: «dam doctor» en una terminal nueva (que empieza en ~) revisó todo: certificados de
+    13-nov, en clase: «mochila doctor» en una terminal nueva (que empieza en ~) revisó todo: certificados de
     librerías en .cache como «secretos», .nvm/package.json como «dependencias»... y tardó.
     """
     try:
@@ -170,7 +170,7 @@ def _secretos(raiz: Path, ficheros: list[Path]) -> Comprobacion:
         return Comprobacion("Sin secretos a la vista", "ok", f"Ninguno seguro en {revisados} ficheros.")
     donde = _lista({h.donde for h in hallazgos})
     return Comprobacion("Sin secretos a la vista", "falta",
-                        f"{len(hallazgos)} en {donde}. Míralos con dam scan-secrets.")
+                        f"{len(hallazgos)} en {donde}. Míralos con mochila scan-secrets.")
 
 
 # ---------- recomendadas ----------
