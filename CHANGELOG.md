@@ -83,6 +83,8 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Arreglado
 
+- Al leer algunos PDF (resúmenes, `ordenar`), pypdf llenaba la terminal de avisos como «fontTools is
+  required...» aunque el texto salía bien. Ahora solo se ven sus errores de verdad.
 - Lo que no entendió el compañero de la instalación cruzada: `mochila ordenar` dice que `ordenar` es
   una acción y da la orden buena (`mochila ejecutar ordenar CARPETA --simular`); `ejecutar` sin
   carpeta explica que hay que decirla (`.` es la carpeta en la que estás) en vez de quejarse de la
