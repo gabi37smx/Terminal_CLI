@@ -240,8 +240,9 @@ el contenido de los PDF y de los `.odt`, `.docx`, `.pptx`... con su cabecera y p
 confirmación), `convertir-webp` (JPEG/PNG a WebP sin tocar el original), `renombrar-capturas`
 (capturas con fecha y número), `copiar-entregas` (copia entregas y prácticas a una carpeta de
 seguridad) y `mover-zips` (mueve los `.zip` a la subcarpeta `comprimidos`).
-Con IA: `resumir-tema` (resume cada tema en un `.md`, en castellano aunque el apunte esté en
-valenciano), `nombrar-descargas` (pone nombre por su contenido a los `escaneo_0042.pdf` o
+Con IA: `resumir-tema` (resume cada tema en un `.resumen.md` **al lado del apunte**, en castellano
+aunque esté en valenciano; lee el tema entero y el resumen es más largo cuanto más largo es: una
+viñeta por cada 2 páginas, entre 6 y 40, en apartados), `nombrar-descargas` (pone nombre por su contenido a los `escaneo_0042.pdf` o
 `documento (3).pdf`) y `clasificar-asignatura` (lee los apuntes que `ordenar` no sabe colocar y los
 lleva a la carpeta de su asignatura).
 

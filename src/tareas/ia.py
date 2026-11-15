@@ -33,7 +33,7 @@ from .errores import IANoDisponible
 
 # El que trae el OpenCode del centro (13-nov: el antiguo «qwen3.8-flash-next» ya da 403)
 MODELO_POR_DEFECTO = "Qwen38-DualSpark-medium"
-SEGUNDOS_CENTRO = 120  # en clase, solo para decir «ok» tardó 31 s: con 60 s un resumen se cortaba
+SEGUNDOS_CENTRO = 300  # en clase, solo decir «ok» tardó 31 s, y un resumen de un tema largo tarda más
 # Los modelos «thinking» pueden devolver su razonamiento entre <think> y </think>: no es la respuesta
 PENSAMIENTO = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 
@@ -191,7 +191,7 @@ RECOMENDADOS = (
     "opencode/glm-5.3-flash-free",
     "opencode/minimax-m3.1-flash-free",
 )
-SEGUNDOS_OPENCODE = 180  # un modelo gratis puede tardar: mejor esperar que cortar a mitad
+SEGUNDOS_OPENCODE = 300  # un modelo gratis puede tardar (y más con un tema largo): mejor esperar que cortar
 
 # El agente que usa mochila. «read» no se puede quitar (sin ninguna herramienta, la 1.18.35 se queda
 # colgada), así que se deja solo dentro de su carpeta temporal, que está vacía: external_directory
