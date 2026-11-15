@@ -203,8 +203,9 @@ if (-not (Test-Path $Config)) {
 } else {
     # O ya elegiste tus asignaturas o es de una instalación vieja (le faltarían las acciones nuevas)
     Aviso "Tu $Config no es igual que la del repo: ya elegiste tus asignaturas o es de una instalación vieja."
-    $respuesta = Read-Host "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [s/N]"
-    if ($respuesta -eq 's') {
+    # Enter es «sí»: te propone lo que ya elegiste y guarda copia, y así te llegan las acciones nuevas
+    $respuesta = Read-Host "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [S/n]"
+    if ($respuesta.Trim() -notmatch '^(n|no)$') {
         uv run mochila --config "$Config" configurar --plantilla acciones.json
         if ($LASTEXITCODE -eq 0) { $Configurado = $true } else { Aviso "No he cambiado nada: mochila seguirá usando la tuya." }
     } else {

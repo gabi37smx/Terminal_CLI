@@ -329,3 +329,19 @@ def test_ordenar_al_almacen_sin_git_no_ofrece_sync(tmp_path, monkeypatch):
     salida = " ".join(r.output.split())  # sin los saltos de línea de la consola
     assert "no es un repositorio git" in salida
     assert "¿Hago ahora mochila sync" not in salida
+
+
+def test_con_enter_en_todo_guarda_y_crea_las_carpetas(entorno):
+    # Lo que hizo el compañero de la instalación cruzada: Enter, Enter, Enter
+    r = lanzar(entorno, "--ciclo", "daw", "--curso", "1", entrada="\n\n\n")
+    assert r.exit_code == 0, r.output
+    salida = plano(r)
+    assert "¿Quieres quitar o añadir alguna? [s/N]" in salida  # esta, Enter es «no»
+    assert "[S/n]" in salida                                     # guardar y crear carpetas: Enter es «sí»
+    assert entorno["destino"].is_file()
+    assert (entorno["almacen"] / "lenguaje-marcas").is_dir() and (entorno["almacen"] / "entornos").is_dir()
+
+
+def test_n_sigue_diciendo_que_no(entorno):
+    r = lanzar(entorno, "--ciclo", "daw", "--curso", "1", entrada="\nn\n")
+    assert r.exit_code != 0 and not entorno["destino"].exists()  # «n» a guardar: no se guarda nada

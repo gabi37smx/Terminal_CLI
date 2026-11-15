@@ -232,8 +232,10 @@ else
     # O ya elegiste tus asignaturas o es de una instalación vieja (le faltarían las acciones nuevas)
     aviso "Tu $CONFIG no es igual que la del repo: ya elegiste tus asignaturas o es de una instalación vieja."
     respuesta=""
-    read -rp "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [s/N]: " respuesta || true
-    if [ "$respuesta" = "s" ] || [ "$respuesta" = "S" ]; then
+    # Enter es «sí»: te propone lo que ya elegiste y guarda copia, y así te llegan las acciones nuevas
+    read -rp "    ¿La rehago con las acciones del repo? Te propongo lo que elegiste y guardo una copia [S/n]: " respuesta || true
+    case "$respuesta" in n|N|no|No|NO) respuesta=n ;; *) respuesta=s ;; esac
+    if [ "$respuesta" = "s" ]; then
         if configurar; then configurado=1; else aviso "No he cambiado nada: mochila seguirá usando la tuya."; fi
     else
         aviso "No la toco: mochila seguirá usando la tuya."
