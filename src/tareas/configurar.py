@@ -49,6 +49,14 @@ def palabras_al_dia(asignaturas: dict[str, list[str]]) -> dict[str, list[str]]:
     return resultado
 
 
+def _poner_o_quitar(accion: dict, campo: str, valor: dict) -> None:
+    """Pone el campo si tiene algo; si está vacío, lo quita (un {} en acciones.json solo confunde)."""
+    if valor:
+        accion[campo] = valor
+    else:
+        accion.pop(campo, None)
+
+
 def _cambiar_curso(texto: str, etiqueta: str) -> str:
     """'...por asignatura del DAM...' -> '...por asignatura de 1º de SMX...'."""
     return _CURSO_EN_TEXTO.sub(lambda m: (f"de {etiqueta}" if m.group(1) else etiqueta), texto)
@@ -84,12 +92,12 @@ def aplicar(plantilla: dict, ciclo: str, cursos: list[int], asignaturas: dict[st
             continue
         if accion.get("tipo") == "ordenar" and accion.get("carpetas") != asignaturas:
             accion["carpetas"] = {k: list(v) for k, v in asignaturas.items()}
-            extensiones = ciclos.por_extension(nombres)
-            if extensiones:
-                accion["por_extension"] = extensiones
-            else:
-                accion.pop("por_extension", None)
+            _poner_o_quitar(accion, "siglas", ciclos.siglas_de(nombres))
+            _poner_o_quitar(accion, "por_extension", ciclos.por_extension(nombres))
             accion["descripcion"] = _cambiar_curso(accion.get("descripcion", ""), etiqueta)
+        elif accion.get("tipo") == "ordenar" and "siglas" not in accion:
+            # Mismas asignaturas, de antes de que hubiera siglas: se añaden sin tocar lo que afinaste
+            _poner_o_quitar(accion, "siglas", ciclos.siglas_de(nombres))
         elif accion.get("tipo") == "clasificar" and accion.get("categorias") != categorias:
             accion["categorias"] = categorias
             accion["instrucciones"] = instrucciones(etiqueta, asignaturas)

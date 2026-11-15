@@ -6,7 +6,7 @@
   "acciones": [
     {
       "nombre": "ordenar",
-      "descripcion": "Ordena los ficheros por asignatura del DAM y los mete en tu almacén; lo demás, a ~/Datos/POR-TIPO (por nombre, extensión y contenido del PDF, .odt o .docx; dentro, a la carpeta de su unidad si existe)",
+      "descripcion": "Ordena los ficheros por asignatura del DAM y los mete en tu almacén; lo demás, a ~/Datos/POR-TIPO (por nombre, extensión y contenido del PDF, .odt o .docx; dentro, a la carpeta de su unidad, que crea si no está)",
       "tipo": "ordenar",
       "origen": "~/pruebas-tareas/prueba-final",
       "carpetas": {
@@ -18,7 +18,9 @@
           "mysql",
           "consulta",
           "taula",
-          "tabla"
+          "tabla",
+          "sgbd",
+          "bbdd"
         ],
         "entornos": [
           "entorns",
@@ -92,6 +94,31 @@
           "maquinari",
           "xarxa",
           "windows"
+        ]
+      },
+      "siglas": {
+        "bases-datos": [
+          "bd",
+          "bbdd",
+          "gbd"
+        ],
+        "entornos": [
+          "ed"
+        ],
+        "lenguaje-marcas": [
+          "lm",
+          "llmm",
+          "lmsgi"
+        ],
+        "programacion": [
+          "prg",
+          "prog"
+        ],
+        "proyecto": [
+          "pi"
+        ],
+        "sistemas": [
+          "si"
         ]
       },
       "por_extension": {

@@ -317,7 +317,7 @@ def test_ordenar_al_almacen_simular(al_almacen):
     descargas, almacen, cfg, llamadas = al_almacen
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--simular"])
     assert r.exit_code == 0, r.output
-    assert "DAM-almacen" in r.output and "no está en el almacén" in r.output
+    assert "DAM-almacen" in r.output and "no tiene carpeta en tu almacén" in r.output
     assert (descargas / "linux tema 1.pdf").exists() and not llamadas
 
 
@@ -325,7 +325,7 @@ def test_ordenar_al_almacen_y_no_sincroniza(al_almacen):
     descargas, almacen, cfg, llamadas = al_almacen
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas)], input="s\nn\n")
     assert r.exit_code == 0, r.output
-    assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
+    assert (almacen / "asignaturas" / "sistemas" / "UD01" / "linux tema 1.pdf").exists()
     assert (descargas / "apuntes sql.txt").exists()  # su asignatura no está en el almacén: no se inventa
     assert not (almacen / "asignaturas" / "bases-datos").exists()
     assert "mochila sync" in r.output and "Cuando quieras" in r.output and not llamadas
@@ -343,7 +343,7 @@ def test_ordenar_al_almacen_con_si_no_pregunta_ni_sincroniza(al_almacen):
     descargas, almacen, cfg, llamadas = al_almacen
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--si"])
     assert r.exit_code == 0, r.output
-    assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
+    assert (almacen / "asignaturas" / "sistemas" / "UD01" / "linux tema 1.pdf").exists()
     assert "mochila sync" in r.output and not llamadas
 
 
@@ -351,7 +351,7 @@ def test_ordenar_al_almacen_sin_almacen(al_almacen, tmp_path, monkeypatch):
     descargas, almacen, cfg, llamadas = al_almacen
     monkeypatch.setenv("MOCHILA_ALMACEN", str(tmp_path / "no-esta"))
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas), "--si"])
-    assert r.exit_code == 1 and "No encuentro las asignaturas" in r.output
+    assert r.exit_code == 1 and "mochila crear-almacen" in " ".join(r.output.split())
     assert (descargas / "linux tema 1.pdf").exists()
 
 
@@ -399,7 +399,7 @@ def test_ordenar_al_almacen_y_por_tipo(al_almacen, tmp_path):
     (descargas / "desktop.ini").write_text("x", encoding="utf-8")
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas)], input="s\ns\n")
     assert r.exit_code == 0, r.output
-    assert (almacen / "asignaturas" / "sistemas" / "linux tema 1.pdf").exists()
+    assert (almacen / "asignaturas" / "sistemas" / "UD01" / "linux tema 1.pdf").exists()
     assert (tmp_path / "Datos" / "POR-TIPO" / "DOCUMENTOS" / "misterio.txt").exists()
     assert (descargas / "desktop.ini").exists()
     # mochila sync solo cuenta lo que ha entrado en el almacén

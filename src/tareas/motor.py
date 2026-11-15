@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import re
 import time
 from pathlib import Path
@@ -23,6 +24,15 @@ def describir_filtro(filtro: dict) -> str:
     if "mayor_que_mb" in filtro:
         partes.append(f"de más de {filtro['mayor_que_mb']} MB")
     return "; ".join(partes) or "sin filtro"
+
+
+def sugerir(nombre: str, opciones: list[str]) -> str | None:
+    """La opción que seguramente querías: «clasificar» -> «clasificar-asignatura». Si no está claro, None."""
+    empiezan = [o for o in opciones if o.startswith(nombre)]
+    if len(empiezan) == 1:
+        return empiezan[0]
+    parecidas = difflib.get_close_matches(nombre, opciones, n=1, cutoff=0.75)
+    return parecidas[0] if parecidas else None
 
 
 class Motor:
@@ -62,9 +72,9 @@ class Motor:
         """Resuelve la acción y los ficheros SIN tocar nada (sirve para pedir confirmación)."""
         accion = self.acciones.get(nombre)
         if accion is None:
-            raise TareasError(
-                f"No hay ninguna acción «{nombre}». Mira la lista con: mochila acciones"
-            )
+            parecida = sugerir(nombre, list(self.acciones))
+            pista = f" ¿Querías decir «{parecida}»?" if parecida else ""
+            raise TareasError(f"No hay ninguna acción «{nombre}».{pista} Mira la lista con: mochila acciones")
         origen = carpeta if carpeta is not None else accion.config.get("origen")
         if origen is None:
             raise TareasError("Indica una CARPETA o define «origen» en la acción")
@@ -77,6 +87,12 @@ class Motor:
                                   "no hago nada")
         elif origen.is_dir():
             ficheros = self.seleccionar(origen, filtro)
+        elif carpeta is None:
+            # «mochila ejecutar ordenar» sin carpeta: el origen de la acción es de ejemplo y aquí no está
+            raise TareasError(
+                f"Dime qué carpeta o fichero: mochila ejecutar {nombre} CARPETA (un punto, «.», es la carpeta "
+                f"en la que estás). Sin ella uso la de la acción, {origen}, y no existe."
+            )
         else:
             raise TareasError(f"{origen} no existe (ni como carpeta ni como fichero)")
         if accion.necesita_ia:

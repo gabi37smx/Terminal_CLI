@@ -50,7 +50,7 @@ ASIGNATURAS: dict[str, Asignatura] = {
     # --- 1º de DAM y DAW (las palabras son las del acciones.json del repo: no cambiarlas sin él) ---
     "bases-datos": A("Bases de datos", "Bases de dades",
                      ("base de dades", "bases de dades", "bases de datos", "sql", "mysql", "consulta",
-                      "taula", "tabla"),
+                      "taula", "tabla", "sgbd", "bbdd"),
                      (".sql", ".db")),
     "entornos": A("Entornos de desarrollo", "Entorns de desenvolupament",
                   ("entorns", "entornos", "git", "ide", "compilador", "docker")),
@@ -172,6 +172,38 @@ ASIGNATURAS: dict[str, Asignatura] = {
                       (".sh", ".bat", ".ps1")),
 }
 
+# Siglas del módulo, como salen en los nombres de los ficheros del aula («LM_Tema01.pdf», «ED_Git.pdf»).
+# Solo se buscan en el NOMBRE del fichero, nunca dentro: en un PDF, «ed» (edición) o «pi» salen por
+# casualidad. Solo las que se usan seguro; si falta alguna, se añade aquí (y al acciones.json del repo).
+SIGLAS: dict[str, tuple[str, ...]] = {
+    # 1º de DAM y DAW
+    "bases-datos": ("bd", "bbdd", "gbd"),  # GBD: Gestión de bases de datos en ASIR
+    "entornos": ("ed",),
+    "lenguaje-marcas": ("lm", "llmm", "lmsgi"),
+    "programacion": ("prg", "prog"),
+    "sistemas": ("si",),
+    "proyecto": ("pi",),
+    # 2º de DAM
+    "acceso-datos": ("ad",),
+    "interfaces": ("di",),
+    "moviles": ("pmdm",),
+    "servicios-procesos": ("psp",),
+    "gestion-empresarial": ("sge",),
+    # 2º de DAW
+    "cliente": ("dwec",),
+    "servidor": ("dwes",),
+    "diseno-interfaces": ("diw",),
+    # ASIR
+    "sistemas-operativos": ("iso",),
+    "redes": ("par",),
+    "hardware": ("fh",),
+    "admin-sistemas": ("aso",),
+    "servicios-red": ("sri",),
+    "aplicaciones-web": ("iaw",),
+    "admin-bases-datos": ("asgbd",),
+    "seguridad": ("sad",),
+}
+
 DAM_DAW_1 = ["bases-datos", "entornos", "ingles", "ipo", "lenguaje-marcas", "programacion", "proyecto", "sistemas"]
 COMUNES_2 = ["ipo", "proyecto", "digitalizacion", "sostenibilidad"]
 
@@ -238,6 +270,11 @@ def por_extension(asignaturas: list[str]) -> dict[str, str]:
         for ext in ASIGNATURAS[nombre].extensiones if nombre in ASIGNATURAS else ():
             resultado.setdefault(ext, nombre)
     return resultado
+
+
+def siglas_de(asignaturas: list[str]) -> dict[str, list[str]]:
+    """{"lenguaje-marcas": ["lm", "llmm", "lmsgi"], ...} para las de esa lista que tienen siglas."""
+    return {nombre: list(SIGLAS[nombre]) for nombre in asignaturas if nombre in SIGLAS}
 
 
 def nombre_largo(asignatura: str) -> str:

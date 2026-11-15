@@ -70,6 +70,11 @@ def test_fichero_inexistente(tmp_path):
     (con_accion(tipo="ordenar", carpetas={"a": ["x"]}, por_tipo=""), "por_tipo"),
     (con_accion(unidades=False), "unidades"),  # solo en ordenar
     (con_accion(tipo="ordenar", carpetas={"a": ["x"]}, unidades="no"), "unidades"),
+    (con_accion(crear_unidades=False), "crear_unidades"),  # solo en ordenar
+    (con_accion(tipo="ordenar", carpetas={"a": ["x"]}, crear_unidades="no"), "crear_unidades"),
+    (con_accion(siglas={"a": ["x"]}), "siglas"),  # solo en ordenar
+    (con_accion(tipo="ordenar", carpetas={"a": ["x"]}, siglas={"b": ["x"]}), "siglas.b"),
+    (con_accion(tipo="ordenar", carpetas={"a": ["x"]}, siglas={"a": "lm"}), "siglas.a"),
 ])
 def test_casos_feos_dicen_accion_y_campo(tmp_path, datos, campo):
     with pytest.raises(AccionNoValida) as e:

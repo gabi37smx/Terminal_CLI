@@ -404,12 +404,8 @@ def unidad_de(texto_normalizado: str) -> int | None:
     return numeros.pop() if len(numeros) == 1 else None
 
 
-def carpeta_de_unidad(base: Path, numero: int, niveles: int = 3) -> Path | None:
-    """La carpeta de esa unidad dentro de la asignatura («unitat 1», «UD01», «Tema 1»...), hasta 3 niveles.
-
-    Si hay varias, la menos profunda; si empatan, ninguna (mejor en la asignatura que en otra unidad).
-    Nunca se crea: si no está, el fichero se queda en la carpeta de la asignatura.
-    """
+def _carpetas_de_unidad(base: Path, numero: int, niveles: int = 3) -> list[tuple[int, Path]]:
+    """Todas las carpetas de esa unidad dentro de la asignatura, hasta 3 niveles: [(profundidad, ruta)]."""
     candidatas: list[tuple[int, Path]] = []
     for raiz, carpetas, _ in os.walk(base):
         profundidad = len(Path(raiz).relative_to(base).parts) + 1
@@ -419,12 +415,42 @@ def carpeta_de_unidad(base: Path, numero: int, niveles: int = 3) -> Path | None:
                 candidatas.append((profundidad, Path(raiz) / carpeta))
         if profundidad >= niveles:
             carpetas[:] = []  # no bajar más
+    return candidatas
+
+
+def carpeta_de_unidad(base: Path, numero: int, niveles: int = 3) -> Path | None:
+    """La carpeta de esa unidad dentro de la asignatura («unitat 1», «UD01», «Tema 1»...), hasta 3 niveles.
+
+    Si hay varias, la menos profunda; si empatan, ninguna (mejor en la asignatura que en otra unidad).
+    """
+    candidatas = _carpetas_de_unidad(base, numero, niveles)
     if not candidatas:
         return None
     menor = min(p for p, _ in candidatas)
     mas_arriba = [c for p, c in candidatas if p == menor]
     return mas_arriba[0] if len(mas_arriba) == 1 else None
 
+
+# Una carpeta de unidad «solo número», para copiar su estilo: «UD1», «UD 01», «Tema 3», «Unitat-02»...
+_SOLO_UNIDAD = re.compile(r"^(?P<pre>(?:u\.?\s?d\.?|unitat|unidad|unit|tema)[\s_-]?)(?P<num>\d{1,2})$", re.IGNORECASE)
+
+
+def nombre_carpeta_unidad(base: Path, numero: int) -> str:
+    """Cómo llamar a la carpeta nueva de la unidad: como las que ya hay en la asignatura o, si no, «UD01».
+
+    Con dos cifras («UD01», «UD02»... «UD10») quedan en orden en cualquier explorador de archivos.
+    """
+    if base.is_dir():
+        for carpeta in sorted(base.iterdir()):
+            parecida = _SOLO_UNIDAD.match(carpeta.name) if carpeta.is_dir() else None
+            if parecida:
+                cifras = len(parecida["num"]) if parecida["num"].startswith("0") else 1
+                return f"{parecida['pre']}{numero:0{cifras}d}"
+    return f"UD{numero:02d}"
+
+
+# Tipos de fichero que nunca son apuntes: un «Git-2.56-64-bit.exe» no es de Entornos aunque diga «git»
+NUNCA_APUNTES = {"instaladores"}
 
 # Plan B de ordenar («por_tipo»): el tipo de mochila inventario -> su carpeta (en MAYÚSCULAS, como en ~/Datos/POR-TIPO)
 CARPETA_POR_TIPO = {"documentos": "DOCUMENTOS", "imagenes": "IMAGENES", "video": "VIDEO", "audio": "AUDIO",
@@ -444,6 +470,11 @@ class Ordenar(Accion):
         self._claves = {
             asignatura: [k for k in (_normalizar(c) for c in [*claves, asignatura]) if k]
             for asignatura, claves in config["carpetas"].items()
+        }
+        # Las siglas («lm», «ed», «bd»...) solo cuentan en el nombre del fichero (ver ciclos.SIGLAS)
+        self._siglas = {
+            asignatura: [s for s in (_normalizar(x) for x in siglas) if s]
+            for asignatura, siglas in config.get("siglas", {}).items() if asignatura in self._claves
         }
 
     def _sumar(self, puntos: dict[str, int], texto: str, peso: int) -> None:
@@ -473,6 +504,9 @@ class Ordenar(Accion):
 
         puntos = dict.fromkeys(self._claves, 0)
         self._sumar(puntos, nombre, 2)  # el nombre pesa más
+        palabras_nombre = set(nombre.split())
+        for asignatura, siglas in self._siglas.items():
+            puntos[asignatura] += 2 * sum(1 for s in siglas if s in palabras_nombre)
         por_ext = {k.lower(): v for k, v in self.config.get("por_extension", {}).items()}
         asignatura_ext = por_ext.get(fichero.suffix.lower())
         if asignatura_ext in puntos:
@@ -493,17 +527,18 @@ class Ordenar(Accion):
     def aplicar(self, fichero, n, simular):
         if fichero.name.lower() in DEL_SISTEMA or fichero.name.startswith(".") or es_basura(fichero.name):
             return Resultado(fichero, None, "saltado", "del sistema, temporal o a medio descargar")
-        asignatura, unidad = self.analizar(fichero)
+        if tipo_de(fichero.name) in NUNCA_APUNTES:
+            asignatura, unidad = None, None
+        else:
+            asignatura, unidad = self.analizar(fichero)
         nota = ""
         if asignatura is not None:
             carpeta = self._carpeta_destino(fichero) / asignatura
             if self.config.get("al_almacen") and not carpeta.is_dir():  # en el almacén no se inventan asignaturas
-                return Resultado(fichero, None, "saltado", f"«{asignatura}» no está en el almacén")
-            # Si dice de qué unidad es y la asignatura ya tiene esa carpeta, dentro (nunca se crea)
-            subcarpeta = carpeta_de_unidad(carpeta, unidad) if unidad is not None and carpeta.is_dir() else None
-            if subcarpeta is not None:
-                carpeta = subcarpeta
-                nota = f"unidad {unidad}"
+                return Resultado(fichero, None, "saltado",
+                                 f"«{asignatura}» no tiene carpeta en tu almacén (créala con: mochila configurar)")
+            if unidad is not None:
+                carpeta, nota = self._carpeta_unidad(carpeta, unidad)
         elif self.config.get("por_tipo"):  # plan B: no es de ninguna asignatura
             carpeta = Path(self.config["por_tipo"]).expanduser() / CARPETA_POR_TIPO.get(tipo_de(fichero.name), "OTROS")
             nota = "por tipo"
@@ -514,6 +549,19 @@ class Ordenar(Accion):
             carpeta.mkdir(parents=True, exist_ok=True)
             shutil.move(fichero, destino)
         return Resultado(fichero, destino, "simulado" if simular else "hecho", nota)
+
+    def _carpeta_unidad(self, asignatura: Path, unidad: int) -> tuple[Path, str]:
+        """Dónde va un fichero de esa unidad: su carpeta si ya está y, si no, una nueva («UD02»).
+
+        Si hay dos carpetas de esa unidad igual de arriba, no se adivina ni se crea una tercera: se queda
+        en la asignatura. Con «"crear_unidades": false» en la acción, nunca se crean.
+        """
+        existente = carpeta_de_unidad(asignatura, unidad)
+        if existente is not None:
+            return existente, f"unidad {unidad}"
+        if _carpetas_de_unidad(asignatura, unidad) or self.config.get("crear_unidades") is False:
+            return asignatura, ""
+        return asignatura / nombre_carpeta_unidad(asignatura, unidad), f"unidad {unidad} (carpeta nueva)"
 
 
 class Convertir(Accion):

@@ -26,7 +26,7 @@ from tareas import pendientes as pendientes_mod
 from tareas import readme as readme_mod
 from tareas.errores import ConfigError, GitError, IANoDisponible, TareasError
 from tareas.inventario import tamano_legible
-from tareas.motor import Motor
+from tareas.motor import Motor, sugerir
 from typer import _completion_classes, _completion_shared, rich_utils
 
 
@@ -116,7 +116,37 @@ def ruta_con_comillas_metidas(argumentos: list[str]) -> Optional[str]:
     return None
 
 
-class Dam(typer.Typer):
+def accion_en_vez_de_comando(argumentos: list[str]) -> Optional[tuple[str, str]]:
+    """«mochila ordenar ~/Descargas»: ordenar es una ACCIÓN y va con ejecutar. Devuelve (acción, orden buena).
+
+    Solo si el primer argumento no es un comando y es (o se parece a) una acción de tu acciones.json.
+    """
+    resto, ruta_config, previas = list(argumentos), None, []
+    while resto and resto[0].startswith("-"):  # opciones de antes del comando: solo --config
+        opcion = resto.pop(0)
+        if opcion == "--config" and resto:
+            ruta_config = resto.pop(0)
+        elif opcion.startswith("--config="):
+            ruta_config = opcion.split("=", 1)[1]
+        else:
+            return None  # --help, --version...: eso lo atiende Typer
+        previas = ["--config", _citar(ruta_config)]
+    if not resto or resto[0] in typer.main.get_command(app).commands:
+        return None
+    try:
+        acciones = [a["nombre"] for a in config.cargar(config.buscar(Path(ruta_config) if ruta_config else None))]
+    except TareasError:
+        return None  # sin acciones.json que mirar: el «No existe el comando» de siempre
+    accion = resto[0] if resto[0] in acciones else sugerir(resto[0], acciones)
+    if accion is None:
+        return None
+    detras = [_citar(a) for a in resto[1:]] or ["CARPETA"]
+    if "--simular" not in detras:
+        detras.append("--simular")
+    return accion, " ".join(["mochila", *previas, "ejecutar", accion, *detras])
+
+
+class Mochila(typer.Typer):
     """El Typer de siempre, pero antes de nada revisa los argumentos tal y como llegan de la terminal."""
 
     def __call__(self, *args, **kwargs):
@@ -126,6 +156,13 @@ class Dam(typer.Typer):
                               "antes de las comillas de cierre se las come (el TAB de PowerShell la añade).")
             consola_err.print(f"Quita la \\ del final y repite:  [bold]{escape(corregida)}[/bold]")
             raise SystemExit(2)  # 2 = uso incorrecto
+        es_accion = accion_en_vez_de_comando(sys.argv[1:])
+        if es_accion:
+            accion, orden = es_accion
+            consola_err.print(f"[red]✘ «{escape(accion)}» es una acción, no un comando:[/red] las acciones se "
+                              "lanzan con [bold]ejecutar[/bold]. Prueba primero sin tocar nada:")
+            consola_err.print(f"  [bold]{escape(orden)}[/bold]")
+            raise SystemExit(2)
         try:
             return super().__call__(*args, **kwargs)
         except OSError as e:
@@ -149,7 +186,7 @@ def _salida_cerrada() -> bool:
         return True
 
 
-app = Dam(
+app = Mochila(
     help="mochila: automatiza tareas con ficheros y mantiene tu almacén de apuntes sincronizado.",
     no_args_is_help=False,
     add_completion=True,  # --install-completion / --show-completion y el TAB (ver completar_*)
@@ -645,7 +682,7 @@ def ejecutar(
 
     Nunca sobrescribe: si el destino ya existe, añade « (1)». Sale con 1 si algún fichero falla.
 
-    Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén (y dentro, a la carpeta de su unidad si ya existe: «unitat 1», «UD01», «Tema 1»...) y, al acabar, pregunta si quieres hacer mochila sync (con --si no lo hace: te lo recuerda).
+    Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén (y dentro, a la carpeta de su unidad: «unitat 1», «UD01», «Tema 1»...; si no la hay, la crea) y, al acabar, pregunta si quieres hacer mochila sync (con --si no lo hace: te lo recuerda).
 
     Con «por_tipo»: "~/Datos/POR-TIPO", lo que no es de ninguna asignatura va a POR-TIPO/DOCUMENTOS, IMAGENES, COMPRIMIDOS... Los ficheros del sistema, temporales y descargas a medias (desktop.ini, .crdownload, .part...) no se mueven nunca.
     """
@@ -658,10 +695,12 @@ def ejecutar(
     if accion.config.get("al_almacen"):
         almacen = _abrir_almacen(ctx, None)
         asignaturas = almacen.ruta / almacen.carpeta_asignaturas
+        if not almacen.ruta.is_dir():
+            raise TareasError(f"Aún no tienes tu almacén de apuntes en este equipo ({almacen.ruta}). "
+                              "Prepáralo con: mochila crear-almacen")
         if not asignaturas.is_dir():
-            raise TareasError(f"No encuentro las asignaturas de tu almacén en «{asignaturas}». "
-                              "Revisa la variable MOCHILA_ALMACEN o «almacen» en acciones.json. "
-                              "Si el almacén es nuevo, mochila configurar te ofrece crear las carpetas de asignatura.")
+            raise TareasError(f"Tu almacén ({almacen.ruta}) aún no tiene las carpetas de tus asignaturas. "
+                              "Créalas con: mochila configurar (te pregunta si las creo)")
         accion.config["destino"] = str(asignaturas)
     if not ficheros:
         consola.print("Ningún fichero cumple el filtro: no hay nada que hacer.")

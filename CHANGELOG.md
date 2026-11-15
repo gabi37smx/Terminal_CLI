@@ -17,6 +17,13 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Añadido
 
+- `ordenar` **crea la carpeta de la unidad** si el apunte dice de cuál es («UD1», «Tema 4») y aún no
+  está: `UD01`, `UD02`... o con el estilo de las que ya tengas («Tema 2»). Con `"crear_unidades": false`
+  solo usa las que existen.
+- `ordenar` reconoce las **siglas del módulo** en el nombre del fichero (`LM_Tema01.pdf`,
+  `ED_Git.pdf`, `BD`, `PRG`, `DWEC`, `ISO`...). Solo en el nombre: dentro de un PDF, «si» o «pi»
+  salen por casualidad. `mochila configurar` pone las de tu ciclo.
+
 - Si OpenCode ya usa el servidor del centro, `dam configurar-ia` ofrece usar esos mismos datos: no
   hace falta copiar la dirección ni la clave (la clave se queda en OpenCode y se lee al momento). Y si
   no defines `CENTRO_IA_CA`, `dam` usa el certificado de `NODE_EXTRA_CA_CERTS`, como OpenCode.
@@ -65,6 +72,13 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Arreglado
 
+- Lo que no entendió el compañero de la instalación cruzada: `mochila ordenar` dice que `ordenar` es
+  una acción y da la orden buena (`mochila ejecutar ordenar CARPETA --simular`); `ejecutar` sin
+  carpeta explica que hay que decirla (`.` es la carpeta en la que estás) en vez de quejarse de la
+  carpeta de pruebas; una acción mal escrita propone la parecida (`clasificar` → `clasificar-asignatura`);
+  y sin almacén o sin carpetas de asignaturas dice qué escribir (`crear-almacen` o `configurar`).
+- `ordenar` ya no mete un instalador en una asignatura porque su nombre diga «git» o «linux»: va a
+  `INSTALADORES`. Y un `.html` de bases de datos («BD», «SGBD») ya no va a lenguaje de marcas.
 - `instalar.cmd` en un Windows recién instalado ya no da un error en rojo al activar el TAB: crea la
   carpeta `.config\dam` antes de guardar el script, y si no puede generarlo no toca tu perfil de
   PowerShell. Lo encontró la instalación cruzada con un compañero de ASIR.
