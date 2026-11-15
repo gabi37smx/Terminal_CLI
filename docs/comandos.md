@@ -8,8 +8,9 @@
 ## 0. Ayuda integrada
 
 ```powershell
-mochila              # manual completo: todos los comandos, opciones y ejemplos
+mochila              # ayuda corta: lo más usado y la lista de comandos (una pantalla)
 mochila -h           # lo mismo
+mochila help         # guía: primeros pasos, cada comando con un ejemplo y trucos
 mochila sync -h      # ayuda detallada de un comando, con sus ejemplos
 ```
 

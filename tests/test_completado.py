@@ -68,7 +68,8 @@ def test_sin_almacen_no_sugiere_nada_ni_falla(tmp_path):
 
 
 def test_el_manual_explica_las_opciones_de_autocompletado_en_espanol():
-    r = run.invoke(app, ["--help"])
+    assert "--install-completion" in run.invoke(app, ["--help"]).output  # la corta lo dice en una línea
+    r = run.invoke(app, ["help"])  # y la guía, entero
     assert "--install-completion" in r.output and "Activa el TAB" in r.output
     assert "--show-completion" in r.output
 

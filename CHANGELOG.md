@@ -22,6 +22,11 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Añadido
 
+- **Dos ayudas:** `mochila -h` es corta (una pantalla: lo más usado y los comandos por temas) y
+  `mochila help` es una guía con los primeros pasos, cada comando con un ejemplo para copiar y
+  trucos (`.`, `--simular`, TAB...). `mochila help COMANDO` sigue explicando uno entero. Los
+  ejemplos de `ejecutar` llevan siempre la carpeta (`mochila ejecutar ordenar . --simular`).
+
 - `resumir-tema` hace resúmenes **a la medida del tema**: lee el tema entero (de uno largo, un trozo
   de cada página, no solo las primeras) y pide una viñeta por cada 2 páginas, entre 6 y 40, en
   apartados. Antes, de un tema de 71 páginas salían 6 viñetas. El `.resumen.md` se guarda **al lado

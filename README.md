@@ -199,7 +199,13 @@ Opción global: `mochila --config RUTA ORDEN` usa otro `acciones.json`. Por defe
 
 **Códigos de salida:** 0 bien · 1 fallo al ejecutar (carpeta inexistente, permiso denegado, sync pendiente, claves, enlaces rotos o cabeceras básicas que faltan...) · 2 error de uso (lo pone Typer) · 3 configuración inválida · 4 sin IA (sin clave, sin red o el servidor no responde: las acciones sin IA siguen funcionando).
 
-`mochila` (o `mochila -h` o `mochila help`) muestra el manual completo con todos los comandos, opciones y ejemplos; `mochila COMANDO -h` (o `mochila help COMANDO`) explica uno.
+Hay tres ayudas, de más corta a más larga:
+
+| Orden | Qué enseña |
+|---|---|
+| `mochila`, `mochila -h` o `mochila --help` | Una pantalla: lo más usado y la lista de comandos por temas. |
+| `mochila help` | La guía: primeros pasos, qué hace cada comando con un ejemplo para copiar, y trucos (`.`, `--simular`, TAB...). |
+| `mochila help COMANDO` o `mochila COMANDO -h` | Todo sobre un comando: sus opciones y varios ejemplos. |
 
 ## Esquema de acciones.json
 
