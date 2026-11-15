@@ -215,15 +215,23 @@ def controlar_errores(funcion):
     return envoltorio
 
 
-def preguntar(pregunta: str) -> bool:
-    """Pregunta s/n (acepta s, sí, si, y, yes). Cualquier otra cosa es «no»: nunca actúa por defecto."""
-    respuesta = typer.prompt(f"{pregunta} [s/N]", default="n", show_default=False)
-    return respuesta.strip().lower() in {"s", "si", "sí", "y", "yes"}
+def preguntar(pregunta: str, si_por_defecto: bool = False) -> bool:
+    """Pregunta s/n (acepta s, sí, si, y, yes). La mayúscula es lo que hace Enter.
+
+    Por defecto, Enter es «no»: lo que mueve, borra, sube o cambia otro programa nunca se hace sin un «s».
+    Con si_por_defecto, Enter es «sí»: solo para lo que se puede deshacer y es lo que quieres casi
+    siempre (crear carpetas vacías, guardar con copia de lo anterior...).
+    """
+    opciones = "[S/n]" if si_por_defecto else "[s/N]"
+    respuesta = typer.prompt(f"{pregunta} {opciones}", default="", show_default=False).strip().lower()
+    if not respuesta:
+        return si_por_defecto
+    return respuesta in {"s", "si", "sí", "y", "yes"}
 
 
-def confirmar(pregunta: str) -> None:
+def confirmar(pregunta: str, si_por_defecto: bool = False) -> None:
     """Como preguntar, pero si la respuesta no es «sí» cancela la orden."""
-    if not preguntar(pregunta):
+    if not preguntar(pregunta, si_por_defecto):
         raise typer.Abort()
 
 
@@ -819,7 +827,8 @@ def configurar_ia(
         if not si and not (os.environ.get("CENTRO_IA_URL") and os.environ.get("CENTRO_IA_KEY")):
             for nombre, datos in ia.servidores_opencode().items():
                 if preguntar(f"OpenCode ya tiene el servidor «{datos['titulo']}» ({datos['url']}). "
-                             "¿Lo uso también en mochila? La clave se queda en OpenCode: no la copio"):
+                             "¿Lo uso también en mochila? La clave se queda en OpenCode: no la copio",
+                             si_por_defecto=True):
                     ajustes["opencode"] = nombre
                     break
         ruta = ia.guardar_ajustes(ajustes)
@@ -1074,7 +1083,7 @@ def configurar(
                       f"No he guardado nada en {escape(str(destino))}[/cyan]")
         return
     if not si:
-        confirmar(f"¿Lo guardo en {destino}?")
+        confirmar(f"¿Lo guardo en {destino}?", si_por_defecto=True)  # guarda copia de la anterior
     copia = configurar_mod.guardar(datos, destino)
     consola.print(f"[green]✔ Guardado en {escape(str(destino))}[/green]: {len(asignaturas)} asignaturas, "
                   f"{len(datos['acciones'])} acciones válidas")
@@ -1093,7 +1102,8 @@ def configurar(
     if base_asignaturas is None or not almacen.ruta.is_dir():
         if almacen is None or almacen.ruta.exists() or si:
             consola.print("Aún no tienes tu almacén de apuntes en este equipo. Prepáralo con: [bold]mochila crear-almacen[/bold]")
-        elif preguntar("\nAún no tienes tu almacén de apuntes en este equipo. ¿Te lo preparo ahora?"):
+        elif preguntar("\nAún no tienes tu almacén de apuntes en este equipo. ¿Te lo preparo ahora?",
+                       si_por_defecto=True):
             try:
                 _crear_almacen(ctx, list(asignaturas), ciclo)
             except TareasError as e:  # lo de acciones.json ya está guardado: eso no se pierde
@@ -1104,7 +1114,8 @@ def configurar(
     faltan = configurar_mod.carpetas_que_faltan(base_asignaturas, list(asignaturas))
     if not faltan:
         consola.print(f"[green]✔ Tu almacén ya tiene todas las carpetas[/green] ({escape(str(base_asignaturas))})")
-    elif crear_carpetas or (not si and preguntar(f"¿Creo en tu almacén las carpetas que faltan ({', '.join(faltan)})?")):
+    elif crear_carpetas or (not si and preguntar(f"¿Creo en tu almacén las carpetas que faltan ({', '.join(faltan)})?",
+                                                 si_por_defecto=True)):  # carpetas vacías: sin riesgo
         configurar_mod.crear_carpetas(base_asignaturas, faltan)
         consola.print(f"[green]✔ Creadas {len(faltan)} carpetas en {escape(str(base_asignaturas))}[/green]. "
                       "Súbelas con: mochila sync")

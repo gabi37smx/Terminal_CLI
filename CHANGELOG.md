@@ -10,6 +10,11 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Cambiado
 
+- Las preguntas en las que Enter tenía que seguir adelante ahora tienen **Sí** por defecto (`[S/n]`):
+  guardar lo que eliges en `configurar` (guarda copia de lo anterior), crear las carpetas de tus
+  asignaturas, preparar el almacén, usar el servidor del centro que ya tiene OpenCode y, en el
+  instalador, rehacer `acciones.json` con las acciones nuevas. Lo que mueve, borra, sube a GitHub o
+  cambia otro programa sigue con **No** por defecto (`[s/N]`).
 - **El comando se llama `mochila`** (antes `dam`): a un compañero de DAW le confundía que se llamara
   como otro ciclo (ADR-0006). `tareas` sigue valiendo. Tu configuración pasa a `~/.config/mochila`
   y las variables a `MOCHILA_ALMACEN`, `MOCHILA_IA`...; al repetir el instalador se copia lo que ya
