@@ -8,7 +8,8 @@ mis apuntes de 1º DAM sincronizados entre el PC de clase, el de casa y el USB.
 > ([ADR-0006](docs/adr/0006-nombre-mochila.md)). El paquete Python sigue siendo `tareas` y se
 > instalan los dos nombres para el mismo programa (`tareas version` y `mochila version` dan la
 > misma versión). Si ya tenías `dam`, repite el instalador: copia lo que
-> elegiste a `~/.config/mochila`. Cambios en [CHANGELOG.md](CHANGELOG.md).
+> elegiste a `~/.config/mochila`. Cambios en [CHANGELOG.md](CHANGELOG.md); todas las pull requests,
+> por versión y con sus issues, en [docs/historial-pr.md](docs/historial-pr.md).
 
 ## Spec (versión 0 · 26/10/2026)
 
