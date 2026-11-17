@@ -5,7 +5,7 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**43 PR fusionadas** y 3 abiertas, 6 issues y 3 versiones publicadas.
+**46 PR fusionadas**, 6 issues y 3 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
@@ -88,9 +88,9 @@ Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las 
 | PR | Fusionada | Rama | Qué cambia | Cierra |
 |---|---|---|---|---|
 | [#49](https://github.com/gabi37smx/Terminal_CLI/pull/49) | 17-nov | `feature/revisor-y-simular-real` | Ideas del vídeo de la Sesión 2: simular de verdad, borrar en Windows y el revisor en cada commit |  |
-| [#50](https://github.com/gabi37smx/Terminal_CLI/pull/50) | abierta | `docs/completar-revisor` | prompts.md: rellena los [COMPLETAR] que ya tienen datos reales |  |
-| [#51](https://github.com/gabi37smx/Terminal_CLI/pull/51) | abierta | `docs/readme-windows-y-comandos` | README y comandos.md: restos de dam y crear-almacen |  |
-| [#52](https://github.com/gabi37smx/Terminal_CLI/pull/52) | abierta | `docs/historial-pr` | docs/historial-pr.md: todas las PR por versión, con sus issues |  |
+| [#50](https://github.com/gabi37smx/Terminal_CLI/pull/50) | 18-nov | `docs/completar-revisor` | prompts.md: rellena los [COMPLETAR] que ya tienen datos reales |  |
+| [#51](https://github.com/gabi37smx/Terminal_CLI/pull/51) | 18-nov | `docs/readme-windows-y-comandos` | README y comandos.md: restos de dam y crear-almacen |  |
+| [#52](https://github.com/gabi37smx/Terminal_CLI/pull/52) | 18-nov | `docs/historial-pr` | docs/historial-pr.md: todas las PR por versión, con sus issues |  |
 
 ## Issues
 
