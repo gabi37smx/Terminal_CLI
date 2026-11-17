@@ -254,6 +254,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
     "instalar-hook": [
         ("mochila instalar-hook", "Revisa claves en cada git commit del repositorio actual"),
         ("mochila instalar-hook ~/DAM-almacen", "En otro repositorio"),
+        ("mochila instalar-hook --revisor", "Además, el agente revisor mira cada commit con código"),
         ("mochila instalar-hook --quitar", "Lo desactiva"),
     ],
     "doctor": [
@@ -1491,15 +1492,18 @@ def instalar_hook(
     ruta: Annotated[Path, typer.Argument(metavar="REPO", help="Repositorio donde instalarlo (por defecto, el actual).")] = Path("."),
     quitar: Annotated[bool, typer.Option("--quitar", help="Desinstala el hook (solo si es de mochila).")] = False,
     forzar: Annotated[bool, typer.Option("--forzar", help="Reemplaza un hook pre-commit que no sea de mochila.")] = False,
+    revisor: Annotated[bool, typer.Option("--revisor", help="Además, el agente revisor de OpenCode mira cada commit que lleve código (necesita scripts/revisar.sh).")] = False,
 ) -> None:
     """Revisa claves en cada git commit, sin acordarte.
 
     Instala un hook pre-commit que ejecuta «mochila scan-secrets --staged» justo antes de cada commit y lo cancela si encuentra algo. Se instala una vez por repositorio.
 
-    No pisa un hook que no sea de mochila (salvo --forzar). Si «mochila» no está en el PATH, avisa pero no bloquea. Para saltarlo una vez: git commit --no-verify.
+    Con --revisor, si el commit lleva código (.py, .sh, .json, .toml, .opencode/...), también lo pasa por el agente revisor (bash scripts/revisar.sh): «VEREDICTO: CAMBIAR» cancela el commit; si no se puede revisar (sin red o sin opencode), avisa y deja seguir. Para saltar solo el revisor una vez, pon la variable MOCHILA_SIN_REVISOR=1.
+
+    No pisa un hook que no sea de mochila (salvo --forzar). Si «mochila» no está en el PATH, avisa pero no bloquea. Para saltarlo todo una vez: git commit --no-verify.
     """
     ruta = ruta.expanduser()
-    mensaje = hook.quitar(ruta) if quitar else hook.instalar(ruta, forzar)
+    mensaje = hook.quitar(ruta) if quitar else hook.instalar(ruta, forzar, revisor)
     consola.print(f"[green]✔ {escape(mensaje)}[/green]")
 
 

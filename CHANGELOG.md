@@ -8,6 +8,30 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+### Añadido
+
+- `mochila instalar-hook --revisor`: además de buscar claves, el hook pasa cada commit que lleve
+  código por el agente revisor de OpenCode (`scripts/revisar.sh`). Si dice `VEREDICTO: CAMBIAR`, el
+  commit se cancela; si no se puede revisar (sin red), avisa y deja seguir. Solo documentación: no
+  lo llama. Para saltarlo una vez: `MOCHILA_SIN_REVISOR=1`.
+- `scripts/revisar.sh` usa el modelo que elegiste con `mochila configurar-ia` (en casa, uno gratis
+  de OpenCode) o el de `MOCHILA_REVISOR_MODELO`; antes siempre usaba el de OpenCode por defecto.
+- Una prueba que comprueba que **lo que dice `--simular` es lo que pasa de verdad** en los seis
+  tipos de acción sin IA: mismos ficheros, mismos destinos y mismos saltados, y después cada
+  fichero está donde dijo la simulación.
+
+### Arreglado
+
+- `scripts/revisar.sh` lanzado desde un hook de git ya no estropea el commit: OpenCode heredaba
+  `GIT_INDEX_FILE` y guardaba sus instantáneas en el índice del repositorio (`invalid object`).
+
+### Seguridad
+
+- El agente de OpenCode ya no puede borrar ficheros con las órdenes de Windows (`Remove-Item`,
+  también en minúsculas, `del`, `erase`, `rmdir`, `rd`) ni con `git clean`, y tampoco tirar cambios sin
+  guardar con `git restore` o `git checkout --`: antes solo estaba prohibido `rm`. Una prueba
+  avisa si alguien quita una de estas reglas de `opencode.json`.
+
 ## [1.1.0] - 2026-11-17
 
 ### Cambiado

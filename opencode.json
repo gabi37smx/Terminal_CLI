@@ -41,6 +41,16 @@
       "git push *": "deny",
       "git reset *": "deny",
       "rm *": "deny",
+      "Remove-Item *": "deny",
+      "ri *": "deny",
+      "del *": "deny",
+      "erase *": "deny",
+      "rmdir *": "deny",
+      "rd *": "deny",
+      "remove-item *": "deny",
+      "git clean *": "deny",
+      "git restore *": "deny",
+      "git checkout -- *": "deny",
       "sudo *": "deny"
     }
   },

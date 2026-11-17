@@ -662,3 +662,45 @@ Mi primera `test_renombrar_con_plantilla` falló porque yo esperaba otro orden. 
 **Qué aprendí:**
 - **Una prueba con otra persona encuentra lo que yo ya no veo.** Yo sé que `ordenar` va con `ejecutar` y que sin carpeta usa la de pruebas; él no, y era lo primero que probaba.
 - **El nombre también es parte de la interfaz.** Si confunde a quien lo usa, es un fallo igual que un mensaje que no se entiende.
+
+---
+
+## 2026-11-17 · Lo que aprendí del vídeo de la Sesión 2: simular de verdad y un revisor que vigila (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows).
+**De dónde sale:** el vídeo «Curso de Programación con IA #12 | El motor de tu CLI: simular, tu comando y un revisor» de Edu. En su descripción cuenta tres fallos que le pasaron en directo:
+- La simulación decía que todo iba bien y, de verdad, los vídeos no se movían (un comentario del agente mentía).
+- El build se pasó casi nueve minutos probando acciones donde no debía.
+- El revisor acertó dos veces, pero se equivocó en su primer «error seguro».
+
+Su frase: «Lo que diga un agente, se prueba». Comparé cada fallo con mi proyecto.
+
+**Prompt:** «Haz la PR con las ideas 1 y 2, y si creas el revisor y cuando hagamos algún cambio que el revisor lo supervise.»
+
+**1. ¿Mi `--simular` dice la verdad?** Tenía pruebas de que `--simular` no toca nada, pero ninguna comparaba lo que dice la simulación con lo que pasa de verdad. La nueva, `tests/test_simular_igual_que_real.py`, prepara dos carpetas iguales con casos feos (tildes, espacios, `.JPG` en mayúsculas, un `.tmp` viejo, destinos que ya existen). En una ejecuta con `--simular` y en la otra de verdad, para los seis tipos sin IA: `mover`, `copiar`, `renombrar`, `borrar`, `convertir` y `ordenar`. Comprueba que eligen los mismos ficheros, con los mismos destinos y los mismos saltados, y que después cada fichero está donde dijo la simulación.
+**La prueba que prueba:** rompí `Mover` a propósito (cambié el `shutil.move` por un `pass`, que es justo el fallo del vídeo: dice «hecho» y no mueve). La prueba se puso en rojo en `mover` y en ninguna más; lo dejé bien con `git restore`.
+
+**2. ¿El agente puede borrar donde no debe?** Sí podía: en la entrada del 3-nov, OpenCode creó ficheros de prueba y luego los borró con `Remove-Item`. Mi `opencode.json` solo prohibía `rm`, que es la orden de Linux. Ahora también están en `deny` las de Windows (`Remove-Item`, `ri`, `del`, `erase`, `rmdir`, `rd`) y `git clean`. `tests/test_opencode_json.py` se pone en rojo si alguien quita una de esas reglas o si el revisor deja de ser de solo lectura.
+
+**3. Que el revisor supervise cada cambio:** el revisor ya existía (`.opencode/agents/revisor.md`, solo lectura) y `scripts/revisar.sh`, pero había que acordarse de lanzarlo. Ahora `mochila instalar-hook --revisor` lo mete en el hook pre-commit. Cada commit que lleva código pasa antes por el revisor:
+- `VEREDICTO: CAMBIAR` cancela el commit.
+- Si no se puede revisar (sin red), avisa y deja seguir.
+- Los commits solo de documentación no lo llaman.
+
+Como el revisor también se equivoca (lo dice el vídeo), `MOCHILA_SIN_REVISOR=1` lo salta una vez, y lo que hay que hacer es apuntar aquí en qué falló. Las pruebas usan un `revisar.sh` de mentira que contesta OK, CAMBIAR o «sin red», así no gastan red ni modelo.
+
+**Primera vez que el revisor supervisa un cambio de verdad (17-nov, en casa):**
+- **Primero, sin modelo:** el revisor usaba el modelo por defecto de OpenCode, que es el del centro, y en casa falló con `"/chat/completions" cannot be parsed as a URL` (no hay `CENTRO_IA_URL`). Ahora `revisar.sh` usa el modelo que elegí con `mochila configurar-ia` (en casa, `opencode/deepseek-v4.1-flash-free`) o el de `MOCHILA_REVISOR_MODELO`.
+- **Su solo lectura funciona de verdad:** intentó `sed`, `grep`, `cat ...; echo`, `git config` y `uv run pytest`, y OpenCode se los denegó todos («The user has specified a rule which prevents you...»). Solo pudo leer ficheros con su herramienta de lectura.
+- **Pero no llegó a dar veredicto:** con los 12 ficheros del cambio se puso a leer medio proyecto (`ia.py`, `motor.py`, `acciones.py`...) y pasaron los 180 s. Con un solo fichero, igual. El hook hizo lo que debía: «No se ha podido pasar el revisor: el commit sigue». Le añadí al prompt que se centre en el diff y que tiene 180 s.
+- **Y encontré un fallo de verdad, no del revisor sino mío:** el commit acabó con `error: invalid object ... for 'scripts/revisar.sh'` y en `git status` volvían a estar preparados todos los ficheros, también los que yo no había añadido. OpenCode guarda instantáneas (las de `/undo`) con su propio git; dentro de un hook de git hereda `GIT_INDEX_FILE` y las escribió en **mi** índice, con objetos que mi repo no tiene. Lo arreglé con `git read-tree HEAD` (los ficheros del disco estaban bien) y en `revisar.sh`: el diff se saca primero y OpenCode se lanza sin las variables `GIT_*`. La prueba `test_opencode_dentro_del_hook_no_estropea_el_indice` usa un `opencode` de mentira que hace lo mismo que el de verdad: sin el arreglo da el mismo `invalid object`; con él, pasa.
+- **Ya con el arreglo, tres commits pequeños, cada uno por el hook:**
+  - La prueba de simular: **`VEREDICTO: OK` en 173 s.** Comprobó cada campo contra `motor.py` y `acciones.py` y no vio errores seguros. Me dejó una pregunta buena: por qué `resumen()` cuenta «simulado» como «hecho» (porque `--simular` nunca puede dar «hecho», lo dice una aserción de `acciones.py`).
+  - `opencode.json`: **`VEREDICTO: OK` en 28 s**, y vio algo que yo no: las reglas distinguen mayúsculas y PowerShell no, así que `remove-item` en minúsculas se saltaba la regla. También echó en falta `git restore` y `git checkout --`, que tiran cambios sin guardar.
+  - El hook (9 ficheros): no contestó en 180 s; el hook avisó y el commit siguió, ya sin el `invalid object`.
+- **Qué hice con lo que dijo (commit siguiente):** acepté `remove-item`, `git restore` y `git checkout --` en `deny`, y que la prueba de simular compare el **contenido** de cada fichero (antes solo miraba que existiera; un `.webp` se comprueba abriéndolo). **No acepté** prohibir `mv *` (el agente lo necesita para trabajar y ya pregunta, por el `"*": "ask"`) ni cambiar la prueba a un fixture solo porque «un JSON roto daría un error de colección»: también se ve en rojo, que es lo que importa.
+
+**Qué aprendí:**
+- **Una simulación es una promesa: hay que comprobar que se cumple.** Que no toque nada no basta; tiene que decir lo mismo que luego hace.
+- **Prohibir una orden no es prohibir lo que hace.** En Windows se borra con otras palabras.
+- **Lo que no se automatiza se olvida.** El revisor estaba hecho, pero en la Sesión 2 no consta que lo usara; con el hook ya no depende de acordarme.
+- **Automatizar también se prueba.** Meter un agente dentro de un hook de git rompió el commit por una variable que ni sabía que existía. Lo encontré porque lo probé de verdad antes de darlo por bueno.

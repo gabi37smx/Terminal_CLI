@@ -29,7 +29,7 @@ mochila sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `mochila comprobar-ia` | ¿Responde el modelo de IA que usa `mochila`? (nunca enseña la clave) | `uv run mochila comprobar-ia` |
 | `mochila status [ASIGNATURA]` | Qué hay pendiente (no toca nada) | `uv run mochila status programacion` |
 | `mochila scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves y contraseñas expuestas | `uv run mochila scan-secrets --staged` |
-| `mochila instalar-hook [REPO] [--quitar] [--forzar]` | Revisa claves en cada `git commit` | `uv run mochila instalar-hook` |
+| `mochila instalar-hook [REPO] [--quitar] [--forzar] [--revisor]` | Revisa claves en cada `git commit` (y, con `--revisor`, pasa el agente revisor si hay código) | `uv run mochila instalar-hook --revisor` |
 | `mochila doctor [CARPETA]` | Revisa que un proyecto esté sano (git, `.env`, README, tests...) | `uv run mochila doctor .` |
 | `mochila pendientes [CARPETA] [--quien NOMBRE] [--resumen]` | Cuenta `[Verificado]`, `[Hipótesis]` y `[Pendiente]` y resume `pendientes.md` | `uv run mochila pendientes ~/Electrician --quien Gabi` |
 | `mochila entregar [CARPETA] [--destino D] [--nombre N] [--simular]` | Proyecto en un `.zip` limpio, sin `.env` ni claves | `uv run mochila entregar . --simular` |
@@ -97,7 +97,7 @@ uv run mochila ejecutar convertir-webp
 | `-m, --mensaje TEXTO` | `sync` | Mensaje del commit (con o sin asignatura) |
 | `--sin-externos` | `test-links` | Solo enlaces internos (no necesita internet) |
 | `--timeout SEGUNDOS` | `test-links`, `check-headers` | Tiempo máximo de espera (Render gratis: `--timeout 60`) |
-| `--quitar`, `--forzar` | `instalar-hook` | Desinstala el hook · reemplaza un hook que no sea de mochila |
+| `--quitar`, `--forzar`, `--revisor` | `instalar-hook` | Desinstala el hook · reemplaza un hook que no sea de mochila · además pasa el agente revisor en cada commit con código |
 | `--si` | `ejecutar` | No pide confirmación (peligroso) |
 | `--integrar` | `sync` | Si hay cambios en ambos lados, guarda lo tuyo y hace `pull --rebase` |
 | `--almacen RUTA` | `status`, `sync` | Usa otro almacén |
@@ -193,6 +193,7 @@ mochila scan-secrets --alta          # solo hallazgos seguros, sin avisos dudoso
 
 ```powershell
 mochila instalar-hook            # una vez por repositorio (Terminal_CLI y DAM-almacen)
+mochila instalar-hook --revisor  # en Terminal_CLI: además, el agente revisor mira cada commit con código
 mochila instalar-hook --quitar   # para desactivarlo
 git commit --no-verify -m "..."   # salta la revisión UNA vez (solo si es un falso aviso)
 ```
