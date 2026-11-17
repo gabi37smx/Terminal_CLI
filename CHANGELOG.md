@@ -28,7 +28,8 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 ### Seguridad
 
 - El agente de OpenCode ya no puede borrar ficheros con las órdenes de Windows (`Remove-Item`,
-  `del`, `erase`, `rmdir`, `rd`) ni con `git clean`: antes solo estaba prohibido `rm`. Una prueba
+  también en minúsculas, `del`, `erase`, `rmdir`, `rd`) ni con `git clean`, y tampoco tirar cambios sin
+  guardar con `git restore` o `git checkout --`: antes solo estaba prohibido `rm`. Una prueba
   avisa si alguien quita una de estas reglas de `opencode.json`.
 
 ## [1.1.0] - 2026-11-17

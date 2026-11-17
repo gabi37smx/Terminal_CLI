@@ -94,4 +94,11 @@ def test_lo_que_simula_es_lo_que_hace(tmp_path, tipo, campos, mueve):
             continue
         if r.destino is not None:
             assert r.destino.is_file(), f"la simulación dijo {r.destino.name} y no está"
+            # Y entero: no basta con que exista (lo propuso el revisor el 17-nov)
+            if tipo == "convertir":
+                with Image.open(r.destino) as imagen:
+                    assert imagen.format == "WEBP"
+            else:
+                original = base_sim / relativo(r.origen, base_real)   # en la copia simulada sigue intacto
+                assert r.destino.read_bytes() == original.read_bytes()
         assert r.origen.exists() != mueve, f"{r.origen.name}: {'debía irse' if mueve else 'debía quedarse'}"

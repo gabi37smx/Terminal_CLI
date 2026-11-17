@@ -14,9 +14,11 @@ RAIZ = Path(__file__).resolve().parent.parent
 CONFIG = json.loads((RAIZ / "opencode.json").read_text(encoding="utf-8"))
 BASH = CONFIG["permission"]["bash"]
 
-# Lo irreversible lo hago yo: borrar (Linux, macOS y Windows), deshacer commits y subir
-PELIGROSAS = ["git push *", "git reset *", "git clean *", "sudo *",
-              "rm *", "Remove-Item *", "ri *", "del *", "erase *", "rmdir *", "rd *"]
+# Lo irreversible lo hago yo: borrar (Linux, macOS y Windows), tirar cambios sin guardar, deshacer
+# commits y subir. Las reglas distinguen mayúsculas y PowerShell no: «remove-item» va aparte
+# (lo vio el revisor el 17-nov).
+PELIGROSAS = ["git push *", "git reset *", "git clean *", "git restore *", "git checkout -- *", "sudo *",
+              "rm *", "Remove-Item *", "remove-item *", "ri *", "del *", "erase *", "rmdir *", "rd *"]
 
 
 @pytest.mark.parametrize("orden", PELIGROSAS)

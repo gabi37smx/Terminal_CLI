@@ -47,7 +47,10 @@
       "erase *": "deny",
       "rmdir *": "deny",
       "rd *": "deny",
+      "remove-item *": "deny",
       "git clean *": "deny",
+      "git restore *": "deny",
+      "git checkout -- *": "deny",
       "sudo *": "deny"
     }
   },
