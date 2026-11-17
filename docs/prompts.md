@@ -7,12 +7,12 @@ Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con O
 
 ---
 
-## Sesión 1 · Primera orden: `listar` (OpenCode) — [COMPLETAR]
+## Sesión 1 · Primera orden: `listar` (OpenCode)
 **Herramienta:** OpenCode 1.18.35 · modelo centro/qwen3.8-flash-next
-**Prompt del plan (agente plan):** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
-**Qué corregí del plan:** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
+**Prompt del plan (agente plan):** no lo guardé: no está en las sesiones exportadas de OpenCode y no lo apunté en su momento.
+**Qué corregí del plan:** no lo guardé: no está en las sesiones exportadas de OpenCode y no lo apunté en su momento.
 **Diffs que rechacé o deshice (/undo) y por qué:** no consta ninguno. Solo hubo un bloqueo: el agente intentó hacer `git push` y la regla `"git push *": "deny"` de `opencode.json` lo impidió; el push lo hice yo.
-**Funcionaba a la primera:** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
+**Funcionaba a la primera:** no lo guardé: no está en las sesiones exportadas de OpenCode y no lo apunté en su momento.
 **Qué aprendí:** `typer.Exit(code=1)` termina con código 1 sin traza; el error va a stderr.
 
 **Nota sobre el primer commit (repasado el 17-nov):** la lista de la Sesión 1 pide `.gitignore` y `.gitattributes` en el primer commit. En mi historial el primero es «Initial commit», que hizo GitHub al crear el repo con un README, y el siguiente es un retoque de ese README. `.gitignore` (con `.venv/` y `.env`) y `.gitattributes` entraron en el commit `1195d31` («Crea el proyecto con uv y Typer...»), el primero con código. Antes de ese commit no había nada que ignorar, así que nunca se subió `.venv` ni `.env` (`git log --all -- .env` no devuelve nada). No reescribí el historial para arreglarlo: cambiaría todos los commits, las etiquetas `v1.0.0` y `v1.0.1` y las PR ya fusionadas. **Qué aprendí:** si creas el repo en GitHub con README, el primer commit es suyo; mejor crearlo vacío y subir el tuyo.
@@ -97,9 +97,9 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 
 ---
 
-## Sesión 2 · Skill, `/nueva-accion` y `@revisor` (OpenCode) — [COMPLETAR]
+## Sesión 2 · Skill, `/nueva-accion` y `@revisor` (OpenCode)
 **Herramienta:** OpenCode · modelo DeepSeek V4.1 Flash Free
-**Prompt de la validación (plan y build):** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
+**Prompt de la validación (plan y build):** no lo guardé: no está en las sesiones exportadas de OpenCode y no lo apunté en su momento.
 **`/nueva-accion`:** no se usó. La skill `acciones-json` se cargó en la sesión del 28/10.
 **Comandos y cambios pedidos a OpenCode:** el sistema de sincronización con el repo de asignaturas (`sync` y `status`, `DAM-almacen`), nombres de asignaturas en valenciano en `acciones.json` y excluir la carpeta privada del almacén.
 **`@revisor` y `/review`:** no consta que se usaran.
@@ -145,7 +145,7 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 **Herramienta:** Claude Code, en casa (Windows), con una prueba mía en Ubuntu 24.04 (WSL).
 
 **Prompt 1:** «Revisa el proyecto y mira por qué, si he clonado el repositorio en el PC de clase con Linux, no funcionaban en la terminal los comandos, y no he podido subir los archivos al repo de DAM-almacen. No funcionaba nada, ni `dam` ni `--help`. Tiene que funcionar en Linux, aquí en Windows y en Mac.»
-**Qué pasó en clase:** [COMPLETAR] (los mensajes de error exactos que salieron en el PC de clase).
+**Qué pasó en clase:** no apunté los mensajes exactos; solo que no funcionaba nada, ni `dam` ni `--help`. Lo que salió al instalar desde cero en el aula el 12-nov sí está apuntado, en su entrada.
 **Qué encontró:** el código no tenía la culpa. En un clon limpio, `uv sync` + `uv run dam --help` funcionan y pasan los 162 tests. En mi Windows tengo preparadas cosas que no están en el repo: `dam` instalado con `uv tool install` (`~/.local/bin`), `~/.config/dam/acciones.json`, la variable `DAM_ALMACEN` y `~/DAM-almacen`. Al clonar en otro equipo no hay nada de eso: `dam: command not found`, y `dam sync` no sabe dónde está el almacén. Para subir a GitHub hace falta un token, no la contraseña.
 **Por qué el otro día sí funcionaba:** sin confirmar. Lo más probable es que fuera otro PC u otro usuario, o que el PC se restaure al reiniciar, y con eso se pierde la carpeta personal. Lo compruebo mañana con `which uv dam` y `ls ~/.config/dam ~/DAM-almacen`. Resultado (13-nov, en el PC del aula donde lo instalé el 12-nov): un día después, `which dam` seguía dando `~/.local/bin/dam` y `~/.config/dam` seguía ahí. Ese PC **guarda la carpeta personal**, así que lo de que se restaura al reiniciar queda descartado (al menos en ese PC). Lo del otro día fue otro PC u otro usuario.
 
@@ -168,7 +168,7 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 **Qué se descubrió al revisar Typer:** `dam --install-completion` en PowerShell cambia en silencio la política de ejecución a `Unrestricted` y añade el script al perfil cada vez que se ejecuta. Además, desde `bash instalar.sh` detectaría bash aunque en macOS la terminal sea zsh. Por eso los instaladores no lo usan: miran `$SHELL` y, en Windows, si la política no deja cargar scripts, avisan sin cambiarla.
 **Un error que salió en la prueba:** con `--config` escrito en la línea, el TAB daba una traza (`'str' object has no attribute 'expanduser'`): al completar, Typer deja los valores como texto. Se arregló convirtiéndolo con `Path()`, y hay un test para ese caso.
 **Qué comprobó Claude Code:** un TAB real en Git Bash y en PowerShell (`TabExpansion2`) cargando el `.bashrc` y el perfil de prueba. Las sugerencias son correctas, y en PowerShell salen con descripción. Mi perfil real de PowerShell no se tocó. **Falta probarlo en Linux de verdad.**
-**Prueba en el PC de clase (4-nov):** [COMPLETAR] (clonar, `bash instalar.sh`, token, `dam help`, `dam ej<TAB>`, `dam status`).
+**Prueba en el PC de clase:** el 4-nov no la apunté. La hice entera más tarde: el 12-nov en un PC del aula que no es el mío (clonar, `bash instalar.sh`, `dam help`, el TAB y las acciones; el token falló con «Invalid username or token») y el 13-nov en mi PC de clase (`dam status`, `dam sync` con el almacén real). Está en las entradas de esos días.
 
 **A tener en cuenta:**
 - Lo que hace funcionar `dam` en un equipo no viaja con `git clone`: hay que instalarlo en cada sitio (para eso está el instalador).
@@ -267,10 +267,10 @@ Con Claude (chat) se generó una entrega con `test-links`, `check-headers`, `ins
 **Herramienta:** OpenCode · modelo centro/qwen3.8-flash-next
 **context7 (paso 2):** conectar con `/mcps` solo para esa sesión, preguntar en el agente plan cómo pasar a `httpx.post` un certificado de CA propio y desconectarlo. Qué respondió: [COMPLETAR]. ¿Propuso `verify="ruta"` (obsoleto en httpx 0.28) o `ssl.create_default_context`? [COMPLETAR]. Comprobado con `uv run python -W always -c "import httpx; ..."`: [COMPLETAR]. La frase para aquí: «context7 me trajo la doc, pero tuve que elegir yo» [COMPLETAR con lo que pasó de verdad].
 **`dam comprobar-ia` en la red del centro:** probado el 13-nov en mi PC de clase (lo cuento en la entrada «Mi PC de clase: almacén real e IA del centro»). Con el modelo de entonces, `qwen3.8-flash-next`, el servidor respondía **403**. Con `Qwen38-DualSpark-medium`, el del OpenCode del centro: «✔ El modelo responde «ok» en 31.6 s (30+2 tokens)».
-**`dam ejecutar resumir-tema` de verdad:** [COMPLETAR] (tokens y segundos de cada fichero, y si el resumen acaba en una línea «Para el examen:» con contenido)
-**`dam ejecutar nombrar-descargas` y `clasificar-asignatura` de verdad:** [COMPLETAR] (qué nombres y categorías puso; qué hizo con `descarga.pdf`, el que intenta engañar al modelo)
+**`dam ejecutar resumir-tema` de verdad:** hecho el 12-nov en un PC del aula, pero con el modelo gratis de OpenCode (DeepSeek V4.1 Flash), no con el del centro: un `.txt` de SQL, 1.011 + 100 tokens en 6,9 s. Con el modelo del centro, y si el resumen acaba en una línea «Para el examen:» con contenido: [COMPLETAR]
+**`dam ejecutar nombrar-descargas` y `clasificar-asignatura` de verdad:** con el modelo gratis, el 12-nov: `documento1.txt` → `redes-direcciones-ip-mascara-subred.txt` (8,4 s), y `clasificar-asignatura` acertó 15 de 17 apuntes de SMX (entrada «Prueba de verdad: mis apuntes de 1º de SMX»). Con el modelo del centro, y qué hizo con `descarga.pdf`, el que intenta engañar al modelo: [COMPLETAR]
 **Un fallo real del modelo y cómo lo arreglé en el JSON (no en Python):** [COMPLETAR]
-**Rómpelo a propósito en clase:** sin clave, con una URL que no existe, con una clave mala (401) y sin `CENTRO_IA_CA`; `echo $?` → 4 en los cuatro casos: [COMPLETAR]
+**Rómpelo a propósito en clase:** sin clave, con una URL que no existe, con una clave mala (401) y sin `CENTRO_IA_CA`; `echo $?` → 4 en los cuatro casos. En casa (13-nov) ya salieron con 4 los tres que no necesitan el servidor: sin clave, URL que no existe y certificado que no existe. Con el servidor del centro, la clave mala (401) y sin `CENTRO_IA_CA`: [COMPLETAR]
 **Qué aprendí:** [COMPLETAR]
 
 ---
@@ -305,7 +305,7 @@ Las pruebas ya pasaban de 28 (las que pide la página): ahora son 405.
 
 ## Sesión 4 · borrador del CHANGELOG, release e instalación cruzada — [COMPLETAR]
 **`opencode run --agent plan` → `docs/changelog-borrador.md` (en clase):** [COMPLETAR] (qué se inventó o qué se dejó comparado con `CHANGELOG.md`)
-**`bash scripts/revisar.sh` de verdad:** [COMPLETAR] (veredicto, segundos y si lo que señaló era cierto)
+**`bash scripts/revisar.sh` de verdad:** el 17-nov, en casa, con el modelo gratis de OpenCode y desde el hook (entrada del 17-nov). En los cuatro commits de la PR #49: `VEREDICTO: OK` en 173 s, 28 s y 99 s, y uno con 9 ficheros que no contestó en los 180 s. Lo que señaló era cierto: `remove-item` en minúsculas se saltaba la regla de `opencode.json` (PowerShell no distingue mayúsculas y las reglas sí), y faltaban `git restore` y `git checkout --`. Lo arreglé en el último commit, que es el que aprobó en 99 s. Con el modelo del centro: [COMPLETAR]
 **Actions en macOS:** no salió verde a la primera. El 11-nov, la rama `release-1.0` falló en Ubuntu y en macOS, y en Windows pasó. La prueba `test_version_con_los_dos_nombres` le pasaba al programa una ruta de Windows (`C:\Users\alumno\...\tareas.exe`). En Linux y macOS esa ruta no se parte por las barras invertidas, así que el nombre no salía y respondía `dam 1.0.0` en vez de `tareas 1.0.0`. Se arregló en `bde3cb7`: ahora la prueba construye las rutas con `Path.home()` del sistema donde se ejecuta. Tres minutos después, verde en los tres. Para eso sirve probar en los tres sistemas: en mi Windows esa prueba pasaba siempre.
 **Release:** PR de `release-1.0` fusionada, `git tag -a v1.0.0`, `git push --tags` y `gh release create`: la PR #16 la fusioné yo el 11-nov a las 15:40 y en los minutos siguientes creé la etiqueta `v1.0.0` y la release «tareas 1.0.0» en GitHub. Las órdenes me las dio Claude Code, pero las ejecuté yo. Esa misma tarde salió la `v1.0.1` con los arreglos del ensayo en el portátil (abajo).
 **Ensayo en un ordenador limpio (hecho el 11-nov):** en mi portátil viejo con Ubuntu 24.04.4 recién instalado, siguiendo solo el README, mientras Claude Code me guiaba y arreglaba desde el PC de casa. Lo que salió, cada cosa con su issue (abiertos con `gh issue create`) y arreglado en la **1.0.1** con «Closes #N»:
@@ -325,7 +325,7 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - El TAB funciona: `dam ej` + tecla Tab → `dam ejecutar`. La primera vez escribí `<TAB>` tal cual, sin entender que había que pulsar la tecla, y bash dio un error de sintaxis por el `<`. No era un fallo de `dam`.
 - `uv run pytest -q` → **418 passed, 1 skipped** en Ubuntu 24.04.
 - Release `v1.0.1` publicada con los arreglos de los issues #17-#22, todos cerrados.
-**Instalación cruzada con otra persona:** quién la hizo, en qué sistema, qué issues abrió y cómo los contesté: [COMPLETAR]
+**Instalación cruzada con otra persona:** la primera, el 15-nov, con mi cuñado (estudia DAW), en su portátil con Windows 11 LTSC y en una máquina virtual con Windows (entrada del 15-nov). Lo que salió lo arreglé yo (#40 y el cambio a `mochila`); él no abrió issues con su cuenta. Con un compañero de clase, con su cuenta de GitHub y sus issues: [COMPLETAR]
 **Qué aprendí:**
 - **El README se prueba en un ordenador limpio y siguiéndolo al pie de la letra.** En mi PC funcionaba porque ya tenía `git`, `curl` y `uv`. En el portátil recién instalado salieron cinco fallos en una tarde, y ninguno era del código: eran del README y de los mensajes.
 - **Un issue por fallo y `Closes #N` en el commit.** Así cada arreglo queda unido a su problema y la release dice qué arregla.
