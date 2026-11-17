@@ -704,3 +704,25 @@ Como el revisor también se equivoca (lo dice el vídeo), `MOCHILA_SIN_REVISOR=1
 - **Prohibir una orden no es prohibir lo que hace.** En Windows se borra con otras palabras.
 - **Lo que no se automatiza se olvida.** El revisor estaba hecho, pero en la Sesión 2 no consta que lo usara; con el hook ya no depende de acordarme.
 - **Automatizar también se prueba.** Meter un agente dentro de un hook de git rompió el commit por una variable que ni sabía que existía. Lo encontré porque lo probé de verdad antes de darlo por bueno.
+
+## 2026-11-17 · El historial de las PR, y el primer «CAMBIAR» del revisor (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows), con el revisor de OpenCode en el hook (modelo gratis).
+**Prompt:** «Creo que también nombraba [Edu] un .md con el histórico de los números de id de las PR y las descripciones. Revisa y hazlo tú, que las PR tengan sentido.»
+
+**Lo que dice la web:** en las páginas de las cuatro sesiones no aparece ningún `.md` de PR. Lo más cercano es la rúbrica, que en «Excelente» pide un «historial con ramas y PR legibles». Si Edu lo dijo en un vídeo, no lo he podido comprobar. Lo hice igualmente porque cumple ese criterio.
+
+**Qué se hizo:**
+- `docs/historial-pr.md`: las 46 PR por versión, con rama, fecha, qué cambia y qué issue cierra, y los 6 issues con la PR que los cerró. Lo genera `scripts/historial_pr.py` con `gh`, así que no se escribe a mano.
+- Las PR #1 y #3 tenían el título cortado por GitHub («…»), y la #1, la descripción vacía. Los arreglé en GitHub con `gh pr edit`.
+
+**El revisor dijo `VEREDICTO: CAMBIAR` y el hook canceló el commit.** Era la primera vez que pasaba de verdad. Lo que señaló era cierto:
+- el año de la cabecera iba escrito a mano (`-2026`);
+- una PR abierta con «Closes #N» salía como si ya hubiera cerrado el issue;
+- las fechas dependían de la zona horaria del PC;
+- con más de 500 PR recortaba sin avisar;
+- sin `gh`, salía un error sin explicación.
+
+Lo arreglé todo. No toqué lo que no importa en este proyecto: las ramas con comillas invertidas en el nombre y que el fichero no se escriba de forma atómica. En el segundo intento no contestó en 180 s y el hook dejó seguir el commit, como está previsto.
+**Su pregunta:** «Si fusionas una PR el 31-dic a las 23:30 UTC, ¿qué fecha escribe y por qué?». Con el arreglo, la hora se pasa a la de España (1-ene, 00:30) y el año sale de esa misma fecha, así que pone 1-ene del año siguiente. Antes habría escrito el año fijo.
+
+**Qué aprendí:** el hook sirve aunque el revisor tarde. Cuando contesta, frena el commit antes de que el fallo llegue a GitHub, y yo decido qué es cierto y qué no.
