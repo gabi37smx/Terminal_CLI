@@ -5,7 +5,7 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**43 PR fusionadas** y 2 abiertas, 6 issues y 3 versiones publicadas.
+**43 PR fusionadas** y 3 abiertas, 6 issues y 3 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
@@ -81,7 +81,7 @@ Los arreglos del ensayo de instalación en un Ubuntu recién instalado, siguiend
 | [#47](https://github.com/gabi37smx/Terminal_CLI/pull/47) | 15-nov | `feature/ayuda-corta-y-larga` | Ayuda corta y guía con ejemplos, y avisos del instalador en LTSC | [#46](https://github.com/gabi37smx/Terminal_CLI/issues/46) |
 | [#48](https://github.com/gabi37smx/Terminal_CLI/pull/48) | 17-nov | `release-1.1` | Release 1.1.0: versión, CHANGELOG, README y nota del primer commit |  |
 
-## Sin publicar (#49 a #51)
+## Sin publicar (#49 a #52)
 
 Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.
 
@@ -90,6 +90,7 @@ Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las 
 | [#49](https://github.com/gabi37smx/Terminal_CLI/pull/49) | 17-nov | `feature/revisor-y-simular-real` | Ideas del vídeo de la Sesión 2: simular de verdad, borrar en Windows y el revisor en cada commit |  |
 | [#50](https://github.com/gabi37smx/Terminal_CLI/pull/50) | abierta | `docs/completar-revisor` | prompts.md: rellena los [COMPLETAR] que ya tienen datos reales |  |
 | [#51](https://github.com/gabi37smx/Terminal_CLI/pull/51) | abierta | `docs/readme-windows-y-comandos` | README y comandos.md: restos de dam y crear-almacen |  |
+| [#52](https://github.com/gabi37smx/Terminal_CLI/pull/52) | abierta | `docs/historial-pr` | docs/historial-pr.md: todas las PR por versión, con sus issues |  |
 
 ## Issues
 
