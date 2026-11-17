@@ -68,7 +68,7 @@ mochila validar && mochila acciones
 En Windows (PowerShell), lo mismo:
 
 ```powershell
-New-Item -ItemType Directory -Force "$HOME\.config\dam" | Out-Null
+New-Item -ItemType Directory -Force "$HOME\.config\mochila" | Out-Null
 curl.exe -fsSL https://raw.githubusercontent.com/gabi37smx/Terminal_CLI/main/acciones.json -o "$HOME\.config\mochila\acciones.json"
 mochila validar; mochila acciones
 ```
@@ -157,7 +157,7 @@ En Windows (PowerShell):
 ```powershell
 mochila instalar-hook --quitar
 uv tool uninstall tareas
-Remove-Item -Recurse -Force "$HOME\.config\dam"
+Remove-Item -Recurse -Force "$HOME\.config\mochila"
 [Environment]::SetEnvironmentVariable('MOCHILA_ALMACEN', $null, 'User')   # si el instalador la guardó
 notepad $PROFILE.CurrentUserAllHosts    # borra la línea «# autocompletado de mochila»
 ```

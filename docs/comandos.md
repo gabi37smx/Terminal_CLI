@@ -1,9 +1,7 @@
 # Guía rápida de `mochila`
 
-> Ejecuta siempre desde:
-> `C:\Users\HP\Desktop\DAM\PROGRAMACIÓ IA\PROJECTE TERMINAL CLI\Terminal_CLI`
->
-> Si ya instalaste el comando, usa `mochila` en vez de `uv run mochila`.
+> Los ejemplos con `uv run mochila` se lanzan desde la carpeta del repositorio (`Terminal_CLI`).
+> Si ya instalaste el comando, usa `mochila` en vez de `uv run mochila`, desde cualquier carpeta.
 
 ## 0. Ayuda integrada
 
@@ -27,6 +25,7 @@ mochila sync -h      # ayuda detallada de un comando, con sus ejemplos
 | `mochila ejecutar NOMBRE [CARPETA\|FICHERO] [--simular] [--si]` | Ejecuta una acción sobre una carpeta o un solo fichero | `uv run mochila ejecutar convertir-webp ~/Descargas/portada.png` |
 | `mochila configurar-ia [--proveedor opencode\|centro] [--modelo M]` | Elige el modelo de IA: gratis con OpenCode o el del centro | `uv run mochila configurar-ia` |
 | `mochila comprobar-ia` | ¿Responde el modelo de IA que usa `mochila`? (nunca enseña la clave) | `uv run mochila comprobar-ia` |
+| `mochila crear-almacen` | Baja tu almacén de GitHub o te ayuda a crearlo (privado y con el nombre de tu ciclo) | `uv run mochila crear-almacen` |
 | `mochila status [ASIGNATURA]` | Qué hay pendiente (no toca nada) | `uv run mochila status programacion` |
 | `mochila scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves y contraseñas expuestas | `uv run mochila scan-secrets --staged` |
 | `mochila instalar-hook [REPO] [--quitar] [--forzar] [--revisor]` | Revisa claves en cada `git commit` (y, con `--revisor`, pasa el agente revisor si hay código) | `uv run mochila instalar-hook --revisor` |
