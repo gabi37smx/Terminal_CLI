@@ -184,7 +184,7 @@ bórralas tú si ya no las quieres (antes, `mochila status` para no perder nada 
 | `mochila status [ASIGNATURA]` | Qué has cambiado en local y qué hay nuevo en GitHub. No modifica nada. |
 | `mochila sync [ASIGNATURA] [MENSAJE] [-m TEXTO] [--integrar] [--simular]` | Sincroniza el almacén con GitHub de forma segura. |
 | `mochila scan-secrets [RUTA] [--staged] [--historial] [--alta]` | Busca claves, tokens y contraseñas expuestas. Sale con 1 si encuentra algo. |
-| `mochila instalar-hook [REPO] [--quitar] [--forzar]` | Revisa claves automáticamente en cada `git commit`. |
+| `mochila instalar-hook [REPO] [--quitar] [--forzar] [--revisor]` | Revisa claves automáticamente en cada `git commit`; con `--revisor`, además el agente revisor mira cada commit con código. |
 | `mochila doctor [CARPETA]` | Revisa que un proyecto esté sano: git, `.env` ignorado, `.env.example` al día, README, secretos, tests y CI. |
 | `mochila pendientes [CARPETA] [--quien NOMBRE] [--resumen]` | Cuenta las etiquetas `[Verificado]`, `[Hipótesis]` y `[Pendiente]` de la documentación y resume el registro `pendientes.md` por persona. |
 | `mochila entregar [CARPETA] [--destino D] [--nombre N] [--simular]` | Empaqueta un proyecto en un `.zip` limpio (sin `.env`, claves ni `node_modules`); no lo crea si hay un secreto dentro. |
@@ -503,7 +503,28 @@ push y en cada PR (`.github/workflows/pruebas.yml`).
 
 `scripts/revisar.sh` sale con 0 si el revisor dice `VEREDICTO: OK`, con 1 si dice `CAMBIAR` (o no
 da veredicto) y con 2 si no se pudo revisar (sin opencode o más de 180 s sin respuesta). El
-revisor no puede editar ni navegar, y en bash solo puede `git diff/log/status`.
+revisor no puede editar ni navegar, y en bash solo puede `git diff/log/status`. Usa el modelo que
+elegiste con `mochila configurar-ia` (en casa, uno gratis de OpenCode); para otro, pon
+`MOCHILA_REVISOR_MODELO`, por ejemplo `MOCHILA_REVISOR_MODELO=opencode/big-pickle`.
+
+**Que el revisor mire cada commit sin acordarte:** `mochila instalar-hook --revisor` (una vez, en
+la raíz del repositorio). Desde entonces, cada `git commit` que lleve código (`.py`, `.sh`, `.ps1`,
+`.json`, `.toml`, `.yml` o algo de `.opencode/`) pasa antes por `scripts/revisar.sh`:
+
+- `VEREDICTO: OK` → el commit sigue.
+- `VEREDICTO: CAMBIAR` → el commit se cancela. Lee lo que dice: lo que sea cierto, se arregla.
+- No se pudo revisar (sin red o sin opencode) → avisa y el commit sigue.
+- Si solo cambias documentación (`.md`), no lo llama.
+
+Si el revisor se equivoca (también le pasa), sáltalo solo esa vez y apunta en `docs/prompts.md` en
+qué falló:
+
+```bash
+MOCHILA_SIN_REVISOR=1 git commit -m "..."                                          # Linux, macOS y Git Bash
+```
+```powershell
+$env:MOCHILA_SIN_REVISOR = "1"; git commit -m "..."; Remove-Item Env:MOCHILA_SIN_REVISOR   # PowerShell
+```
 
 ## Ideas futuras
 

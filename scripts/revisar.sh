@@ -7,6 +7,10 @@
 # El revisor (.opencode/agents/revisor.md) no puede editar ni navegar, y en bash solo tiene
 # «git diff/log/status». El diff le llega por la entrada estándar, así que no necesita más permisos.
 # Sin nadie delante, un permiso «ask» cuenta como denegado: por eso aquí nunca va --auto.
+#
+# Modelo: MOCHILA_REVISOR_MODELO si lo pones (p. ej. opencode/big-pickle); si no, el que elegiste con
+# «mochila configurar-ia» si es de OpenCode (en casa, uno gratis); si no, el que OpenCode tenga por
+# defecto (en clase, el del centro).
 set -euo pipefail
 
 LIMITE=180   # segundos: si el servidor no contesta, el script no se queda colgado
@@ -33,11 +37,28 @@ else
     echo "(aviso: sin «timeout» en este sistema, la revisión no tiene tiempo máximo)" >&2
 fi
 
-echo "Revisando $(git diff --staged --name-only | wc -l | tr -d ' ') fichero(s) con el agente revisor (máximo ${LIMITE} s)..."
+modelo="${MOCHILA_REVISOR_MODELO:-}"
+config_ia="${MOCHILA_IA_CONFIG:-$HOME/.config/mochila/ia.json}"
+if [ -z "$modelo" ] && [ -f "$config_ia" ] && grep -q '"proveedor": *"opencode"' "$config_ia"; then
+    modelo=$(grep -o '"modelo": *"[^"]*"' "$config_ia" | head -n 1 | cut -d '"' -f 4)
+fi
+CON_MODELO=()
+if [ -n "$modelo" ]; then
+    CON_MODELO=(--model "$modelo")
+fi
+
+echo "Revisando $(git diff --staged --name-only | wc -l | tr -d ' ') fichero(s) con el agente revisor (modelo: ${modelo:-el de OpenCode por defecto}; máximo ${LIMITE} s)..."
+
+diff_preparado=$(git diff --staged)
+
+# Desde el hook pre-commit, git pone GIT_INDEX_FILE (y a veces GIT_DIR...). OpenCode guarda sus
+# instantáneas (las de /undo) con su propio git, pero si hereda esas variables las escribe en NUESTRO
+# índice: el commit fallaba con «invalid object» (me pasó el 17-nov). El diff ya está sacado: fuera.
+unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_PREFIX GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
 
 estado=0
-salida=$(git diff --staged | ${CON_LIMITE[@]+"${CON_LIMITE[@]}"} opencode run --agent revisor \
-    "Revisa este diff (lo que voy a subir en el próximo commit). Acaba con la línea VEREDICTO: OK o VEREDICTO: CAMBIAR.") \
+salida=$(printf '%s\n' "$diff_preparado" | ${CON_LIMITE[@]+"${CON_LIMITE[@]}"} opencode run --agent revisor ${CON_MODELO[@]+"${CON_MODELO[@]}"} \
+    "Revisa este diff (lo que voy a subir en el próximo commit). Céntrate en lo que cambia: abre otro fichero solo si lo necesitas para confirmar un error, porque tienes ${LIMITE} segundos. Acaba con la línea VEREDICTO: OK o VEREDICTO: CAMBIAR.") \
     || estado=$?
 
 if [ "$estado" -eq 124 ]; then

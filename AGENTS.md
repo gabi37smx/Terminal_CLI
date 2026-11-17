@@ -12,5 +12,6 @@
 - Nunca ejecutes acciones sobre carpetas reales: solo en ~/pruebas-tareas y con --simular. Los tests de sync usan repos temporales (tmp_path), nunca el repo real.
 - `mochila test-links` y `mochila check-headers` hacen peticiones de red: no los lances contra webs reales; los tests usan un servidor local de mentira.
 - Nunca imprimas ni guardes un secreto entero (ni en mensajes, ni en tests): en los tests, las claves falsas se montan por trozos.
+- Tus cambios de código pasan por el agente revisor antes del commit (hook de `mochila instalar-hook --revisor`): no lo saltes con --no-verify ni con MOCHILA_SIN_REVISOR.
 - No toques .env ni escribas claves en ningún fichero. No hagas git push ni commits: los hace el alumno.
 - Antes de cambiar un fichero, explica en 2-3 líneas qué vas a hacer.
