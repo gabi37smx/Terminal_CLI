@@ -15,7 +15,7 @@
 
 ### Semana 1 (terminal y primera orden)
 - [x] Terminal, herramientas (git, uv, Python 3.12, OpenCode 1.18.35) y proyecto con uv.
-- [x] `.gitignore` (con `.env`) y `.gitattributes` desde el primer commit.
+- [x] `.gitignore` (con `.env`) y `.gitattributes` desde el primer commit con código (`1195d31`). El primero de todos es el «Initial commit» que hizo GitHub con el README: explicado en `docs/prompts.md`.
 - [x] `opencode.json` y `AGENTS.md`.
 - [x] Spec v0 en el README, `mochila version` y `mochila listar`; instalado con `uv tool install --editable .`.
 - [x] Más de 10 commits; ya hubo una rama y un pull request (#1, `feature/cli-listar`).
@@ -114,7 +114,7 @@ Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes p
    - De verdad: `mochila ejecutar resumir-tema`, `nombrar-descargas` y `clasificar-asignatura` sobre `~/pruebas-tareas/apuntes-ia` y `descargas-ia` (hay que copiarlas al PC de clase o crear otras). Si algo sale mal, se arregla en las `instrucciones` del JSON, con su commit.
    - Rellenar los **[COMPLETAR]** de la entrada «Sesión 3 · context7...» de `docs/prompts.md` y repasar el ADR-0002 (que diga lo que yo diría).
 
-14. **Semana 4 (entrega el 20-nov).** Hecho el 11-nov en la rama `release-1.0`:
+14. **Semana 4 (entrega el 27-nov: soy del grupo presencial, con defensa de 5 minutos: instalar desde cero, una acción con IA y otra sin red, y preguntas; el 20-nov es la fecha del semipresencial).** Hecho el 11-nov en la rama `release-1.0`:
    - `CHANGELOG.md`, la versión 1.0.0 en `pyproject.toml` y `__init__.py`, y el alias `tareas` (`tareas version` → `tareas 1.0.0`).
    - `pruebas.yml` en Ubuntu, Windows y macOS, y `pytest-cov` (93 %).
    - `scripts/revisar.sh`, con el revisor en `mode: all`.
@@ -128,10 +128,10 @@ Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes p
      - `opencode run --agent plan` para sacar `docs/changelog-borrador.md` y apuntar en qué se equivocó comparado con mi `CHANGELOG.md`.
      - `bash scripts/revisar.sh` con algo en `git add`.
    - ~~Ensayo de instalación en un ordenador limpio~~ HECHO (11-nov): en el portátil con Ubuntu 24.04 recién instalado, siguiendo solo el README. Salieron los issues #17-#20 y, en la Fase B, el #22; todos arreglados en la 1.0.1.
-   - Instalación cruzada con **otra persona** (lo pide la lista): un compañero instala con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.1` siguiendo solo el README y abre issues (`gh issue create`). Los contesto, y si hay arreglo sale como 1.0.2.
+   - Instalación cruzada con **otra persona** (lo pide la lista): un compañero instala con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.1.0` siguiendo solo el README y abre issues (`gh issue create`) **con su propia cuenta**. Los contesto, y si hay arreglo sale como 1.1.1.
    - Rellenar los **[COMPLETAR]** de la entrada «Sesión 4 · ...» de `docs/prompts.md`.
    - **Instalación cruzada, mejor con alguien de SMX o ASIR, y con `git clone` + `bash instalar.sh`.** La instalación desde cero con `mochila configurar` ya la probé yo el 12-nov en un PC de clase (PR #34); falta que la haga **otra persona**, que es lo que pide la lista.
-   - **Publicar la 1.1.0** (`mochila configurar` es una función nueva) cuando esté lo de clase. Antes: la versión en `pyproject.toml` y `__init__.py`, y la fecha en el CHANGELOG. Etiquetar y publicar lo hago yo.
+   - **Publicar la 1.1.0** (`mochila configurar` es una función nueva). Preparada el 17-nov en la rama `release-1.1`: versión en `pyproject.toml`, `__init__.py` y `uv.lock`, fecha en el CHANGELOG y el README instalando `@v1.1.0`. Fusionar la PR, etiquetar y publicar lo hago yo.
    - Leer y corregir lo que Claude Code escribió en primera persona el 12-nov: «Por qué se me ocurrió» y «Qué aprendí» de la entrada «`mochila configurar`» de `docs/prompts.md`, y el ADR-0003.
 
 ## Cómo retomar

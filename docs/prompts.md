@@ -1,6 +1,6 @@
 # Prompts clave del proyecto
 
-Cuaderno de bitácora de `dam`: qué pedí, qué comprobé yo y qué corregí.
+Cuaderno de bitácora de `mochila` (antes `dam`): qué pedí, qué comprobé yo y qué corregí.
 
 **Herramientas.** En clase uso OpenCode con los modelos del centro; en casa, además, Claude (chat) y, desde el 3-nov, Claude Code. Cada entrada dice cuál usé.
 Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con OpenCode o el resultado de una prueba): se rellena con datos reales, no se inventa.
@@ -14,6 +14,8 @@ Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con O
 **Diffs que rechacé o deshice (/undo) y por qué:** no consta ninguno. Solo hubo un bloqueo: el agente intentó hacer `git push` y la regla `"git push *": "deny"` de `opencode.json` lo impidió; el push lo hice yo.
 **Funcionaba a la primera:** [COMPLETAR] (no consta en las sesiones exportadas de OpenCode)
 **Qué aprendí:** `typer.Exit(code=1)` termina con código 1 sin traza; el error va a stderr.
+
+**Nota sobre el primer commit (repasado el 17-nov):** la lista de la Sesión 1 pide `.gitignore` y `.gitattributes` en el primer commit. En mi historial el primero es «Initial commit», que hizo GitHub al crear el repo con un README, y el siguiente es un retoque de ese README. `.gitignore` (con `.venv/` y `.env`) y `.gitattributes` entraron en el commit `1195d31` («Crea el proyecto con uv y Typer...»), el primero con código. Antes de ese commit no había nada que ignorar, así que nunca se subió `.venv` ni `.env` (`git log --all -- .env` no devuelve nada). No reescribí el historial para arreglarlo: cambiaría todos los commits, las etiquetas `v1.0.0` y `v1.0.1` y las PR ya fusionadas. **Qué aprendí:** si creas el repo en GitHub con README, el primer commit es suyo; mejor crearlo vacío y subir el tuyo.
 
 ---
 

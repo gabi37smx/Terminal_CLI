@@ -1,12 +1,14 @@
 # Changelog
 
-Todos los cambios importantes de `tareas` (el comando `dam`) se apuntan aquí.
+Todos los cambios importantes de `tareas` (el comando `mochila`; hasta la 1.0.1, `dam`) se apuntan aquí.
 
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y las versiones siguen
 [Versionado Semántico](https://semver.org/lang/es/): 1.0.1 arregla fallos, 1.1.0 añade cosas sin
 romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
+
+## [1.1.0] - 2026-11-17
 
 ### Cambiado
 
@@ -248,6 +250,7 @@ Primera versión estable: lo de las semanas 1 a 4 del proyecto de 1º DAM.
   - El documento va entre `<documento>` para frenar la inyección de prompt.
 - `comprobar-ia` nunca enseña la clave (solo dice «clave: definida»), y OpenCode no puede leer `*.env`.
 
-[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.1...HEAD
+[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/gabi37smx/Terminal_CLI/releases/tag/v1.0.0

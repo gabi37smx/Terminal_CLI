@@ -51,7 +51,7 @@ Si usas el script `instalar.sh` / `instalar.cmd` de abajo, uv lo instala él; gi
 ### En una orden (si ya tienes uv)
 
 ```bash
-uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.0.1
+uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.1.0
 mochila --help          # o «tareas --help»: es el mismo programa
 ```
 
