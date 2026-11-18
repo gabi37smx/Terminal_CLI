@@ -266,7 +266,10 @@ else
         read -rp "    Para usar modelos de IA gratis hace falta OpenCode. ¿Lo instalo? [S/n]: " respuesta || true
         if [ "$respuesta" != "n" ] && [ "$respuesta" != "N" ]; then
             if de_linux npm; then
+                # En una máquina virtual, Node.js puede cerrarse a la primera (issue #53): otra vez y ya
                 npm install -g "opencode-ai@$VERSION_OPENCODE" \
+                    || { aviso "npm se ha cerrado sin instalar OpenCode. Lo intento otra vez..."
+                         npm install -g "opencode-ai@$VERSION_OPENCODE"; } \
                     || aviso "npm no ha podido instalarlo. Si pone EACCES: sudo npm install -g opencode-ai@$VERSION_OPENCODE"
             else
                 aviso "Para instalar OpenCode necesito npm (Node.js): Ubuntu/Debian: sudo apt install npm · macOS: brew install node"
@@ -277,7 +280,8 @@ else
     if de_linux opencode; then
         uv run mochila configurar-ia || aviso "Sin IA de momento. Cuando quieras: mochila configurar-ia"
     else
-        aviso "Sin OpenCode, las acciones con IA usan el servidor del centro (o elige con: mochila configurar-ia)."
+        aviso "Sin OpenCode no hay modelos gratis: las acciones con IA no funcionarán hasta que elijas uno."
+        SIN_IA=1
     fi
 fi
 
@@ -286,3 +290,10 @@ paso "Compruebo que todo funciona"
 uv run mochila --config "$CONFIG" validar
 
 printf '\nListo. Prueba:  mochila --help   y   mochila status\n'
+if [ "${SIN_IA:-0}" = 1 ]; then
+    # Issue #53: si npm falla, el aviso sale en medio y la instalación parece perfecta
+    printf '\n'
+    aviso "Ojo: la IA NO está lista (no se ha instalado OpenCode). Para tenerla, una vez:"
+    aviso "    npm install -g opencode-ai@$VERSION_OPENCODE"
+    aviso "y después, en una terminal nueva:  mochila configurar-ia"
+fi

@@ -193,6 +193,23 @@ RECOMENDADOS = (
 )
 SEGUNDOS_OPENCODE = 300  # un modelo gratis puede tardar (y más con un tema largo): mejor esperar que cortar
 
+# La pregunta mínima de comprobar-ia y configurar-ia. Antes era «Responde solo con la palabra: ok», pero
+# el agente de mochila le dice al modelo que no obedezca instrucciones del mensaje (issue #53, punto 7):
+# un saludo se contesta igual sin pedirle nada.
+PRUEBA_SISTEMA = "Contesta al saludo con una sola palabra."
+PRUEBA_MENSAJE = "Hola"
+
+# Lo que dice OpenCode (en inglés) cuando no llega a internet: «Cannot connect to API...», «fetch failed»...
+_SIN_CONEXION = ("cannot connect", "unable to connect", "fetch failed", "enotfound", "econnrefused",
+                 "econnreset", "getaddrinfo", "network error")
+
+
+def _error_opencode(error: str) -> str:
+    """El error de OpenCode para un alumno: sin red, en español; lo demás, tal cual (issue #53, punto 6)."""
+    if any(p in error.lower() for p in _SIN_CONEXION):
+        return f"No hay conexión con OpenCode: ¿tienes internet? (OpenCode dice: {error})"
+    return f"OpenCode dice: {error}"
+
 # El agente que usa mochila. «read» no se puede quitar (sin ninguna herramienta, la 1.18.35 se queda
 # colgada), así que se deja solo dentro de su carpeta temporal, que está vacía: external_directory
 # le prohíbe leer fuera. Todo lo demás (editar, ejecutar, navegar...) no existe para él.
@@ -273,9 +290,11 @@ class ProveedorOpenCode(ProveedorIA):
                 raise IANoDisponible(f"No he podido lanzar opencode ({e.strerror or e})") from None
         texto, entrada, salida, error = leer_eventos(r.stdout.decode("utf-8", "replace"))
         if error:
-            raise IANoDisponible(f"OpenCode dice: {error}")
+            raise IANoDisponible(_error_opencode(error))
         if r.returncode != 0:
             lineas = _ANSI.sub("", r.stderr.decode("utf-8", "replace")).strip().splitlines()
+            if lineas and any(p in lineas[-1].lower() for p in _SIN_CONEXION):
+                raise IANoDisponible(_error_opencode(lineas[-1][:200]))
             raise IANoDisponible(
                 f"opencode ha fallado (código {r.returncode})" + (f": {lineas[-1][:200]}" if lineas else "")
             )
@@ -381,13 +400,24 @@ def guardar_ajustes(ajustes: dict) -> Path:
     return ruta
 
 
-def crear_proveedor() -> ProveedorIA:
-    """El proveedor que elegiste con mochila configurar-ia. Sin elegir nada, el servidor del centro.
+SIN_ELEGIR = ("Aún no has elegido con qué modelo de IA trabajar. Elígelo con: mochila configurar-ia "
+              "(modelos gratis con OpenCode, en casa y en clase; o el servidor del centro, con tu clave).")
 
+
+def crear_proveedor() -> ProveedorIA:
+    """El proveedor que elegiste con mochila configurar-ia.
+
+    Sin elegir nada, el servidor del centro si ya tienes sus datos (CENTRO_IA_URL o CENTRO_IA_KEY, en la
+    terminal o en un .env); si no, te dice que elijas (issue #53: en casa, «Faltan CENTRO_IA_URL» no se entendía).
     MOCHILA_IA=centro|opencode (y MOCHILA_IA_MODELO) lo cambian solo en esa terminal: p. ej., en clase.
     """
     ajustes = leer_ajustes()
-    eleccion = config.entorno("IA").lower() or str(ajustes.get("proveedor") or "centro")
+    eleccion = config.entorno("IA").lower() or str(ajustes.get("proveedor") or "")
+    if not eleccion:
+        _leer_dotenv()
+        if not (os.environ.get("CENTRO_IA_URL") or os.environ.get("CENTRO_IA_KEY")):
+            raise IANoDisponible(SIN_ELEGIR)
+        eleccion = "centro"
     if eleccion == "opencode":
         modelo = config.entorno("IA_MODELO") or ajustes.get("modelo") or RECOMENDADOS[0]
         return ProveedorOpenCode(modelo)

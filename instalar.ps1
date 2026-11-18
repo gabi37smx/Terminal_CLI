@@ -75,6 +75,7 @@ Paso "Activo el autocompletado con TAB"
 # en el orden en que manda Windows; si ninguno está definido, Windows usa Restricted.
 $Politica = 'Restricted'
 $SinTab = $false  # para repetir el aviso al final: en medio de toda la salida no se ve
+$SinIA = $false   # lo mismo si no se instala OpenCode (issue #53)
 foreach ($Ambito in 'MachinePolicy', 'UserPolicy', 'CurrentUser', 'LocalMachine') {
     $p = Get-ExecutionPolicy -Scope $Ambito
     if ($p -ne 'Undefined') { $Politica = $p; break }
@@ -233,7 +234,13 @@ if (Test-Path (Join-Path $HOME ".config\mochila\ia.json")) {
         if ($respuesta -ne 'n') {
             if (Tiene npm) {
                 npm install -g "opencode-ai@$VersionOpenCode"
-                if ($LASTEXITCODE -ne 0) { Aviso "npm no ha podido instalar OpenCode." }
+                if ($LASTEXITCODE -ne 0) {
+                    # En una máquina virtual, Node.js puede cerrarse a la primera («Assertion failed:
+                    # new_time >= loop->time»): en la prueba del issue #53 funcionó a la segunda
+                    Aviso "npm se ha cerrado sin instalar OpenCode. Lo intento otra vez..."
+                    npm install -g "opencode-ai@$VersionOpenCode"
+                    if ($LASTEXITCODE -ne 0) { Aviso "npm no ha podido instalar OpenCode." }
+                }
                 $env:Path = "$env:APPDATA\npm;$env:Path"   # ahí deja npm sus comandos: que esta ventana lo vea ya
             } else {
                 # Windows LTSC no trae winget: primero la web, que vale en todos
@@ -247,7 +254,8 @@ if (Test-Path (Join-Path $HOME ".config\mochila\ia.json")) {
         uv run mochila configurar-ia
         if ($LASTEXITCODE -ne 0) { Aviso "Sin IA de momento. Cuando quieras: mochila configurar-ia" }
     } else {
-        Aviso "Sin OpenCode, las acciones con IA usan el servidor del centro (o elige con: mochila configurar-ia)."
+        Aviso "Sin OpenCode no hay modelos gratis: las acciones con IA no funcionarán hasta que elijas uno."
+        $SinIA = $true
     }
 }
 
@@ -263,4 +271,11 @@ if ($SinTab) {
     Aviso "Ojo: el TAB NO está activado. Tu PowerShell no deja cargar scripts. Para tenerlo, una vez:"
     Aviso "    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"
     Aviso "y vuelve a lanzar .\instalar.cmd (lo que ya está hecho se salta)."
+}
+if ($SinIA) {
+    # Issue #53: npm se cerró, el aviso salió en medio y la instalación parecía perfecta
+    Write-Host ""
+    Aviso "Ojo: la IA NO está lista (no se ha instalado OpenCode). Para tenerla, una vez:"
+    Aviso "    npm install -g opencode-ai@$VersionOpenCode"
+    Aviso "y después, en una PowerShell nueva:  mochila configurar-ia"
 }

@@ -24,6 +24,18 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 - `scripts/revisar.sh` lanzado desde un hook de git ya no estropea el commit: OpenCode heredaba
   `GIT_INDEX_FILE` y guardaba sus instantáneas en el índice del repositorio (`invalid object`).
+- Lo que salió en la instalación cruzada de 1º de ASIR (#53), en lo de la IA:
+  - Si aún no has elegido modelo, las acciones con IA y `comprobar-ia` te dicen que lo elijas con
+    `mochila configurar-ia`, en vez de pedir `CENTRO_IA_URL` y `CENTRO_IA_KEY`. Si ya tienes esas
+    variables (o un `.env`), se sigue usando el servidor del centro sin elegir nada.
+  - Sin internet, OpenCode decía `Cannot connect to API: Was there a typo in the url or port?`; ahora
+    sale «No hay conexión con OpenCode: ¿tienes internet?».
+  - La pregunta de prueba de `comprobar-ia` y `configurar-ia` es un saludo. Antes pedía «responde solo
+    ok», y el modelo contestaba con una nota: el agente de mochila le dice que no obedezca
+    instrucciones que lleguen en el mensaje. Además, solo se enseña la primera línea de la respuesta.
+  - Si `npm` se cierra al instalar OpenCode (dentro de una máquina virtual pasa a veces), el
+    instalador lo intenta otra vez y, si no hay OpenCode, lo repite al final con la orden para
+    instalarlo.
 
 ### Seguridad
 
