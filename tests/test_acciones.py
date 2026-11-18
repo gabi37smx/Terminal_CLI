@@ -369,6 +369,7 @@ def test_ordenar_al_almacen_sin_almacen(al_almacen, tmp_path, monkeypatch):
 def test_ordenar_por_tipo(tmp_path, nombre, destino):
     origen = tmp_path / "Downloads"
     origen.mkdir()
+    (tmp_path / "POR-TIPO").mkdir()  # el plan B solo va a una carpeta que ya existe (issue #53)
     f = origen / nombre
     f.write_bytes(b"x")
     o = Ordenar({"nombre": "o", "descripcion": "d", "tipo": "ordenar", "por_tipo": str(tmp_path / "POR-TIPO"),
@@ -378,6 +379,18 @@ def test_ordenar_por_tipo(tmp_path, nombre, destino):
         assert r.destino == origen / "sistemas" / nombre and r.nota == ""
     else:
         assert r.destino == tmp_path / "POR-TIPO" / destino / nombre and r.nota == "por tipo"
+
+
+def test_ordenar_por_tipo_no_crea_esa_carpeta_si_no_la_tienes(tmp_path):  # issue #53, punto 4
+    origen = tmp_path / "Downloads"
+    origen.mkdir()
+    f = origen / "programacion-arrays.pdf"
+    f.write_bytes(b"x")
+    o = Ordenar({"nombre": "o", "descripcion": "d", "tipo": "ordenar", "por_tipo": str(tmp_path / "Datos" / "POR-TIPO"),
+                 "carpetas": {"sistemas": ["linux"]}})
+    r = o.aplicar(f, 1, simular=False)
+    assert r.estado == "saltado" and "se queda aquí" in r.nota
+    assert f.exists() and not (tmp_path / "Datos").exists()
 
 
 @pytest.mark.parametrize("nombre", ["desktop.ini", "Thumbs.db", "linux.iso.crdownload", "linux.part",
@@ -395,6 +408,7 @@ def test_ordenar_al_almacen_y_por_tipo(al_almacen, tmp_path):
     descargas, almacen, cfg, llamadas = al_almacen
     datos = json.loads(cfg.read_text(encoding="utf-8"))
     datos["acciones"][0]["por_tipo"] = str(tmp_path / "Datos" / "POR-TIPO")
+    (tmp_path / "Datos" / "POR-TIPO").mkdir(parents=True)
     cfg.write_text(json.dumps(datos), encoding="utf-8")
     (descargas / "desktop.ini").write_text("x", encoding="utf-8")
     r = CliRunner().invoke(app, ["--config", str(cfg), "ejecutar", "ordenar", str(descargas)], input="s\ns\n")

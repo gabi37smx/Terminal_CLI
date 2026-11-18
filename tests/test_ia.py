@@ -13,7 +13,7 @@ from PIL import Image
 from typer.testing import CliRunner
 
 from tareas import config, ia
-from tareas.acciones import Accion, a_nombre_seguro, leer_texto
+from tareas.acciones import Accion, a_nombre_seguro, leer_documento, leer_texto, sin_cabeceras
 from tareas.cli import app
 from tareas.errores import AccionNoValida, IANoDisponible
 from tareas.ia import ProveedorCentro
@@ -33,6 +33,31 @@ def pdf_con_texto(ruta, texto: str) -> None:
         b"<< /Length " + str(len(contenido)).encode() + b" >>\nstream\n" + contenido + b"\nendstream",
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
     ]
+    salida, posiciones = bytearray(b"%PDF-1.4\n"), []
+    for i, o in enumerate(objetos, 1):
+        posiciones.append(len(salida))
+        salida += f"{i} 0 obj\n".encode() + o + b"\nendobj\n"
+    xref = len(salida)
+    salida += f"xref\n0 {len(objetos) + 1}\n0000000000 65535 f \n".encode()
+    salida += b"".join(f"{p:010d} 00000 n \n".encode() for p in posiciones)
+    salida += f"trailer\n<< /Size {len(objetos) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
+    ruta.write_bytes(bytes(salida))
+
+
+def pdf_de_paginas(ruta, paginas: list[list[str]]) -> None:
+    """Un PDF mínimo con varias páginas; cada página, sus líneas de texto (pypdf las lee una por línea)."""
+    n = len(paginas)
+    objetos = [b"<< /Type /Catalog /Pages 2 0 R >>",
+               ("<< /Type /Pages /Kids [" + " ".join(f"{4 + 2 * i} 0 R" for i in range(n)) +
+                f"] /Count {n} >>").encode(),
+               b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
+    for i, lineas in enumerate(paginas):
+        contenido = " ".join(f"BT /F1 12 Tf 50 {750 - 20 * j} Td ({l}) Tj ET"
+                             for j, l in enumerate(lineas)).encode("latin-1")
+        objetos.append(f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents {5 + 2 * i} 0 R "
+                       "/Resources << /Font << /F1 3 0 R >> >> >>".encode())
+        objetos.append(b"<< /Length " + str(len(contenido)).encode() + b" >>\nstream\n" + contenido +
+                       b"\nendstream")
     salida, posiciones = bytearray(b"%PDF-1.4\n"), []
     for i, o in enumerate(objetos, 1):
         posiciones.append(len(salida))
@@ -122,6 +147,34 @@ def test_un_pdf_escaneado_sin_texto_se_salta_sin_preguntar(tmp_path, modelo_fals
     a.proveedor = modelo_falso("resumen de nada")
     [r] = a.ejecutar([tmp_path / "escaneo.pdf"], simular=False)
     assert r.estado == "saltado" and "sin texto" in r.nota and a.proveedor.llamadas == []
+
+
+def test_un_pdf_con_solo_cabeceras_se_salta_sin_preguntar(tmp_path, modelo_falso):  # issue #53, punto 5
+    pdf_de_paginas(tmp_path / "arrays.pdf",
+                   [[f"ApuntesDAM - Programacion-Arrays | Pagina {i} de 36"] for i in range(1, 37)])
+    a = accion("resumir")
+    a.proveedor = modelo_falso("Contenido no disponible")
+    [r] = a.ejecutar([tmp_path / "arrays.pdf"], simular=False)
+    assert r.estado == "saltado" and "sin texto" in r.nota and a.proveedor.llamadas == []
+    assert not (tmp_path / "arrays.resumen.md").exists()
+
+
+def test_al_modelo_le_llega_el_tema_sin_cabeceras_ni_pies(tmp_path):
+    paginas = [["ApuntesDAM - Arrays", f"Apartado {i}", "Un array guarda datos del mismo tipo",
+                f"Ejercicio {i}: recorre el array", "Se empieza a contar en 0", f"Pagina {i} de 4"] for i in range(1, 5)]
+    pdf_de_paginas(tmp_path / "tema.pdf", paginas)
+    texto, total = leer_documento(tmp_path / "tema.pdf", 40000)
+    assert total == 4 and "ApuntesDAM" not in texto and "Pagina" not in texto
+    # Lo de en medio se queda, aunque se repita o solo cambie el número
+    assert texto.count("Un array guarda datos") == 4 and "Ejercicio 1" in texto and "Ejercicio 4" in texto
+
+
+def test_sin_cabeceras():
+    assert sin_cabeceras(["Cabecera 1\nuno", "Cabecera 2\ndos", "Cabecera 3\ntres"]) == ["uno", "dos", "tres"]
+    assert sin_cabeceras(["Cabecera\nuno", "Cabecera\ndos"]) == ["Cabecera\nuno", "Cabecera\ndos"]  # < 3 páginas
+    # Lo que sale en la mitad o menos no es cabecera: puede ser el título de un apartado
+    assert sin_cabeceras(["SQL\nuno", "SQL\ndos", "tres", "cuatro"]) == ["SQL\nuno", "SQL\ndos", "tres", "cuatro"]
+    assert sin_cabeceras(["Tema 3", "Tema 3", "Tema 3"]) == ["", "", ""]
 
 
 def test_sin_proveedor_es_ia_no_disponible_no_un_traceback(tmp_path):

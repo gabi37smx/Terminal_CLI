@@ -267,7 +267,20 @@ def test_un_instalador_nunca_es_un_apunte(tmp_path):
     descargas = tmp_path / "Descargas"
     descargas.mkdir()
     (descargas / "linux-mint-installer.exe").write_bytes(b"MZ")  # dice «linux», pero es un instalador
+    (tmp_path / "POR-TIPO").mkdir()
     accion = {"nombre": "o", "descripcion": "d", "tipo": "ordenar", "carpetas": CARPETAS,
               "destino": str(tmp_path / "asignaturas"), "por_tipo": str(tmp_path / "POR-TIPO")}
     [r] = Motor([accion]).ejecutar("o", descargas, simular=True)
     assert r.destino == tmp_path / "POR-TIPO" / "INSTALADORES" / "linux-mint-installer.exe"
+
+
+# ---------- issue #53: un tema de CSS en 1º de ASIR ----------
+def test_un_tema_de_css_va_a_lenguaje_de_marcas_en_asir(tmp_path):
+    from tareas import ciclos
+
+    carpetas = ciclos.asignaturas_de("asir", [1])
+    assert "css" in carpetas["lenguaje-marcas"]
+    # Su nombre de verdad; por dentro habla de tablas y consultas de medios, que daban Bases de datos
+    f = odt(tmp_path / "0091-css-desde-cero.odt", "", "Cada tabla y cada consulta de medios con su estilo")
+    o = Ordenar({"nombre": "o", "descripcion": "d", "tipo": "ordenar", "carpetas": carpetas})
+    assert o.clasificar(f) == "lenguaje-marcas"

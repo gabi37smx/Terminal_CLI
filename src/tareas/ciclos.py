@@ -57,7 +57,8 @@ ASIGNATURAS: dict[str, Asignatura] = {
     "lenguaje-marcas": A("Lenguajes de marcas y sistemas de gestión de información",
                          "Llenguatges de marques i sistemes de gestió d'informació",
                          ("llenguatge de marques", "lenguaje de marcas", "marques", "marcas", "xml", "html",
-                          "json"),
+                          "json", "css", "hojas de estilo", "fulls d estil", "dtd", "xsd", "xpath", "xslt",
+                          "xquery"),  # css y los demás: issue #53 (un tema de CSS acabó en Bases de datos)
                          (".xml", ".html", ".htm")),
     "programacion": A("Programación", "Programació",
                       ("programacio ia", "programacio", "programacion", "python", "poo", "classe", "clase",
