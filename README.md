@@ -11,6 +11,53 @@ mis apuntes de 1º DAM sincronizados entre el PC de clase, el de casa y el USB.
 > elegiste a `~/.config/mochila`. Cambios en [CHANGELOG.md](CHANGELOG.md); todas las pull requests,
 > por versión y con sus issues, en [docs/historial-pr.md](docs/historial-pr.md).
 
+## ¿Lo vas a probar? Empieza aquí
+
+Sirve para cualquier ciclo de Informática (SMX, DAM, DAW, ASIR) en Linux, Windows o macOS. En 20 minutos:
+
+**1. Lo que necesitas antes:** `git` y, si quieres la IA gratis, **Node.js** (en Ubuntu, `sudo apt install npm`; en Windows, Node.js LTS de nodejs.org). Cómo instalar git
+en cada sistema: [Antes de empezar](#antes-de-empezar-git-curl-y-uv). En Windows, abre
+PowerShell y ejecuta una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+**2. Clona e instala** (clona: así tienes lo último, también lo que aún no está en una versión publicada):
+
+```bash
+git clone https://github.com/gabi37smx/Terminal_CLI.git
+cd Terminal_CLI
+bash instalar.sh          # Linux y macOS
+```
+
+En Windows: `.\instalar.cmd` desde PowerShell (o doble clic en `instalar.cmd`). El instalador te pregunta:
+
+- **Qué estudias** (ciclo y curso): pone tus asignaturas.
+- **Tu usuario de GitHub**: crea tu almacén de apuntes **privado** (`ASIR-almacen`, `SMX-almacen`...)
+  en tu cuenta. Si git pide *Password*, va un token, no tu contraseña ([por qué](#tu-almacén-de-apuntes-si-aún-no-lo-tienes)).
+  ¿Sin GitHub? Pulsa Enter y lo crea solo en tu equipo.
+- **Qué IA usar**: `1` = modelos gratis con OpenCode (no piden cuenta ni clave).
+
+Al acabar, **abre una terminal nueva**.
+
+**3. Pruébalo** (nada de esto borra ni mueve sin preguntar):
+
+```bash
+mochila                                  # la ayuda corta
+mochila help                             # la guía, con un ejemplo de cada comando
+cd ~/Downloads                           # en Windows: cd $HOME\Downloads
+mochila ejecutar ordenar . --simular     # adónde iría cada fichero (no mueve nada)
+mochila status                           # tu almacén: qué hay pendiente
+mochila comprobar-ia                     # ¿responde la IA?
+mochila ejecutar resumir-tema UN_APUNTE.pdf   # un resumen con IA al lado del apunte
+```
+
+Escribe `mochila ej` y pulsa la tecla **TAB**: se completa sola. Sin internet, `mochila comprobar-ia`
+tiene que decir por qué no llega y salir con código 4 (`echo $?`; en PowerShell, `echo $LASTEXITCODE`).
+
+**4. Si algo falla o no se entiende, abre un issue:**
+<https://github.com/gabi37smx/Terminal_CLI/issues/new>. Cuenta qué hiciste, qué esperabas y qué salió
+(copia el texto de la terminal), y en qué sistema y ciclo. **Nunca pegues tu token ni una clave.**
+
+Para quitarlo todo después: [Desinstalación](#desinstalación).
+
 ## Spec (versión 0 · 26/10/2026)
 
 1. **Problema:** cada semana pierdo tiempo ordenando Descargas a mano, limpiando ficheros temporales y convirtiendo fotos a WebP para que pesen menos.
@@ -382,7 +429,7 @@ casa, `mochila` puede usar los **modelos gratis de OpenCode**: no piden cuenta n
 
 ```bash
 mochila configurar-ia         # 1 = modelos gratis con OpenCode; luego eliges el modelo de la lista
-mochila comprobar-ia          # OpenCode · modelo: opencode/deepseek-v4.1-flash-free → ✔ El modelo responde «ok»
+mochila comprobar-ia          # OpenCode · modelo: opencode/deepseek-v4.1-flash-free → ✔ El modelo responde «Hola...» y los segundos
 ```
 
 `mochila configurar-ia`:
@@ -446,7 +493,7 @@ de `CENTRO_IA_CA` o, si no está, de `NODE_EXTRA_CA_CERTS`, el mismo que usa Ope
 |---|---|
 | `CENTRO_IA_URL` | Dirección del servidor (acaba en `/v1`). |
 | `CENTRO_IA_KEY` | Tu clave personal. Nunca se imprime: `comprobar-ia` solo dice «definida». |
-| `CENTRO_IA_CA` | Ruta del certificado del instituto (`ca-ies-simarro.crt`). Si no está, `mochila` usa `NODE_EXTRA_CA_CERTS`, el de OpenCode. |
+| `CENTRO_IA_CA` | Ruta del certificado del instituto (un `.crt`; el mismo que usa OpenCode en clase). Si no está, `mochila` usa `NODE_EXTRA_CA_CERTS`, el de OpenCode. |
 | `CENTRO_IA_MODELO` | Opcional: otro modelo del servidor (por defecto, `Qwen38-DualSpark-medium`; los que hay los ves en OpenCode con `/models`). |
 
 **2. Primero, siempre `--simular`.** No llama al modelo ni gasta nada: dice cuánto mandaría
@@ -469,7 +516,8 @@ hecho se queda hecho y el resto, sin tocar.
 
 | Qué pasa | Mensaje |
 |---|---|
-| Falta la URL o la clave | Faltan CENTRO_IA_URL o CENTRO_IA_KEY: ponlas en .env (mira .env.example) |
+| Aún no has elegido modelo | Aún no has elegido con qué modelo de IA trabajar. Elígelo con: mochila configurar-ia |
+| Elegiste el centro y falta la URL o la clave | Faltan CENTRO_IA_URL o CENTRO_IA_KEY. Defínelas en la terminal o en un .env... |
 | Sin red | No llego al servidor de IA: ¿estás en la red del centro? |
 | Sin certificado | No me fío del servidor: falta el certificado del centro (CENTRO_IA_CA) |
 | Tarda más de 120 s | El servidor de IA no ha respondido a tiempo |
