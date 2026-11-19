@@ -332,6 +332,11 @@ mochila crear-almacen
 En otro equipo (clase, casa) es lo mismo, pero a la pregunta de si ya lo tienes dices que **sí**:
 solo lo baja.
 
+**¿Aún sin GitHub?** Pulsa Enter cuando te pida el usuario y di que sí a crearlo **solo en este
+equipo**: tendrás `~/CICLO-almacen` con tus carpetas y ya podrás ordenar. Cuando tengas cuenta, vuelve
+a escribir `mochila crear-almacen`: lo sube a tu repo nuevo (créalo **vacío**, sin README) y desde ahí
+ya funciona `mochila sync`.
+
 > **Al bajarlo o subirlo, ¿qué contraseña pongo?** En Windows se abre el navegador para que inicies
 > sesión en GitHub. En Linux y macOS, git pide `Username` (tu usuario) y `Password`: ahí **no vale tu
 > contraseña**, va un *token* que creas en <https://github.com/settings/tokens> con permiso «repo»

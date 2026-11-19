@@ -19,6 +19,11 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 - Una prueba que comprueba que **lo que dice `--simular` es lo que pasa de verdad** en los seis
   tipos de acción sin IA: mismos ficheros, mismos destinos y mismos saltados, y después cada
   fichero está donde dijo la simulación.
+- **El almacén «solo en este equipo»**, para quien aún no tiene GitHub (#53): en `mochila
+  crear-almacen`, pulsa Enter en el usuario y di que sí a «¿Lo creo solo en este equipo?»: lo crea
+  en `~/CICLO-almacen` con tus carpetas, sin subir nada, y ya puedes ordenar. Cuando tengas cuenta, repite `mochila crear-almacen` y lo sube a
+  tu repo (vacío). Hasta entonces, `ordenar` no ofrece `sync`, y `sync` y `status` dicen qué hacer
+  en vez de `git push -u origin main` (ADR-0005, actualizado).
 
 ### Arreglado
 
@@ -36,6 +41,16 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
   - Si `npm` se cierra al instalar OpenCode (dentro de una máquina virtual pasa a veces), el
     instalador lo intenta otra vez y, si no hay OpenCode, lo repite al final con la orden para
     instalarlo.
+- Lo que salió en la instalación cruzada de 1º de ASIR (#53), en `ordenar` y `resumir-tema`:
+  - Un tema de CSS iba a Bases de datos (hablaba de «tablas» y «consultas de medios»). Lenguaje de
+    marcas reconoce ahora `css`, «hojas de estilo», `dtd`, `xsd`, `xpath`, `xslt` y `xquery`.
+  - Lo que no es de ninguna asignatura solo va a `por_tipo` (`~/Datos/POR-TIPO`) **si esa carpeta ya
+    existe**. Es cómo ordeno yo mi PC: a otro alumno se le creaba sin pedirla. Si no está, el fichero
+    se queda donde estaba.
+  - `resumir-tema` quita las cabeceras y los pies de un PDF (las líneas que se repiten arriba o abajo
+    en más de la mitad de las páginas, aunque cambie el número de página). Un PDF que solo tiene
+    cabeceras se salta como «sin texto», sin preguntar al modelo: antes gastaba una llamada y dejaba
+    un resumen que decía «contenido no disponible».
 
 ### Seguridad
 

@@ -6,7 +6,7 @@
   "acciones": [
     {
       "nombre": "ordenar",
-      "descripcion": "Ordena los ficheros por asignatura del DAM y los mete en tu almacén; lo demás, a ~/Datos/POR-TIPO (por nombre, extensión y contenido del PDF, .odt o .docx; dentro, a la carpeta de su unidad, que crea si no está)",
+      "descripcion": "Ordena los ficheros por asignatura del DAM y los mete en tu almacén; lo demás, a ~/Datos/POR-TIPO si tienes esa carpeta (por nombre, extensión y contenido del PDF, .odt o .docx; dentro, a la carpeta de su unidad, que crea si no está)",
       "tipo": "ordenar",
       "origen": "~/pruebas-tareas/prueba-final",
       "carpetas": {
@@ -49,7 +49,15 @@
           "marcas",
           "xml",
           "html",
-          "json"
+          "json",
+          "css",
+          "hojas de estilo",
+          "fulls d estil",
+          "dtd",
+          "xsd",
+          "xpath",
+          "xslt",
+          "xquery"
         ],
         "programacion": [
           "programacio ia",

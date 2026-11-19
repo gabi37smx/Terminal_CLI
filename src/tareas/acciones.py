@@ -264,10 +264,41 @@ def _repartir(trozos: list[str], tope: int) -> str:
     return "\n".join(t[:limite] for t, limite in zip(trozos, limites) if limite)
 
 
+def sin_cabeceras(paginas: list[str]) -> list[str]:
+    """Las páginas sin las líneas que se repiten en más de la mitad de ellas: cabeceras y pies.
+
+    Los números no cuentan: «Tema 3 | Página 1 de 36» y «Tema 3 | Página 2 de 36» son la misma línea.
+    Solo se miran las 2 primeras y las 2 últimas líneas de cada página, que es donde van: así «Ejercicio 1»,
+    «Ejercicio 2»... en medio de cada página no se toman por cabecera.
+    Issue #53: un PDF mal exportado solo tenía su cabecera en las 36 páginas, y se mandaba al modelo como
+    si fuera el tema. Con menos de 3 páginas no se sabe qué es cabecera: se dejan como están.
+    """
+    if len(paginas) < 3:
+        return paginas
+
+    def clave(linea: str) -> str:
+        return re.sub(r"\d+", "#", " ".join(linea.split()))
+
+    def bordes(n: int) -> set[int]:  # qué líneas de una página de n líneas son las de arriba o abajo
+        return set(range(n)) if n <= 4 else {0, 1, n - 2, n - 1}
+
+    lineas = [[l for l in p.splitlines() if l.strip()] for p in paginas]
+    veces: dict[str, int] = {}
+    for pagina in lineas:
+        for c in {clave(pagina[i]) for i in bordes(len(pagina))}:
+            veces[c] = veces.get(c, 0) + 1
+    repetidas = {c for c, n in veces.items() if n > len(paginas) / 2}
+    if not repetidas:
+        return paginas
+    return ["\n".join(l for i, l in enumerate(pagina) if not (i in bordes(len(pagina)) and clave(l) in repetidas))
+            for pagina in lineas]
+
+
 def leer_documento(fichero: Path, tope: int) -> tuple[str, int]:
     """(texto, páginas) del documento ENTERO: si es largo, un trozo de cada página hasta `tope` caracteres.
 
-    Las páginas son las del PDF; en lo demás, una por cada 2500 caracteres.
+    Las páginas son las del PDF; en lo demás, una por cada 2500 caracteres. Del PDF se quitan las
+    cabeceras y los pies (sin_cabeceras): si no queda nada, es como si no tuviera texto.
     """
     if fichero.suffix.lower() == ".pdf":
         try:
@@ -276,7 +307,7 @@ def leer_documento(fichero: Path, tope: int) -> tuple[str, int]:
             paginas = [(p.extract_text() or "").strip() for p in PdfReader(str(fichero)).pages]
         except Exception:  # PDF roto o cifrado: para la IA es como si no tuviera texto
             return "", 0
-        return _repartir([p for p in paginas if p], tope).strip(), len(paginas)
+        return _repartir([p for p in sin_cabeceras(paginas) if p.strip()], tope).strip(), len(paginas)
     completo = leer_texto(fichero, 10 ** 7)  # un .txt o .odt con más de 10 millones de caracteres sería raro
     paginas = max(1, round(len(completo) / CARACTERES_POR_PAGINA)) if completo else 0
     trozos = [completo[i:i + CARACTERES_POR_PAGINA] for i in range(0, len(completo), CARACTERES_POR_PAGINA)]
@@ -594,7 +625,12 @@ class Ordenar(Accion):
             if unidad is not None:
                 carpeta, nota = self._carpeta_unidad(carpeta, unidad)
         elif self.config.get("por_tipo"):  # plan B: no es de ninguna asignatura
-            carpeta = Path(self.config["por_tipo"]).expanduser() / CARPETA_POR_TIPO.get(tipo_de(fichero.name), "OTROS")
+            raiz = Path(self.config["por_tipo"]).expanduser()
+            if not raiz.is_dir():
+                # Issue #53: la plantilla trae ~/Datos/POR-TIPO, que es cómo ordeno MI PC. En otro equipo
+                # no se inventa: como en el almacén con las asignaturas, solo si esa carpeta ya existe.
+                return Resultado(fichero, None, "saltado", "no es de ninguna de tus asignaturas: se queda aquí")
+            carpeta = raiz / CARPETA_POR_TIPO.get(tipo_de(fichero.name), "OTROS")
             nota = "por tipo"
         else:
             return Resultado(fichero, None, "saltado", "no sé de qué asignatura es")
