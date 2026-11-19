@@ -5,14 +5,14 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**46 PR fusionadas**, 6 issues y 3 versiones publicadas.
+**50 PR fusionadas**, 7 issues y 3 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
   o la bitácora; `ci/` las pruebas automáticas; `release-X` prepara una versión.
 - **El nombre del comando:** en la #1 era `gabriel`, después `dam` y, desde la #41, `mochila`. Los títulos
   se quedan con el nombre de entonces.
-- **Los números que faltan** (#17, #18, #19, #20, #22, #46) son issues: GitHub numera issues y
+- **Los números que faltan** (#17, #18, #19, #20, #22, #46, #53) son issues: GitHub numera issues y
   PR con la misma cuenta.
 
 Este fichero se genera con `uv run python scripts/historial_pr.py` (lo saca de GitHub con `gh`): no se
@@ -81,7 +81,7 @@ Los arreglos del ensayo de instalación en un Ubuntu recién instalado, siguiend
 | [#47](https://github.com/gabi37smx/Terminal_CLI/pull/47) | 15-nov | `feature/ayuda-corta-y-larga` | Ayuda corta y guía con ejemplos, y avisos del instalador en LTSC | [#46](https://github.com/gabi37smx/Terminal_CLI/issues/46) |
 | [#48](https://github.com/gabi37smx/Terminal_CLI/pull/48) | 17-nov | `release-1.1` | Release 1.1.0: versión, CHANGELOG, README y nota del primer commit |  |
 
-## Sin publicar (#49 a #52)
+## Sin publicar (#49 a #57)
 
 Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.
 
@@ -91,6 +91,10 @@ Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las 
 | [#50](https://github.com/gabi37smx/Terminal_CLI/pull/50) | 18-nov | `docs/completar-revisor` | prompts.md: rellena los [COMPLETAR] que ya tienen datos reales |  |
 | [#51](https://github.com/gabi37smx/Terminal_CLI/pull/51) | 18-nov | `docs/readme-windows-y-comandos` | README y comandos.md: restos de dam y crear-almacen |  |
 | [#52](https://github.com/gabi37smx/Terminal_CLI/pull/52) | 18-nov | `docs/historial-pr` | docs/historial-pr.md: todas las PR por versión, con sus issues |  |
+| [#54](https://github.com/gabi37smx/Terminal_CLI/pull/54) | 19-nov | `arreglo/asir-ia` | IA: elige modelo si no hay ninguno, sin red en español y prueba sin choque (#53) |  |
+| [#55](https://github.com/gabi37smx/Terminal_CLI/pull/55) | 19-nov | `arreglo/asir-ordenar` | ordenar y resumir-tema: css en Lenguaje de marcas, por_tipo solo si existe y PDF sin cabeceras (#53) |  |
+| [#56](https://github.com/gabi37smx/Terminal_CLI/pull/56) | 19-nov | `arreglo/asir-almacen-local` | crear-almacen: el almacén «solo en este equipo» para quien aún no tiene GitHub (#53) |  |
+| [#57](https://github.com/gabi37smx/Terminal_CLI/pull/57) | 19-nov | `arreglo/asir-ordenar` | Lleva a main lo de #55 y #56 (se fusionaron en sus ramas de debajo) | [#53](https://github.com/gabi37smx/Terminal_CLI/issues/53) |
 
 ## Issues
 
@@ -105,3 +109,4 @@ Cada uno se cerró desde la PR que lo arreglaba («Closes #N»).
 | [#20](https://github.com/gabi37smx/Terminal_CLI/issues/20) | 11-nov | Detalles de la ayuda para quien instala sin clonar o usa el nombre tareas | [#21](https://github.com/gabi37smx/Terminal_CLI/pull/21) |
 | [#22](https://github.com/gabi37smx/Terminal_CLI/issues/22) | 11-nov | instalar.sh: no queda claro qué usuario pide para clonar DAM-almacen ni qué poner en Username/Password | [#23](https://github.com/gabi37smx/Terminal_CLI/pull/23) |
 | [#46](https://github.com/gabi37smx/Terminal_CLI/issues/46) | 15-nov | Instalación cruzada (1º DAW, Windows 11 LTSC y VM Windows): TAB, ordenar y la ayuda confunden | [#47](https://github.com/gabi37smx/Terminal_CLI/pull/47) |
+| [#53](https://github.com/gabi37smx/Terminal_CLI/issues/53) | 19-nov | Instalación cruzada (1º ASIR, VM Windows 11 limpia): almacén sin GitHub, IA sin elegir y ordenar fuera de DAM | [#57](https://github.com/gabi37smx/Terminal_CLI/pull/57) |
