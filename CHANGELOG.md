@@ -27,6 +27,9 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ### Arreglado
 
+- `nombrar-descargas`: un PDF que no dice de qué trata, o que da órdenes al modelo, se llama `revisar-a-mano.pdf`.
+  Antes podía quedarse con otro nombre genérico (`descarga.pdf` → `documento.pdf`), que el filtro volvía a
+  coger. Visto en clase con el modelo del centro; arreglado en las instrucciones de `acciones.json`.
 - `scripts/revisar.sh` lanzado desde un hook de git ya no estropea el commit: OpenCode heredaba
   `GIT_INDEX_FILE` y guardaba sus instantáneas en el índice del repositorio (`invalid object`).
 - Lo que salió en la instalación cruzada de 1º de ASIR (#53), en lo de la IA:
