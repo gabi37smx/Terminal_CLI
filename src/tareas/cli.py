@@ -805,6 +805,9 @@ def ejecutar(
         if not (almacen.ruta / ".git").exists():  # p. ej. un almacén de prueba: los apuntes se quedan ahí
             consola.print(f"[yellow]Tu almacén ({escape(str(almacen.ruta))}) no es un repositorio git:[/yellow] "
                           "los apuntes ya están en él, pero mochila sync no puede subirlos. Para eso, clónalo de GitHub.")
+        elif almacen_nuevo.solo_en_este_equipo(almacen.ruta):  # issue #53: aún sin GitHub
+            consola.print("Tus apuntes ya están en tu almacén, que está solo en este equipo. Para tenerlos también "
+                          "en GitHub (clase, casa y USB): [bold]mochila crear-almacen[/bold]")
         elif si:
             consola.print("Para subir los apuntes a GitHub: [bold]mochila sync[/bold]")
         elif preguntar(f"¿Hago ahora mochila sync para subir {hechos} apunte(s) nuevo(s) a GitHub?"):
@@ -1219,13 +1222,68 @@ def _pedir_usuario_github() -> str | None:
             consola.print(f"[yellow]{escape(str(e))}[/yellow]")
 
 
+def _pedir_que_lo_cree(repo: str) -> None:
+    """Abre github.com/new con el nombre y «privado» ya puestos, y espera a que pulse el botón."""
+    url = almacen_nuevo.url_crear(repo)
+    consola.print("\n[bold]Créalo en GitHub[/bold] (solo se hace una vez):")
+    consola.print("  1. Si te lo pide, inicia sesión.")
+    consola.print(f"  2. Comprueba que el nombre es [bold]{repo}[/bold] y que está marcado [bold]Private[/bold] "
+                  "(ya lo he rellenado yo).")
+    consola.print("  3. Pulsa el botón verde [bold]Create repository[/bold]. No hace falta marcar nada más.")
+    if almacen_nuevo.abrir_navegador(url):
+        consola.print("Te lo he abierto en el navegador. Si no lo ves, abre esta dirección:")
+    else:
+        consola.print("Abre esta dirección en el navegador (en muchas terminales, Ctrl+clic):")
+    consola.print(escape(url), soft_wrap=True)
+    typer.prompt("Cuando lo hayas creado, pulsa Enter", default="", show_default=False)
+
+
+def _avisar_credenciales() -> None:
+    if sys.platform == "win32":
+        consola.print("Si se abre el navegador, inicia sesión en GitHub: así git puede usar tu repo privado.")
+    else:
+        consola.print("Si git te pide [bold]Password[/bold], pega un token de GitHub, no tu contraseña (al pegarlo "
+                      "no se ve: es normal). Créalo en https://github.com/settings/tokens con permiso «repo».")
+
+
+def _subir_a_github(almacen: sincronizar.Almacen, repo: str) -> None:
+    """Un almacén que estaba solo en este equipo pasa a GitHub (issue #53). Con Enter, sigue como está."""
+    consola.print(f"\nTu almacén está [bold]solo en este equipo[/bold]. Para tenerlo también en clase, en casa y en "
+                  f"el USB, súbelo a un repo [bold]privado[/bold] de GitHub, [bold]{repo}[/bold].")
+    usuario = _pedir_usuario_github()
+    if usuario is None:
+        consola.print("Sigue solo en este equipo. Para subirlo cuando quieras: [bold]mochila crear-almacen[/bold]")
+        return
+    if not preguntar(f"¿Ya tienes el repo {repo} en tu GitHub? (tiene que estar vacío)"):
+        _pedir_que_lo_cree(repo)
+    _avisar_credenciales()
+    almacen_nuevo.conectar(almacen.ruta, almacen_nuevo.url_repo(usuario, repo), repo)
+    consola.print("[green]✔ Subido a GitHub. A partir de ahora: mochila sync[/green]")
+    # Lo que ordenaste sin GitHub aún no está en ningún commit: que pase por sync (claves, tamaño, privadas)
+    if almacen_nuevo.hay_cambios(almacen.ruta):
+        if preguntar("Tienes apuntes que aún no están en GitHub. ¿Hago ahora mochila sync para subirlos?"):
+            _pintar_sync(almacen.sincronizar(None, "apuntes de antes de tener GitHub"))
+        else:
+            consola.print("Vale. Cuando quieras subirlos: [bold]mochila sync[/bold]")
+
+
+def _tiene_algo(ruta: Path) -> bool:
+    """¿Hay algo en esa ruta que no sea una carpeta vacía? Si no se puede mirar, mejor no tocarla."""
+    try:
+        return ruta.is_file() or (ruta.is_dir() and any(ruta.iterdir()))
+    except OSError:
+        return True
+
+
 def _crear_almacen(ctx: typer.Context, asignaturas: list[str], ciclo: str | None) -> bool:
     """Lo de mochila crear-almacen (mochila configurar también lo ofrece). Devuelve si hay almacén al acabar."""
     almacen = _abrir_almacen(ctx, None)
     repo = almacen_nuevo.nombre(ciclo)
-    if (almacen.ruta / ".git").exists():
+    ya_estaba = (almacen.ruta / ".git").exists()
+    if ya_estaba:
         consola.print(f"[green]✔ Ya tienes tu almacén en {escape(str(almacen.ruta))}[/green]")
-    elif almacen.ruta.exists():
+    elif _tiene_algo(almacen.ruta):
+        # Una carpeta VACÍA (de un intento que falló) sí se usa: clonar o crearlo ahí no pisa nada
         consola.print(f"[yellow]{escape(str(almacen.ruta))} existe pero no es un repositorio git: no lo toco.[/yellow]")
         return False
     else:
@@ -1234,45 +1292,46 @@ def _crear_almacen(ctx: typer.Context, asignaturas: list[str], ciclo: str | None
                       "en clase, en casa y en el USB.")
         usuario = _pedir_usuario_github()
         if usuario is None:
-            consola.print("Saltado. Cuando quieras: [bold]mochila crear-almacen[/bold]")
-            return False
-        if not preguntar(f"¿Ya tienes el repo {repo} en tu GitHub?"):
-            url = almacen_nuevo.url_crear(repo)
-            consola.print("\n[bold]Créalo en GitHub[/bold] (solo se hace una vez):")
-            consola.print("  1. Si te lo pide, inicia sesión.")
-            consola.print(f"  2. Comprueba que el nombre es [bold]{repo}[/bold] y que está marcado [bold]Private[/bold] "
-                          "(ya lo he rellenado yo).")
-            consola.print("  3. Pulsa el botón verde [bold]Create repository[/bold]. No hace falta marcar nada más.")
-            if almacen_nuevo.abrir_navegador(url):
-                consola.print("Te lo he abierto en el navegador. Si no lo ves, abre esta dirección:")
-            else:
-                consola.print("Abre esta dirección en el navegador (en muchas terminales, Ctrl+clic):")
-            consola.print(escape(url), soft_wrap=True)
-            typer.prompt("Cuando lo hayas creado, pulsa Enter", default="", show_default=False)
-        if sys.platform == "win32":
-            consola.print("Si se abre el navegador, inicia sesión en GitHub: así git puede bajar tu repo privado.")
+            # Issue #53: sin GitHub no había almacén, y sin almacén no se podía ni ordenar
+            if not preguntar("¿Lo creo solo en este equipo? Podrás ordenar tus apuntes ya y subirlo a GitHub "
+                             "cuando quieras (con mochila crear-almacen)", si_por_defecto=True):
+                consola.print("Saltado. Cuando quieras: [bold]mochila crear-almacen[/bold]")
+                return False
+            almacen_nuevo.crear_local(almacen.ruta)
+            consola.print(f"[green]✔ Tu almacén está en {escape(str(almacen.ruta))}[/green] (solo en este equipo)")
         else:
-            consola.print("Si git te pide [bold]Password[/bold], pega un token de GitHub, no tu contraseña (al pegarlo "
-                          "no se ve: es normal). Créalo en https://github.com/settings/tokens con permiso «repo».")
-        if not almacen_nuevo.clonar(almacen_nuevo.url_repo(usuario, repo), almacen.ruta):
-            raise GitError(
-                f"No he podido bajar {repo}. Si pone «Repository not found»: revisa el usuario, que el repo se llame "
-                f"{repo} y que ya lo hayas creado (GitHub esconde así los repos privados). Si pone «Invalid username "
-                "or token»: en Password va el token, no la contraseña. Para repetirlo: mochila crear-almacen"
-            )
-        consola.print(f"[green]✔ Tu almacén está en {escape(str(almacen.ruta))}[/green]")
+            if not preguntar(f"¿Ya tienes el repo {repo} en tu GitHub?"):
+                _pedir_que_lo_cree(repo)
+            _avisar_credenciales()
+            if not almacen_nuevo.clonar(almacen_nuevo.url_repo(usuario, repo), almacen.ruta):
+                raise GitError(
+                    f"No he podido bajar {repo}. Si pone «Repository not found»: revisa el usuario, que el repo se "
+                    f"llame {repo} y que ya lo hayas creado (GitHub esconde así los repos privados). Si pone «Invalid "
+                    "username or token»: en Password va el token, no la contraseña. Si aún no tienes GitHub, pulsa "
+                    "Enter cuando te pida el usuario y lo creo solo en este equipo. Para repetirlo: mochila crear-almacen"
+                )
+            consola.print(f"[green]✔ Tu almacén está en {escape(str(almacen.ruta))}[/green]")
 
+    local = almacen_nuevo.solo_en_este_equipo(almacen.ruta)
     base = almacen.ruta / almacen.carpeta_asignaturas
     faltan = configurar_mod.carpetas_que_faltan(base, asignaturas)
     if faltan:
         configurar_mod.crear_carpetas(base, faltan)
         consola.print(f"[green]✔ Creadas {len(faltan)} carpetas de asignatura[/green] en {escape(str(base))}")
     if faltan and almacen_nuevo.esta_vacio(almacen.ruta):
-        consola.print("Es un almacén nuevo: subo las carpetas a GitHub (solo esta vez; después, mochila sync).")
-        almacen_nuevo.primera_subida(almacen.ruta)
-        consola.print("[green]✔ Subido. A partir de ahora: mochila ejecutar ordenar y mochila sync[/green]")
-    elif faltan:
+        if local:
+            almacen_nuevo.guardar_carpetas(almacen.ruta)
+            consola.print("[green]✔ Guardadas en tu equipo. Ya puedes ordenar:[/green] mochila ejecutar ordenar . --simular")
+        else:
+            consola.print("Es un almacén nuevo: subo las carpetas a GitHub (solo esta vez; después, mochila sync).")
+            almacen_nuevo.primera_subida(almacen.ruta)
+            consola.print("[green]✔ Subido. A partir de ahora: mochila ejecutar ordenar y mochila sync[/green]")
+    elif faltan and not local:
         consola.print("Súbelas con: [bold]mochila sync[/bold]")
+    elif faltan:
+        consola.print("Están en tu equipo. Cuando tu almacén esté en GitHub, súbelas con: [bold]mochila sync[/bold]")
+    if local and ya_estaba:  # lo creó otra vez «solo en este equipo»: ahora se ofrece subirlo
+        _subir_a_github(almacen, repo)
     return True
 
 
@@ -1301,6 +1360,8 @@ def crear_almacen_cmd(ctx: typer.Context) -> None:
     """Baja tu almacén de GitHub o te ayuda a crearlo.
 
     El almacén es un repo privado tuyo con una carpeta por asignatura, y se llama como tu ciclo (DAM-almacen, ASIR-almacen...). Si aún no lo tienes, abre GitHub con el nombre y «privado» ya puestos: solo pulsas «Create repository». Después lo clona, crea las carpetas de tus asignaturas (las de mochila configurar) y, si es nuevo, las sube.
+
+    ¿Aún sin GitHub? Pulsa Enter en el usuario y lo crea solo en este equipo: ya puedes ordenar. Cuando tengas cuenta, repite mochila crear-almacen y lo sube a tu repo (vacío).
 
     mochila nunca ve tu contraseña ni tu token: los pide git. Si ya lo tienes, solo crea las carpetas que falten. Lo lanza el instalador.
     """

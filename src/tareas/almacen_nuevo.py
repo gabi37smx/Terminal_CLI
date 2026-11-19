@@ -93,24 +93,20 @@ def clonar(url: str, destino: Path) -> bool:
 
 
 def _git(ruta: Path, *args: str, a_la_vista: bool = False) -> subprocess.CompletedProcess:
-    orden = ["git", "-C", str(ruta), *args]
-    if a_la_vista:  # push: si git necesita el token, lo pide en la terminal
-        return subprocess.run(orden)
-    return subprocess.run(orden, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                          stdin=subprocess.DEVNULL)
+    orden = ["git", "-c", "core.quotepath=off", "-C", str(ruta), *args]  # tildes tal cual, no «\303\241»
+    try:
+        if a_la_vista:  # push: si git necesita el token, lo pide en la terminal (y en tu idioma)
+            return subprocess.run(orden)
+        # En inglés, como en sincronizar.py: los errores se reconocen por su texto («who you are»...)
+        return subprocess.run(orden, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              stdin=subprocess.DEVNULL, env={**os.environ, "LC_ALL": "C", "LANGUAGE": "C"})
+    except FileNotFoundError:
+        raise _git_no_esta() from None
 
 
-def esta_vacio(ruta: Path) -> bool:
-    """¿Es un repo recién creado, sin ningún commit?"""
-    return _git(ruta, "rev-parse", "--verify", "--quiet", "HEAD").returncode != 0
-
-
-def primera_subida(ruta: Path) -> None:
-    """En un almacén vacío: commit con las carpetas y push a main, que queda como rama remota
-    (sin eso, mochila sync no sabe adónde subir)."""
-    _git(ruta, "symbolic-ref", "HEAD", "refs/heads/main")  # GitHub usa main; el git de clase quizá master
-    _git(ruta, "add", "-A")
-    p = _git(ruta, "commit", "-m", MENSAJE_PRIMERA_SUBIDA)
+def _commit(ruta: Path, *args: str) -> None:
+    """git commit; si falla, un GitError que se entienda (sobre todo si git no sabe quién eres)."""
+    p = _git(ruta, "commit", *args)
     if p.returncode != 0:
         if "user.name" in p.stderr + p.stdout or "who you are" in p.stderr + p.stdout:
             raise GitError("git no sabe tu nombre ni tu correo. Ponlos una vez con:\n"
@@ -118,6 +114,77 @@ def primera_subida(ruta: Path) -> None:
                            '  git config --global user.email "tu@correo.es"\n'
                            "y repite: mochila crear-almacen")
         raise GitError(f"No he podido guardar las carpetas: {(p.stderr or p.stdout).strip()}")
+
+
+def esta_vacio(ruta: Path) -> bool:
+    """¿Es un repo recién creado, sin ningún commit?"""
+    return _git(ruta, "rev-parse", "--verify", "--quiet", "HEAD").returncode != 0
+
+
+def hay_cambios(ruta: Path) -> bool:
+    """¿Hay algo en el almacén que aún no está en ningún commit (p. ej., lo que ordenaste sin GitHub)?"""
+    return bool(_git(ruta, "status", "--porcelain").stdout.strip())
+
+
+def solo_en_este_equipo(ruta: Path) -> bool:
+    """¿Es un almacén sin ningún remoto? Lo crea así crear_local, pero también vale un «git init» hecho a
+    mano: en los dos casos, mochila sync no tiene adónde subir y crear-almacen ofrece conectarlo."""
+    p = _git(ruta, "remote")
+    return p.returncode == 0 and not p.stdout.strip()
+
+
+def crear_local(ruta: Path) -> None:
+    """Un almacén solo en este equipo, para quien aún no tiene GitHub: un repo git vacío en la rama main.
+
+    Issue #53: sin GitHub no había almacén, y sin almacén no se podía ni ordenar. Se sube después con
+    mochila crear-almacen (conectar).
+    """
+    if shutil.which("git") is None:
+        raise _git_no_esta()
+    ruta.mkdir(parents=True, exist_ok=True)
+    p = _git(ruta, "init")
+    if p.returncode != 0:
+        raise GitError(f"No he podido crear el almacén en {ruta}: {(p.stderr or p.stdout).strip()}")
+    _git(ruta, "symbolic-ref", "HEAD", "refs/heads/main")  # GitHub usa main; el git de clase quizá master
+
+
+def guardar_carpetas(ruta: Path) -> None:
+    """En un almacén vacío: el primer commit, con las carpetas de las asignaturas (sin subir nada)."""
+    _git(ruta, "symbolic-ref", "HEAD", "refs/heads/main")  # sin commits, symbolic-ref basta para llamarla main
+    _git(ruta, "add", "-A")
+    _commit(ruta, "-m", MENSAJE_PRIMERA_SUBIDA)
+
+
+def primera_subida(ruta: Path) -> None:
+    """En un almacén vacío: commit con las carpetas y push a main, que queda como rama remota
+    (sin eso, mochila sync no sabe adónde subir)."""
+    guardar_carpetas(ruta)
     if _git(ruta, "push", "-u", "origin", "main", a_la_vista=True).returncode != 0:
         raise GitError("Las carpetas están guardadas en tu equipo, pero no he podido subirlas a GitHub. "
                        f'Cuando tengas red, entra en el almacén y súbelas una vez con: git -C "{ruta}" push -u origin main')
+
+
+def conectar(ruta: Path, url: str, repo: str) -> None:
+    """Sube a GitHub un almacén que estaba solo en este equipo y deja ese repo como su remoto.
+
+    El repo de GitHub tiene que estar VACÍO (sin README): si no, GitHub no acepta lo que subes.
+    """
+    if esta_vacio(ruta):  # sin asignaturas (ciclo «otro») no hay nada que subir: un commit vacío
+        _commit(ruta, "--allow-empty", "-m", MENSAJE_PRIMERA_SUBIDA)
+    # Con commits, «branch -M» sí la renombra (un «git init» a mano la llama master); symbolic-ref no
+    p = _git(ruta, "branch", "-M", "main")
+    if p.returncode != 0:
+        raise GitError(f"No he podido llamar main a tu rama: {(p.stderr or p.stdout).strip()}")
+    hay_origin = _git(ruta, "remote", "get-url", "origin").returncode == 0
+    p = _git(ruta, "remote", "set-url" if hay_origin else "add", "origin", url)
+    if p.returncode != 0:
+        raise GitError(f"No he podido apuntar tu almacén a {repo}: {(p.stderr or p.stdout).strip()}")
+    if _git(ruta, "push", "-u", "origin", "main", a_la_vista=True).returncode != 0:
+        if not hay_origin:  # como estaba: así, al repetir crear-almacen, vuelve a ofrecer subirlo
+            _git(ruta, "remote", "remove", "origin")
+        raise GitError(
+            f"No he podido subir tu almacén a {repo}. Si pone «Repository not found»: revisa el usuario y que "
+            f"ya hayas creado {repo}. Si pone «rejected» o «fetch first»: el repo de GitHub no está vacío (lo "
+            "creaste con README); bórralo y créalo otra vez sin marcar nada. Tus apuntes siguen en tu equipo. "
+            "Para repetirlo: mochila crear-almacen"
+        )
