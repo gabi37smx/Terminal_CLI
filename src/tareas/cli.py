@@ -828,8 +828,15 @@ def comprobar_ia() -> None:
     """
     proveedor = ia.crear_proveedor()
     consola.print(escape(proveedor.descripcion()))
-    r = proveedor.completar("Responde solo con la palabra: ok", "¿Me oyes?", max_tokens=5)
-    consola.print(f"[green]✔ El modelo responde «{escape(r.texto)}» en {r.segundos:.1f} s[/green] ({r.resumen()})")
+    r = proveedor.completar(ia.PRUEBA_SISTEMA, ia.PRUEBA_MENSAJE, max_tokens=5)
+    consola.print(f"[green]✔ El modelo responde «{escape(_una_linea(r.texto))}» en {r.segundos:.1f} s[/green] "
+                  f"({r.resumen()})")
+
+
+def _una_linea(texto: str, largo: int = 60) -> str:
+    """La primera línea de una respuesta, cortada: para enseñar que el modelo contesta, no lo que dice entero."""
+    primera = (texto.strip().splitlines() or [""])[0].strip()
+    return primera if len(primera) <= largo else primera[:largo - 1] + "…"
 
 
 def _elegir_numero(pregunta: str, cuantas: int, defecto: int) -> int:
@@ -933,8 +940,8 @@ def configurar_ia(
     if probar:
         consola.print(f"Pruebo {escape(modelo)} con una pregunta mínima...")
         try:
-            r = ia.ProveedorOpenCode(modelo, ejecutable).completar("Responde solo con la palabra: ok", "¿Me oyes?", 5)
-            consola.print(f"[green]✔ Responde «{escape(r.texto[:40])}» en {r.segundos:.1f} s[/green]")
+            r = ia.ProveedorOpenCode(modelo, ejecutable).completar(ia.PRUEBA_SISTEMA, ia.PRUEBA_MENSAJE, 5)
+            consola.print(f"[green]✔ Responde «{escape(_una_linea(r.texto, 40))}» en {r.segundos:.1f} s[/green]")
         except IANoDisponible as e:
             consola.print(f"[yellow]No responde: {escape(str(e))}[/yellow]")
             if si or not preguntar("¿Lo guardo igualmente?"):

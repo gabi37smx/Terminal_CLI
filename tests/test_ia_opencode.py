@@ -102,6 +102,22 @@ def test_quita_el_razonamiento_de_los_modelos_thinking(opencode):
     assert ProveedorOpenCode().completar("s", "u").texto == "programacion"
 
 
+@pytest.mark.parametrize("mensaje", ["Cannot connect to API: Was there a typo in the url or port?",
+                                     "fetch failed", "getaddrinfo ENOTFOUND opencode.ai"])
+def test_sin_red_opencode_lo_dice_en_espanol(opencode, mensaje):  # issue #53, punto 6
+    error = {"type": "error", "error": {"name": "UnknownError", "data": {"message": mensaje}}}
+    opencode(stdout=json.dumps(error).encode(), codigo=1)
+    with pytest.raises(IANoDisponible, match="No hay conexión con OpenCode: ¿tienes internet?") as e:
+        ProveedorOpenCode().completar("s", "u")
+    assert mensaje in str(e.value)  # y lo que dijo OpenCode, por si hay que buscarlo
+
+
+def test_sin_red_tambien_si_opencode_solo_lo_dice_por_stderr(opencode):
+    opencode(stdout=b"", codigo=1, stderr=b"Error: Unable to connect. Is the computer able to access the url?\n")
+    with pytest.raises(IANoDisponible, match="No hay conexión con OpenCode"):
+        ProveedorOpenCode().completar("s", "u")
+
+
 def test_error_del_servidor_de_opencode(opencode):
     error = {"type": "error", "error": {"name": "UnknownError", "data": {"message": "Rate limit exceeded"}}}
     opencode(stdout=json.dumps(error).encode(), codigo=1)
@@ -146,7 +162,26 @@ def test_leer_eventos_salta_lo_que_no_es_json():
 
 
 # ---------- qué proveedor usa mochila ----------
-def test_sin_elegir_nada_es_el_servidor_del_centro():
+def test_sin_elegir_nada_te_dice_que_elijas():  # issue #53
+    with pytest.raises(IANoDisponible, match="Aún no has elegido") as e:
+        crear_proveedor()
+    assert "mochila configurar-ia" in str(e.value) and "CENTRO_IA_URL" not in str(e.value)
+
+
+def test_sin_elegir_pero_con_los_datos_del_centro_es_el_centro(monkeypatch):
+    monkeypatch.setenv("CENTRO_IA_URL", "https://servidor/v1")
+    monkeypatch.setenv("CENTRO_IA_KEY", "sk-" + "de-prueba")
+    assert isinstance(crear_proveedor(), ProveedorCentro)
+
+
+def test_sin_elegir_y_a_medias_dice_lo_que_falta_del_centro(monkeypatch):
+    monkeypatch.setenv("CENTRO_IA_URL", "https://servidor/v1")
+    with pytest.raises(IANoDisponible, match="Faltan CENTRO_IA_URL"):
+        crear_proveedor()
+
+
+def test_elegiste_el_centro_y_faltan_sus_datos():
+    ia.guardar_ajustes({"proveedor": "centro"})
     with pytest.raises(IANoDisponible, match="Faltan CENTRO_IA_URL") as e:
         crear_proveedor()
     assert "mochila configurar-ia" in str(e.value)  # y le dice que fuera del instituto tiene los gratis
@@ -329,3 +364,13 @@ def test_comprobar_ia_con_opencode(opencode):
     r = run.invoke(app, ["comprobar-ia"])
     assert r.exit_code == 0, r.output
     assert "OpenCode" in r.output and "opencode/beam-free" in r.output and "El modelo responde «ok»" in r.output
+
+
+def test_comprobar_ia_no_pide_nada_que_choque_con_la_proteccion(opencode):  # issue #53, punto 7
+    falso = opencode(stdout=eventos("Hola.\n\n(Nota: es un saludo y lo contesto con una palabra, como se me pide.)"))
+    ia.guardar_ajustes({"proveedor": "opencode", "modelo": "opencode/beam-free"})
+    r = run.invoke(app, ["comprobar-ia"])
+    assert r.exit_code == 0, r.output
+    assert falso.llamadas[0]["input"] == "Hola".encode()  # el mensaje es un saludo, no una orden
+    assert ia.PRUEBA_SISTEMA in falso.llamadas[0]["agente"]
+    assert "El modelo responde «Hola.»" in r.output and "Nota" not in r.output  # solo la primera línea

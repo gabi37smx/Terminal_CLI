@@ -12,7 +12,7 @@ import pytest
 from PIL import Image
 from typer.testing import CliRunner
 
-from tareas import config
+from tareas import config, ia
 from tareas.acciones import Accion, a_nombre_seguro, leer_texto
 from tareas.cli import app
 from tareas.errores import AccionNoValida, IANoDisponible
@@ -335,6 +335,7 @@ def config_ia(tmp_path) -> str:
 
 
 def test_accion_con_ia_sin_clave_sale_con_4_y_avisa(tmp_path):
+    ia.guardar_ajustes({"proveedor": "centro"})
     cfg = config_ia(tmp_path)
     r = run.invoke(app, ["--config", cfg, "ejecutar", "resumir-tema", str(tmp_path / "Apuntes"), "--si"])
     salida = " ".join(r.output.split())
@@ -351,8 +352,16 @@ def test_sin_clave_simular_y_las_acciones_sin_ia_siguen(tmp_path):
 
 
 def test_comprobar_ia_sin_clave_sale_con_4():
+    ia.guardar_ajustes({"proveedor": "centro"})
     r = run.invoke(app, ["comprobar-ia"])
     assert r.exit_code == 4 and "Faltan" in r.output
+
+
+def test_comprobar_ia_sin_elegir_te_dice_que_elijas():  # issue #53: en casa, «Faltan CENTRO_IA_URL» no se entendía
+    r = run.invoke(app, ["comprobar-ia"])
+    salida = " ".join(r.output.split())
+    assert r.exit_code == 4 and "Aún no has elegido" in salida and "mochila configurar-ia" in salida
+    assert "CENTRO_IA_URL" not in salida
 
 
 def test_acciones_marca_las_que_usan_ia(tmp_path):
@@ -362,6 +371,7 @@ def test_acciones_marca_las_que_usan_ia(tmp_path):
 
 
 def test_sin_clave_el_mensaje_sirve_aunque_no_hayas_clonado():  # issue #19
+    ia.guardar_ajustes({"proveedor": "centro"})
     r = run.invoke(app, ["comprobar-ia"])
     salida = " ".join(r.output.split())
     assert r.exit_code == 4
