@@ -5,7 +5,7 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**51 PR fusionadas**, 7 issues y 3 versiones publicadas.
+**53 PR fusionadas**, 7 issues y 3 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
@@ -81,7 +81,7 @@ Los arreglos del ensayo de instalación en un Ubuntu recién instalado, siguiend
 | [#47](https://github.com/gabi37smx/Terminal_CLI/pull/47) | 15-nov | `feature/ayuda-corta-y-larga` | Ayuda corta y guía con ejemplos, y avisos del instalador en LTSC | [#46](https://github.com/gabi37smx/Terminal_CLI/issues/46) |
 | [#48](https://github.com/gabi37smx/Terminal_CLI/pull/48) | 17-nov | `release-1.1` | Release 1.1.0: versión, CHANGELOG, README y nota del primer commit |  |
 
-## Sin publicar (#49 a #58)
+## Sin publicar (#49 a #60)
 
 Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.
 
@@ -96,6 +96,8 @@ Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las 
 | [#56](https://github.com/gabi37smx/Terminal_CLI/pull/56) | 19-nov | `arreglo/asir-almacen-local` | crear-almacen: el almacén «solo en este equipo» para quien aún no tiene GitHub (#53) |  |
 | [#57](https://github.com/gabi37smx/Terminal_CLI/pull/57) | 19-nov | `arreglo/asir-ordenar` | Lleva a main lo de #55 y #56 (se fusionaron en sus ramas de debajo) | [#53](https://github.com/gabi37smx/Terminal_CLI/issues/53) |
 | [#58](https://github.com/gabi37smx/Terminal_CLI/pull/58) | 19-nov | `docs/clase-19nov` | Clase 19-nov: pruebas con el modelo del centro y arreglo de nombrar-descargas |  |
+| [#59](https://github.com/gabi37smx/Terminal_CLI/pull/59) | 19-nov | `docs/historial-pr-58` | historial-pr.md: la PR 58 |  |
+| [#60](https://github.com/gabi37smx/Terminal_CLI/pull/60) | 19-nov | `docs/readme-empieza-aqui` | README: «Empieza aquí» para quien lo prueba por primera vez |  |
 
 ## Issues
 
