@@ -6,6 +6,9 @@ carpeta temporal.
 """
 
 import json
+import os
+import shutil
+import stat
 import subprocess
 from pathlib import Path
 
@@ -13,6 +16,7 @@ import pytest
 from typer.testing import CliRunner
 
 from tareas import configurar, almacen_nuevo
+from tareas.errores import GitError
 from tareas.cli import app
 
 runner = CliRunner()
@@ -65,7 +69,7 @@ def preparar(github, entrada):
 def ficheros_en_github(repo: Path) -> list[str]:
     p = subprocess.run(["git", "-C", str(repo), "ls-tree", "-r", "--name-only", "main"],
                        capture_output=True, text=True, check=True)
-    return p.stdout.split()
+    return p.stdout.splitlines()  # una ruta por línea: los nombres pueden llevar espacios
 
 
 # ---------- el nombre y la ruta ----------
@@ -151,12 +155,12 @@ def test_si_el_repo_no_existe_explica_que_revisar(github):
     assert not (github["casa"] / "ASIR-almacen").exists()
 
 
-def test_con_enter_se_salta(github):
+def test_con_enter_y_sin_almacen_en_el_equipo_se_salta(github):
     configurar_sin_almacen(github)
-    r = preparar(github, "\n")
+    r = preparar(github, "\nn\n")  # sin usuario, y NO lo quiero ni en este equipo
     assert r.exit_code == 1
-    assert "mochila crear-almacen" in plano(r)
-    assert github["abiertas"] == []
+    assert "Saltado" in plano(r) and "mochila crear-almacen" in plano(r)
+    assert github["abiertas"] == [] and not (github["casa"] / "ASIR-almacen").exists()
 
 
 def test_un_usuario_mal_escrito_se_vuelve_a_preguntar(github):
@@ -172,19 +176,28 @@ def test_si_ya_lo_tienes_solo_crea_las_carpetas_que_faltan(github):
     (almacen / "apunte.txt").write_text("hola", encoding="utf-8")
     subprocess.run(["git", "-C", str(almacen), "add", "-A"], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(almacen), "commit", "-m", "x"], check=True, capture_output=True)
-    r = preparar(github, "")
+    r = preparar(github, "\n")  # es un almacén sin GitHub: ofrece subirlo, y con Enter sigue igual
     assert r.exit_code == 0, r.output
-    assert "Ya tienes tu almacén" in plano(r) and "mochila sync" in plano(r)
+    assert "Ya tienes tu almacén" in plano(r) and "solo en este equipo" in plano(r)
     assert (almacen / "asignaturas" / "redes" / ".gitkeep").is_file()
 
 
 def test_una_carpeta_que_no_es_git_no_se_toca(github):
     configurar_sin_almacen(github)
     (github["casa"] / "ASIR-almacen").mkdir()
+    (github["casa"] / "ASIR-almacen" / "mis cosas.txt").write_text("no tocar", encoding="utf-8")
     r = preparar(github, "")
     assert r.exit_code == 1
     assert "no es un repositorio git" in plano(r)
-    assert list((github["casa"] / "ASIR-almacen").iterdir()) == []
+    assert [p.name for p in (github["casa"] / "ASIR-almacen").iterdir()] == ["mis cosas.txt"]
+
+
+def test_una_carpeta_vacia_de_un_intento_que_fallo_si_se_usa(github):  # lo vio el revisor en la PR de #53
+    configurar_sin_almacen(github)
+    (github["casa"] / "ASIR-almacen").mkdir()
+    r = preparar(github, "\n\n")  # sin GitHub: solo en este equipo
+    assert r.exit_code == 0, r.output
+    assert (github["casa"] / "ASIR-almacen" / "asignaturas" / "redes" / ".gitkeep").is_file()
 
 
 def _ruta_vieja(github, ruta="~/DAM-almacen"):
@@ -235,3 +248,117 @@ def test_configurar_con_si_no_pregunta_por_el_almacen(github):
     r = configurar_sin_almacen(github)
     assert "mochila crear-almacen" in plano(r)
     assert not (github["casa"] / "ASIR-almacen").exists()
+
+
+# ---------- issue #53: sin GitHub, el almacén solo en este equipo ----------
+def _commits(ruta: Path) -> int:
+    p = subprocess.run(["git", "-C", str(ruta), "rev-list", "--count", "HEAD"], capture_output=True, text=True)
+    return int(p.stdout.strip() or 0)
+
+
+def test_sin_github_lo_crea_solo_en_este_equipo_y_ya_se_puede_ordenar(github):
+    configurar_sin_almacen(github)
+    r = preparar(github, "\n\n")  # Enter en el usuario y Enter (Sí) a crearlo solo en este equipo
+    assert r.exit_code == 0, r.output
+    local = github["casa"] / "ASIR-almacen"
+    assert "solo en este equipo" in plano(r) and "mochila ejecutar ordenar" in plano(r)
+    assert (local / "asignaturas" / "redes" / ".gitkeep").is_file() and _commits(local) == 1
+    assert almacen_nuevo.solo_en_este_equipo(local) and github["abiertas"] == []
+    # Y ordenar ya funciona: el apunte entra en el almacén y no intenta subirlo
+    descargas = github["casa"] / "Downloads"
+    descargas.mkdir()
+    (descargas / "redes tema 1.pdf").write_bytes(b"%PDF")
+    o = runner.invoke(app, ["--config", str(github["config"]), "ejecutar", "ordenar", str(descargas), "--si"])
+    assert o.exit_code == 0, o.output
+    assert list((local / "asignaturas" / "redes").rglob("redes tema 1.pdf"))
+    assert "solo en este equipo" in plano(o) and "mochila crear-almacen" in plano(o)
+
+
+def test_sync_de_un_almacen_sin_github_dice_que_hacer(github):
+    configurar_sin_almacen(github)
+    assert preparar(github, "\n\n").exit_code == 0
+    r = runner.invoke(app, ["--config", str(github["config"]), "status"])
+    assert r.exit_code != 0
+    assert "solo en este equipo" in plano(r) and "mochila crear-almacen" in plano(r)
+    assert "git push -u origin main" not in plano(r)
+
+
+def test_despues_lo_sube_a_github_y_sync_ya_sabe_adonde(github):
+    configurar_sin_almacen(github)
+    assert preparar(github, "\n\n").exit_code == 0
+    remoto = github["crear_repo"]("ana", "ASIR-almacen")  # lo que hará al pulsar el botón verde
+    r = preparar(github, "ana\nn\n\n")  # usuario, NO lo tengo aún, Enter cuando lo ha creado
+    assert r.exit_code == 0, r.output
+    assert "Subido a GitHub" in plano(r) and github["abiertas"] == [almacen_nuevo.url_crear("ASIR-almacen")]
+    assert "asignaturas/redes/.gitkeep" in ficheros_en_github(remoto)
+    assert not almacen_nuevo.solo_en_este_equipo(github["casa"] / "ASIR-almacen")
+    s = runner.invoke(app, ["--config", str(github["config"]), "status"])
+    assert s.exit_code == 0, s.output
+
+
+def test_un_git_init_a_mano_en_master_tambien_se_sube_como_main(github):  # lo vio el revisor
+    configurar_sin_almacen(github)
+    almacen = github["casa"] / "ASIR-almacen"
+    subprocess.run(["git", "init", "-b", "master", str(almacen)], check=True, capture_output=True)
+    (almacen / "apunte.txt").write_text("hola", encoding="utf-8")
+    subprocess.run(["git", "-C", str(almacen), "add", "-A"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(almacen), "commit", "-m", "x"], check=True, capture_output=True)
+    remoto = github["crear_repo"]("ana", "ASIR-almacen")
+    r = preparar(github, "ana\ns\nn\n")  # usuario, ya lo tengo, y NO al sync de las carpetas nuevas
+    assert r.exit_code == 0, r.output
+    assert "apunte.txt" in ficheros_en_github(remoto)  # el commit de master, ahora en main
+    assert runner.invoke(app, ["--config", str(github["config"]), "status"]).exit_code == 0
+
+
+def test_si_git_no_sabe_quien_eres_lo_dice_antes_de_subir(github, monkeypatch):  # lo vio el revisor
+    almacen = github["casa"] / "APUNTES-almacen"
+    almacen_nuevo.crear_local(almacen)  # vacío: al subirlo hace falta un commit (sin nada)
+    remoto = github["crear_repo"]("ana", "APUNTES-almacen")
+    for k in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
+        monkeypatch.delenv(k)
+    subprocess.run(["git", "-C", str(almacen), "config", "user.useConfigOnly", "true"], check=True)
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(github["casa"] / "no-hay-gitconfig"))
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    with pytest.raises(GitError, match="git no sabe tu nombre ni tu correo"):
+        almacen_nuevo.conectar(almacen, remoto.as_uri(), "APUNTES-almacen")
+    assert almacen_nuevo.solo_en_este_equipo(almacen)  # no ha llegado a tocar el remoto
+
+
+def test_si_el_repo_de_github_no_esta_vacio_lo_explica_y_no_pierde_nada(github, tmp_path):
+    configurar_sin_almacen(github)
+    assert preparar(github, "\n\n").exit_code == 0
+    remoto = github["crear_repo"]("ana", "ASIR-almacen")
+    otro = tmp_path / "con-readme"  # lo creó en GitHub marcando «Add a README»
+    subprocess.run(["git", "clone", "-q", str(remoto), str(otro)], check=True, capture_output=True)
+    (otro / "README.md").write_text("# ASIR-almacen", encoding="utf-8")
+    subprocess.run(["git", "-C", str(otro), "add", "-A"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(otro), "commit", "-m", "README"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(otro), "push", "-q", "origin", "HEAD:main"], check=True, capture_output=True)
+    r = preparar(github, "ana\ns\n")
+    assert r.exit_code != 0
+    assert "no está vacío" in plano(r) and "siguen en tu equipo" in plano(r)
+    local = github["casa"] / "ASIR-almacen"
+    assert (local / "asignaturas" / "redes" / ".gitkeep").is_file()
+    # Hace lo que dice el mensaje (lo borra y lo crea vacío) y repite: vuelve a ofrecer subirlo
+    assert almacen_nuevo.solo_en_este_equipo(local)  # no se ha quedado con el remoto a medias
+    shutil.rmtree(remoto, onexc=lambda f, ruta, e: (os.chmod(ruta, stat.S_IWRITE), f(ruta)))  # Windows: solo lectura
+    github["crear_repo"]("ana", "ASIR-almacen")
+    r = preparar(github, "ana\ns\n")
+    assert r.exit_code == 0, r.output
+    assert "Subido a GitHub" in plano(r)
+
+
+def test_lo_que_ordeno_sin_github_se_sube_con_sync_al_conectarlo(github):
+    configurar_sin_almacen(github)
+    assert preparar(github, "\n\n").exit_code == 0
+    descargas = github["casa"] / "Downloads"
+    descargas.mkdir()
+    (descargas / "redes tema 1.pdf").write_bytes(b"%PDF")
+    o = runner.invoke(app, ["--config", str(github["config"]), "ejecutar", "ordenar", str(descargas), "--si"])
+    assert o.exit_code == 0, o.output
+    remoto = github["crear_repo"]("ana", "ASIR-almacen")
+    r = preparar(github, "ana\ns\ns\n")  # usuario, ya lo tengo, SÍ haz sync de lo que tengo
+    assert r.exit_code == 0, r.output
+    assert "aún no están en GitHub" in plano(r)
+    assert any(f.endswith("redes tema 1.pdf") for f in ficheros_en_github(remoto))
+    assert not almacen_nuevo.hay_cambios(github["casa"] / "ASIR-almacen")

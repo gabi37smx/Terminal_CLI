@@ -75,3 +75,21 @@ Lo que quiero es que le sirva a un alumno de 1º de SMX que no sabe git.
     rellenar. Por eso el texto dice qué comprobar antes de pulsar el botón.
   - El nombre `CICLO-almacen` lo busca el instalador. Si alguien le pone otro nombre, tiene que
     decirlo con `DAM_ALMACEN`.
+
+## Actualización del 18-nov-2026: el almacén «solo en este equipo» (issue #53)
+
+En la instalación cruzada de 1º de ASIR, sin repo en GitHub no había almacén, y sin almacén
+`mochila ejecutar ordenar` no funcionaba: quien aún no tiene cuenta (o no quiere usarla todavía) no
+podía ni ordenar sus apuntes. Se cambia una cosa de la decisión:
+
+- Si en `crear-almacen` pulsas Enter en el usuario, pregunta **«¿Lo creo solo en este equipo?» [S/n]**:
+  hace `git init` en `~/CICLO-almacen` (rama `main`), crea las carpetas y las guarda con un commit,
+  sin subir nada. `ordenar` ya funciona y, al acabar, recuerda que se sube con `crear-almacen`.
+- Con el almacén así (sin ningún remoto), `crear-almacen` ofrece subirlo: el mismo paso de la página
+  de GitHub rellena, `git remote add origin` y `git push -u origin main`. El repo tiene que estar
+  **vacío**: si lo creó con README, GitHub lo rechaza y el mensaje dice que lo cree otra vez sin nada.
+- `mochila sync` y `status` sin remoto dicen «Tu almacén está solo en este equipo... mochila
+  crear-almacen» en vez de `git push -u origin main`.
+
+Sigue sin manejar secretos: `crear-almacen` solo hace `git init`, `remote add` y `push`, y el push
+pide las credenciales a través de git, como el clon.

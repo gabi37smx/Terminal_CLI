@@ -130,6 +130,9 @@ class Almacen:
                            else f"«{self.ruta}» no es un repositorio git")
         up = self._git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}", comprobar=False)
         if up.returncode != 0:
+            if not self._git("remote", comprobar=False).stdout.strip():  # issue #53: creado sin GitHub
+                raise GitError("Tu almacén está solo en este equipo: aún no tiene adónde subir. "
+                               "Para subirlo a GitHub (una vez): mochila crear-almacen")
             raise GitError("La rama actual no tiene remoto. Ejecuta una vez en el almacén: "
                            "git push -u origin main")
 
