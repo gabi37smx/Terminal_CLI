@@ -1,25 +1,25 @@
 # Pasa las pruebas en cada push y en cada PR, en los tres sistemas: Linux (como el PC de clase),
 # Windows (como el de casa) y macOS. fail-fast: false para ver los tres resultados aunque falle uno.
-name: Pruebas
+name: Pruebas                       # el nombre que sale en la pestaña Actions de GitHub
 
-on:
-  push:
-  pull_request:
+on:                                 # cuándo se lanza:
+  push:                             # en cada push, a cualquier rama
+  pull_request:                     # y en cada pull request (lo que se va a fusionar)
 
 jobs:
-  pruebas:
+  pruebas:                          # un solo trabajo, que se repite en cada sistema de la matriz
     strategy:
-      fail-fast: false
+      fail-fast: false              # si falla en un sistema, los otros dos siguen hasta el final
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+        os: [ubuntu-latest, windows-latest, macos-latest]   # los tres sistemas operativos
+    runs-on: ${{ matrix.os }}       # cada copia del trabajo corre en uno de ellos
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v5   # baja el código del repo a la máquina de GitHub
+      - uses: astral-sh/setup-uv@v6 # instala uv (el gestor de Python que uso)
       - name: Instalar Python 3.12 y dependencias
-        run: uv sync --locked --python 3.12
+        run: uv sync --locked --python 3.12   # Python 3.12 y las versiones exactas de uv.lock (falla si el lock no está al día)
       - name: Pruebas
-        run: uv run pytest -v
+        run: uv run pytest -v       # todas las pruebas, con el nombre de cada una
         env:
           # Typer fuerza los colores si ve GITHUB_ACTIONS, y los códigos de color
           # parten el texto que buscan los tests de la ayuda. Así sale como en local.

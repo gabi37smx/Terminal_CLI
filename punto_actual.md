@@ -1,17 +1,20 @@
 # Punto actual del proyecto
 
-> **Cambio de nombre (27/10 noche):** el comando ya NO es `gabriel` (chocaba con otra herramienta de tu terminal), ahora es **`mochila`**. Variable del almacén: `MOCHILA_ALMACEN`. Config global: `~/.config/mochila/acciones.json`.
+**Fecha:** 2026-11-24 · **Versión publicada:** 1.2.0 (`v1.2.0`) · **Entrega:** viernes 27-nov-2026
+(grupo presencial, con defensa de 5 minutos).
+**Proyecto:** comando `mochila` (también `tareas`), paquete `tareas`, carpeta `Terminal_CLI`.
+**Repo:** https://github.com/gabi37smx/Terminal_CLI · **Para quien corrige:** [docs/entrega.md](docs/entrega.md)
+(cada punto de la rúbrica con el fichero o la orden que lo demuestra).
+**Pruebas:** `uv run pytest -q` → **672 passed, 1 skipped** (24-nov), y en verde en GitHub Actions
+con Ubuntu, Windows y macOS.
+**Historial:** más de 190 commits y 60 PR; todas, por versión y con sus issues, en
+[docs/historial-pr.md](docs/historial-pr.md). Qué trae cada versión: [CHANGELOG.md](CHANGELOG.md).
 
-**Fecha:** 2026-11-12 (en casa, Windows, y WSL para probar)
-**Proyecto:** `mochila` / paquete `tareas` (carpeta `Terminal_CLI`)
-**Repo:** https://github.com/gabi37smx/Terminal_CLI
-**Estado:** `main` en GitHub hasta `2f59e1d` (6-nov): los tres comandos nuevos (`doctor`, `pendientes` y `entregar`) y los arreglos del TAB entraron con el **PR #3** (rama `feature/doctor-entregar-pendientes`, commit `0893964`, subida por Claude Code porque se lo pedí; la fusión la hice yo). Antes: instalador (`40ff2e5`), `mochila help` (`7e62593`) y TAB (`1f34747`), del 3-nov; la rama `feature/seguridad-y-web` entró con el PR #2 (1-nov). Para comprobar que no queda nada sin subir: `git log --oneline origin/main..` (si no sale nada, está al día).
-**Tests:** `uv run pytest -q` → **527 passed, 1 skipped** (12-nov, también en el Linux de clase; desde la raíz; también en GitHub Actions con Ubuntu, Windows y macOS).
-**Estado (11-nov):** `main` al día con `mochila inventario` (PR #4), `mochila duplicados` (PR #5) las palabras de arquitectura en `sistemas` para `ordenar` (PR #6: «UD-01-ARQUITECTURA VON NEUMANN.pdf» iba a programación por la palabra «funció»), `mochila readme` (PR #7), la ayuda en tabla + `ordenar` al almacén con `mochila sync` al acabar (PR #8) y el plan B de `ordenar` a `POR-TIPO` (PR #9).
-**Estado (12-nov):** release 1.0.1 publicada (11-nov). Después, `mochila configurar` (PR #25) y sus arreglos tras probarlo como alumno de SMX en WSL (#26 y #27), y `mochila ejecutar` con un solo fichero (#28). Todo eso va en la **1.1.0**, sin publicar todavía. Rama `feature/ia-opencode-gratis` (12-nov): `mochila configurar-ia` y los modelos gratis de OpenCode para la IA en casa (ADR-0004), fusionada (#30). Rama `feature/ordenar-dentro-y-unidad` (12-nov): `ordenar` lee los `.odt`/`.docx` por dentro y mete cada fichero en la carpeta de su unidad.
-**Carpeta nueva (10-nov):** el repo está ahora en `C:\Users\HP\Datos\REPOS\TERMINAL_CLI` (antes en el Escritorio). `mochila` se reinstaló desde aquí con `uv tool install --editable . --force`.
+> El comando se llamó `tareas` en la spec v0, después `dam` y desde el 15-nov `mochila`
+> ([ADR-0006](docs/adr/0006-nombre-mochila.md)). Las entradas antiguas de este fichero y de
+> `docs/prompts.md` dicen `dam` porque se escribieron entonces.
 
-## Qué hay hecho
+## Qué hay hecho (por semanas)
 
 ### Semana 1 (terminal y primera orden)
 - [x] Terminal, herramientas (git, uv, Python 3.12, OpenCode 1.18.35) y proyecto con uv.
@@ -76,63 +79,34 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
 - [x] **`mochila ejecutar ACCIÓN FICHERO`** (PR #28): un solo fichero, solo si cumple el filtro de la acción. `mochila acciones -h` trae ejemplos.
 - [x] **Instalación desde cero en un Linux de clase** (12-nov, un PC del aula que no es el mío): `git clone` + `bash instalar.sh` sin `uv` instalado. `mochila` no se encontraba en terminales nuevas (el PATH no se guardaba): arreglado en la PR #34 y comprobado allí mismo. Después: 527 pruebas, `doctor` 11 de 11, IA con OpenCode y las acciones (`resumir-tema`, `nombrar-descargas`, `limpiar-temporales`, `ordenar`) de verdad. Detalle en `docs/prompts.md`.
 
-## Qué falta (por orden)
+### Semanas 3 y 4: capa IA, pruebas y release 1.0 (11-nov, Claude Code)
+- [x] `ia.py` con `ProveedorIA` ([ADR-0002](docs/adr/0002-proveedor-ia.md)), las acciones `resumir-tema`, `nombrar-descargas` y `clasificar-asignatura`, `mochila comprobar-ia` y el código 4 sin red.
+- [x] Pruebas de la Sesión 4 (`conftest.py` con `aislado`, `ProveedorFalso`, códigos 0-4 con `CliRunner`), la prueba de mutación de `--simular` y `pytest-cov`.
+- [x] `pruebas.yml` en Ubuntu, Windows y macOS; `scripts/revisar.sh`; `CHANGELOG.md`; instalación en una orden en el README.
+- [x] **Release 1.0.0** (PR #16 de la rama `release-1.0`, etiqueta `v1.0.0`) y, con el ensayo en un Ubuntu recién instalado (issues #17-#22), la **1.0.1**.
 
-1. **⚠ AL LLEGAR A CLASE (Linux), lo primero:**
-   - `which mochila`. Si sale una ruta, `mochila` sigue instalado: `cd ~/Terminal_CLI && git pull` y **vuelve a pasar `bash instalar.sh`**: la capa IA (semana 3) trae dependencias nuevas (`httpx`, `python-dotenv`) y el modo editable no las instala solo; sin reinstalar, `mochila` falla con `ModuleNotFoundError`.
-   - Si no sale nada (el PC se restauró u otro usuario): `git clone https://github.com/gabi37smx/Terminal_CLI.git`, `cd Terminal_CLI`, `bash instalar.sh` (con el token a mano) y abrir otra terminal.
-   - Comprobar: `mochila help` (deben salir `doctor`, `pendientes` y `entregar`), `mochila doc<TAB>`, `mochila status` y `mochila sync --simular`.
-   - Apuntar qué pasó en `docs/prompts.md` (los **[COMPLETAR]** de la entrada del 3-nov): así se sabe por fin si el PC de clase guarda la carpeta personal.
-   - **12-nov:** instalado desde cero en un PC del aula (no salía `mochila`: arreglado en la #34 y probado allí).
-   - **HECHO el 13-nov:** ese PC **guarda la carpeta personal** (`which mochila` y `~/.config/mochila` seguían ahí). En mi PC de clase: `mochila status`, `mochila sync --simular`, `mochila sync` y `mochila instalar-hook` con el almacén real, y `mochila comprobar-ia` con el servidor del centro (tras arreglar el modelo por defecto, que daba 403). Todo en `docs/prompts.md`, entrada «Mi PC de clase: almacén real e IA del centro».
-   - **Falta en clase:** las 3 acciones con IA de verdad, romperlo a propósito (`echo $?` → 4), context7 con `/mcps`, `changelog-borrador` y `scripts/revisar.sh`.
-2. **En otros equipos Windows:** después del `pull`, `instalar.cmd` otra vez para tener el TAB arreglado. En Linux/WSL no hace falta (el fallo era solo de PowerShell).
-3. **Lo que han encontrado los comandos nuevos:**
-   - ~~`portfolio-backend`: añadir a `.env.example`, con el valor vacío, `GITHUB_TOKEN`, `GNEWS_API_KEY` y `Gemini_API_Key`.~~ HECHO (11-nov, PR #4 de portfolio-backend): con el nombre `GEMINI_API_KEY`, que es el que el código mira primero.
-   - ~~Electrician: poner fecha y fuente a los 15 `[Verificado]` sin fecha y un estado a la fila 53.~~ HECHO (11-nov, PR #37 de Electrician): eran 14 y ahora `mochila pendientes` da 0 sin fecha; la fila 53 ya estaba *Descartado 08/11/2026*. Queda avisar al equipo de `mochila pendientes --quien NOMBRE`.
-   - ~~`DAM-almacen`: añadir un README corto y sacar de git el `.zip` de más de 50 MB de `lenguaje-marcas`.~~ HECHO (11-nov): README subido y ya no queda ningún `.zip` de más de 50 MB. Además, los apuntes de Java pasaron de `entornos` a `programacion/Apuntes JAVA` y se quitó su copia de `lenguaje-marcas` (72 MB menos).
-   - ~~`Terminal_CLI`: añadir GitHub Actions que pase `uv run pytest` en cada push.~~ HECHO (11-nov, PR #11): en Linux y en Windows; `doctor` da 10 de 10. Antes fallaban 2 tests en Linux (enlaces en `inventario` y un test frágil): arreglados.
-4. **Crear el token de GitHub** (Settings → Developer settings → Fine-grained tokens; solo `DAM-almacen`, permiso *Contents: Read and write*). No guardarlo en ningún fichero.
-5. (El PC de clase está ahora en el punto 1.)
-6. ~~En Ubuntu (WSL): `bash instalar.sh` otra vez para tener el TAB~~ HECHO (12-nov). Falta clonar `DAM-almacen` con el token (lo salté).
-7. ~~Probar de verdad (sin `--simular`) en `~/pruebas-tareas` las 3 acciones antiguas (`ordenar`, `limpiar-temporales`, `convertir-webp`).~~ HECHO (11-nov), en `~/pruebas-tareas/prueba-11nov` con 19 ficheros creados para la prueba, respondiendo `s` a la pregunta como una persona. Para no tocar el almacén real ni `~/Datos`: `MOCHILA_ALMACEN` apuntando a `~/pruebas-tareas/almacen-prueba` y una copia de `acciones.json` con `por_tipo` en `~/pruebas-tareas/prueba-11nov-POR-TIPO` (`mochila --config`).
-   - `limpiar-temporales`: 3 hechos (`.tmp` de 40 días, `.bak` de 60 y `.crdownload` de 45). Se quedan un `.tmp` de 1 día y un `.txt` de 90 días (no es temporal). Bien.
-   - `convertir-webp`: 3 hechos (JPEG 30.630 B → WebP 3.496 B; PNG con transparencia → WebP RGBA; `LOGO.PNG` con mayúsculas también). Los originales siguen. La segunda vez: 3 saltados («ya existe el .webp»), no pisa nada. Bien.
-   - `ordenar`: 18 hechos y 1 saltado (el `.tmp` reciente). 8 al almacén en su asignatura (`.py`, `.sh` y `.html` por extensión; un PDF sin pistas en el nombre fue a `bases-datos` por su **contenido**) y 10 a POR-TIPO (`DOCUMENTOS`, `IMAGENES`). Al acabar preguntó si hacía `mochila sync` (respondí `n`). Comprobado por hash: los 19 ficheros están y no ha cambiado ninguno. Bien.
-   - Ya están probadas de verdad las 6 acciones.
-8. Pasar `@revisor` sobre `renombrar-capturas` y `copiar-entregas` (en `mover-zips` ya está), pasar `/review` y rellenar los **[COMPLETAR]** de `docs/prompts.md` con lo que hice en clase.
-9. ~~`mochila instalar-hook` en `DAM-almacen`~~ HECHO (11-nov, en este PC; en el de clase y en WSL hay que instalarlo otra vez porque los hooks no se suben con git).
-10. ~~Pendiente del portfolio: borrar o excluir `_backup_mejoras/`.~~ HECHO (11-nov, PR #12 de mi-web): borrada y `.gitignore` arreglado (estaba en UTF-16); `mochila test-links` da 0 rotos.
-11. Instalar sin clonar con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI` siguiendo solo el README (sin probar todavía).
-12. **Comprobación de proceso del 6 nov (semipresencial):** 3 acciones propias funcionando, ADR y commits reales.
+### Del 13 al 24-nov (resumen; el detalle está en `docs/prompts.md`)
+- [x] `mochila crear-almacen` (cada ciclo con su almacén, [ADR-0005](docs/adr/0005-almacen-por-ciclo.md)) y `mochila configurar-ia` con los modelos gratis de OpenCode ([ADR-0004](docs/adr/0004-ia-gratis-opencode.md)).
+- [x] Mi PC de clase con el almacén real y la IA del centro (13-nov); repaso de los errores amables: 26 errores provocados, ninguna traza.
+- [x] Instalación cruzada con un compañero de DAW en Windows 11 LTSC (15-nov, issue #46) → la ayuda nueva y el cambio de nombre a `mochila`.
+- [x] **Release 1.1.0** (17-nov, PR #48 de la rama `release-1.1`).
+- [x] El revisor de OpenCode en el hook de cada commit con código (`mochila instalar-hook --revisor`, PR #49) y una prueba de que `--simular` dice lo mismo que pasa de verdad.
+- [x] Instalación desde cero en una VM con Windows 11 limpio, siguiendo solo el README como alumno de 1º de ASIR (18 y 19-nov, issue #53, arreglos en #54-#57).
+- [x] En clase con el modelo del centro (19-nov): las 3 acciones con IA de verdad, romperlo a propósito (`echo $?` → 4), context7, el borrador del CHANGELOG con `opencode run --agent plan` y `scripts/revisar.sh` real (PR #58).
+- [x] **Release 1.2.0** (24-nov, rama `release-1.2`): revisión final frente a la Sesión 4, `docs/entrega.md`, `revisar.sh` sale con 1 si no hay nada preparado y el workflow explicado línea a línea.
 
-Ideas de comandos que quedan (de la lista del 5-nov): `revisar-web` (imágenes pesadas y `alt` en el portfolio), `informe` (juntar `scan-secrets`, `doctor`, `test-links` y `check-headers` en un `.md` con fecha) y `despertar` (despertar el backend de Render antes de una demo).
+## Qué falta
 
-13. **Semana 3 (capa IA), en clase con el servidor del centro** (el código está hecho el 11-nov, PR `capa-ia`; mira la entrada de `docs/prompts.md`):
-   - `CENTRO_IA_URL`, `CENTRO_IA_KEY` y `CENTRO_IA_CA` en la terminal (o un `.env` copiado de `.env.example`, que nunca se sube) y `mochila comprobar-ia`.
-   - context7 con `/mcps` en OpenCode, una vez: la pregunta del certificado en `httpx` (paso 2 de la sesión).
-   - De verdad: `mochila ejecutar resumir-tema`, `nombrar-descargas` y `clasificar-asignatura` sobre `~/pruebas-tareas/apuntes-ia` y `descargas-ia` (hay que copiarlas al PC de clase o crear otras). Si algo sale mal, se arregla en las `instrucciones` del JSON, con su commit.
-   - Rellenar los **[COMPLETAR]** de la entrada «Sesión 3 · context7...» de `docs/prompts.md` y repasar el ADR-0002 (que diga lo que yo diría).
+- [ ] **Instalación cruzada con un compañero de clase con su propia cuenta de GitHub**, que abra sus
+  issues con `gh issue create` o desde la web. Las pruebas en otros equipos ya hechas (#17-#22, #46 y
+  #53) las abrí yo con mi cuenta. Cuando la haga: contestar cada issue, arreglarlo con una prueba que lo
+  demuestre y «Closes #N», publicar una 1.2.1 y rellenar el último **[COMPLETAR]** de `docs/prompts.md`
+  (entrada «Sesión 4: borrador del CHANGELOG, release e instalación cruzada»).
+- [ ] Ensayar la defensa: instalar desde cero, una acción con IA y otra sin red, y las 6 preguntas
+  (dónde está cada respuesta: final de [docs/entrega.md](docs/entrega.md)).
 
-14. **Semana 4 (entrega el 27-nov: soy del grupo presencial, con defensa de 5 minutos: instalar desde cero, una acción con IA y otra sin red, y preguntas; el 20-nov es la fecha del semipresencial).** Hecho el 11-nov en la rama `release-1.0`:
-   - `CHANGELOG.md`, la versión 1.0.0 en `pyproject.toml` y `__init__.py`, y el alias `tareas` (`tareas version` → `tareas 1.0.0`).
-   - `pruebas.yml` en Ubuntu, Windows y macOS, y `pytest-cov` (93 %).
-   - `scripts/revisar.sh`, con el revisor en `mode: all`.
-   - En el README, la instalación en una orden y la desinstalación.
-   - La prueba de mutación de `--simular`.
-
-   Me queda:
-   - Fusionar la PR de `capa-ia` y luego la de `release-1.0`.
-   - Después, en `main`: `git pull`, `git tag -a v1.0.0 -m "tareas 1.0.0"`, `git push --tags` y `gh release create v1.0.0 --title "tareas 1.0.0" --notes-file CHANGELOG.md`. Si la release no es hoy, antes cambia la fecha de `[1.0.0]` en el CHANGELOG.
-   - En clase, con el modelo:
-     - `opencode run --agent plan` para sacar `docs/changelog-borrador.md` y apuntar en qué se equivocó comparado con mi `CHANGELOG.md`.
-     - `bash scripts/revisar.sh` con algo en `git add`.
-   - ~~Ensayo de instalación en un ordenador limpio~~ HECHO (11-nov): en el portátil con Ubuntu 24.04 recién instalado, siguiendo solo el README. Salieron los issues #17-#20 y, en la Fase B, el #22; todos arreglados en la 1.0.1.
-   - Instalación cruzada con **otra persona** (lo pide la lista): un compañero instala con `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.1.0` siguiendo solo el README y abre issues (`gh issue create`) **con su propia cuenta**. Los contesto, y si hay arreglo sale como 1.1.1.
-   - Rellenar los **[COMPLETAR]** de la entrada «Sesión 4 · ...» de `docs/prompts.md`.
-   - **Instalación cruzada, mejor con alguien de SMX o ASIR, y con `git clone` + `bash instalar.sh`.** La instalación desde cero con `mochila configurar` ya la probé yo el 12-nov en un PC de clase (PR #34); falta que la haga **otra persona**, que es lo que pide la lista.
-   - **Publicar la 1.1.0** (`mochila configurar` es una función nueva). Preparada el 17-nov en la rama `release-1.1`: versión en `pyproject.toml`, `__init__.py` y `uv.lock`, fecha en el CHANGELOG y el README instalando `@v1.1.0`. Fusionar la PR, etiquetar y publicar lo hago yo.
-   - Leer y corregir lo que Claude Code escribió en primera persona el 12-nov: «Por qué se me ocurrió» y «Qué aprendí» de la entrada «`mochila configurar`» de `docs/prompts.md`, y el ADR-0003.
+Lo que faltaba en las versiones antiguas de este fichero (clase, release 1.0 y 1.1, `[COMPLETAR]` de
+las sesiones 1 a 3) ya está hecho: se puede ver con `git log -p punto_actual.md`.
 
 ## Cómo retomar
 
@@ -151,6 +125,7 @@ En otro equipo (clase, WSL, Mac): `git clone https://github.com/gabi37smx/Termin
 ## Recordatorios
 
 - Los commits y el push los haces tú; el agente solo commitea si se lo pides expresamente. El agente no ejecuta `sync` ni `ejecutar`.
+- Tras cada fusión o release: `uv run python scripts/historial_pr.py` para regenerar `docs/historial-pr.md`.
 - Probar siempre en `~/pruebas-tareas` y con `--simular` primero.
 - Si se cambia `opencode.json`, cerrar y volver a abrir OpenCode.
 - GitHub no acepta la contraseña en git: en *Password* va el token. En Linux, el instalador hace que git lo recuerde 8 horas solo en memoria.

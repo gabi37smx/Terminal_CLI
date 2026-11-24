@@ -11,6 +11,9 @@ mis apuntes de 1º DAM sincronizados entre el PC de clase, el de casa y el USB.
 > elegiste a `~/.config/mochila`. Cambios en [CHANGELOG.md](CHANGELOG.md); todas las pull requests,
 > por versión y con sus issues, en [docs/historial-pr.md](docs/historial-pr.md).
 
+> **¿Vienes a corregir la entrega?** En [docs/entrega.md](docs/entrega.md) está, punto por punto
+> de la rúbrica y de las listas de la Sesión 4, dónde está cada cosa y la orden que lo demuestra.
+
 ## ¿Lo vas a probar? Empieza aquí
 
 Sirve para cualquier ciclo de Informática (SMX, DAM, DAW, ASIR) en Linux, Windows o macOS. En 20 minutos:
@@ -99,7 +102,7 @@ Si usas el script `instalar.sh` / `instalar.cmd` de abajo, uv lo instala él; gi
 ### En una orden (si ya tienes uv)
 
 ```bash
-uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.1.0
+uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.2.0
 mochila --help          # o «tareas --help»: es el mismo programa
 ```
 
@@ -556,7 +559,7 @@ al servidor del centro ni lee tu `.env`. GitHub Actions las pasa en Ubuntu, Wind
 push y en cada PR (`.github/workflows/pruebas.yml`).
 
 `scripts/revisar.sh` sale con 0 si el revisor dice `VEREDICTO: OK`, con 1 si dice `CAMBIAR` (o no
-da veredicto) y con 2 si no se pudo revisar (sin opencode o más de 180 s sin respuesta). El
+da veredicto, o no hay nada en `git add`) y con 2 si no se pudo revisar (sin opencode o más de 180 s sin respuesta). El
 revisor no puede editar ni navegar, y en bash solo puede `git diff/log/status`. Usa el modelo que
 elegiste con `mochila configurar-ia` (en casa, uno gratis de OpenCode); para otro, pon
 `MOCHILA_REVISOR_MODELO`, por ejemplo `MOCHILA_REVISOR_MODELO=opencode/big-pickle`.

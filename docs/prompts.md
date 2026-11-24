@@ -766,3 +766,21 @@ Lo arreglé todo. No toqué lo que no importa en este proyecto: las ramas con co
 **Su pregunta:** «Si fusionas una PR el 31-dic a las 23:30 UTC, ¿qué fecha escribe y por qué?». Con el arreglo, la hora se pasa a la de España (1-ene, 00:30) y el año sale de esa misma fecha, así que pone 1-ene del año siguiente. Antes habría escrito el año fijo.
 
 **Qué aprendí:** el hook sirve aunque el revisor tarde. Cuando contesta, frena el commit antes de que el fallo llegue a GitHub, y yo decido qué es cierto y qué no.
+
+## 2026-11-24 · Revisión final frente a la Sesión 4 y release 1.2.0 (Claude Code)
+**Herramienta:** Claude Code, en casa (Windows).
+**Prompts:** «Esta es la última sesión que hay del CLI: revisa mi proyecto a ver si cumplimos con todo, porque este viernes es la entrega y la IA del profe corregirá que cumplamos los requisitos» y, después, «arregla lo que tengas que arreglar y publica, y deja todo finalizado y documentado para que la otra IA lo pueda encontrar todo».
+
+**Qué comprobó, punto por punto con la página de la Sesión 4:** los 4 mínimos (instalar con el README, 9 acciones, ninguna clave en el historial, 198 commits), las pruebas que pide (`conftest.py` con `aislado`, `ProveedorFalso`, códigos 0-4 con `CliRunner`, la prueba rota a propósito), Actions en verde en los tres sistemas, `revisar.sh`, `release-1.0` con su PR, etiqueta y release, CHANGELOG y ADR. `uv run pytest -q` → 672 passed, 1 skipped.
+
+**Lo que encontró y se arregló en la 1.2.0:**
+- `punto_actual.md` seguía con fecha del 12-nov: decía que la 1.1.0 estaba sin publicar y tenía `[COMPLETAR]` que ya estaban hechos. Quien lo leyera pensaría que faltaban cosas. Puesto al día.
+- `main` tenía muchas cosas sin publicar (#49-#61, entre ellas los arreglos de ASIR del #53), pero el README instalaba `@v1.1.0`: quien siguiera el README no las recibía. Publicada la 1.2.0 y el README instala `@v1.2.0`.
+- `scripts/revisar.sh` salía con 0 si no había nada en `git add`; la Sesión 4 pide 1. Ahora el 0 solo significa `VEREDICTO: OK`. El hook no cambia: solo llama al revisor si el commit lleva código, así que siempre hay algo preparado.
+- `pruebas.yml`: `actions/checkout@v5`, como en la sesión, y un comentario en cada línea (lo pedía el prompt de la sesión).
+- `docs/entrega.md` (nuevo): cada punto de la rúbrica con el fichero o la orden que lo demuestra, y dónde está la respuesta de cada pregunta de la defensa. Enlazado al principio del README.
+- El issue #46 estaba cerrado (por la #47) pero sin contestar: contestado.
+
+**Lo que no se puede arreglar desde casa:** la instalación cruzada con un compañero de clase **con su propia cuenta** y sus issues. Los issues de las pruebas en otros equipos (#17-#22, #46 y #53) los abrí yo. Es el último `[COMPLETAR]` de este fichero (entrada del 19-nov) y lo primero de «Qué falta» en `punto_actual.md`.
+
+**Qué aprendí:** que una cosa esté hecha no basta si los documentos dicen lo contrario. Quien corrige (persona o IA) lee el README y `punto_actual.md` antes que el código, y si esos ficheros se quedan atrás, el trabajo hecho parece pendiente.

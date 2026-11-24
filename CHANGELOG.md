@@ -8,8 +8,16 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+## [1.2.0] - 2026-11-24
+
+Lo que salió de probar en clase con el modelo del centro (19-nov) y de la instalación cruzada como
+alumno de 1º de ASIR en un Windows 11 recién instalado (#53), y la revisión final frente a la
+Sesión 4 antes de la entrega.
+
 ### Añadido
 
+- `docs/entrega.md`: para quien corrige, dónde está cada cosa que pide la rúbrica (con la orden o el
+  fichero que lo demuestra).
 - `mochila instalar-hook --revisor`: además de buscar claves, el hook pasa cada commit que lleve
   código por el agente revisor de OpenCode (`scripts/revisar.sh`). Si dice `VEREDICTO: CAMBIAR`, el
   commit se cancela; si no se puede revisar (sin red), avisa y deja seguir. Solo documentación: no
@@ -24,6 +32,13 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
   en `~/CICLO-almacen` con tus carpetas, sin subir nada, y ya puedes ordenar. Cuando tengas cuenta, repite `mochila crear-almacen` y lo sube a
   tu repo (vacío). Hasta entonces, `ordenar` no ofrece `sync`, y `sync` y `status` dicen qué hacer
   en vez de `git push -u origin main` (ADR-0005, actualizado).
+
+### Cambiado
+
+- `scripts/revisar.sh` sale con **1** si no hay nada preparado para el commit, como pide la Sesión 4
+  (antes salía con 0). Así el 0 solo significa «el revisor ha dicho `VEREDICTO: OK`».
+- `.github/workflows/pruebas.yml`: `actions/checkout@v5` y un comentario en cada línea que explica qué
+  hace.
 
 ### Arreglado
 
@@ -304,7 +319,8 @@ Primera versión estable: lo de las semanas 1 a 4 del proyecto de 1º DAM.
   - El documento va entre `<documento>` para frenar la inyección de prompt.
 - `comprobar-ia` nunca enseña la clave (solo dice «clave: definida»), y OpenCode no puede leer `*.env`.
 
-[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.1.0...HEAD
+[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/gabi37smx/Terminal_CLI/releases/tag/v1.0.0
