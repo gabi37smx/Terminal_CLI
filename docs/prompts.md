@@ -780,6 +780,7 @@ Lo arreglé todo. No toqué lo que no importa en este proyecto: las ramas con co
 - `pruebas.yml`: `actions/checkout@v5`, como en la sesión, y un comentario en cada línea (lo pedía el prompt de la sesión).
 - `docs/entrega.md` (nuevo): cada punto de la rúbrica con el fichero o la orden que lo demuestra, y dónde está la respuesta de cada pregunta de la defensa. Enlazado al principio del README.
 - El issue #46 estaba cerrado (por la #47) pero sin contestar: contestado.
+- Al regenerar `docs/historial-pr.md` tras la release, la #55 salía como «Sin publicar»: es la que se fusionó en la rama de debajo el 19-nov, y su commit de fusión no está en `main` (lo suyo llegó con la #57). `scripts/historial_pr.py` ahora, en ese caso, mira el último commit de la propia PR (PR #63).
 
 **Lo que no se puede arreglar desde casa:** la instalación cruzada con un compañero de clase **con su propia cuenta** y sus issues. Los issues de las pruebas en otros equipos (#17-#22, #46 y #53) los abrí yo. Es el último `[COMPLETAR]` de este fichero (entrada del 19-nov) y lo primero de «Qué falta» en `punto_actual.md`.
 

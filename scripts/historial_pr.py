@@ -64,11 +64,24 @@ def fecha(iso: str | None, con_anio: bool = False) -> str:
 
 
 def version_de(commit: str | None) -> str | None:
-    """La primera etiqueta que contiene el commit de la fusión (None si aún no se ha publicado)."""
+    """La primera etiqueta que contiene el commit (None si aún no se ha publicado o no está en este clon)."""
     if not commit:
         return None
-    etiquetas = ejecutar("git", "tag", "--contains", commit, "--sort=creatordate").split()
+    r = subprocess.run(["git", "tag", "--contains", commit, "--sort=creatordate"], cwd=RAIZ,
+                       capture_output=True, text=True, encoding="utf-8")
+    etiquetas = r.stdout.split() if r.returncode == 0 else []
     return etiquetas[0] if etiquetas else None
+
+
+def version_de_pr(pr: dict) -> str | None:
+    """La versión en la que salió una PR fusionada.
+
+    Normalmente, la del commit de la fusión. Pero una PR encadenada que se fusionó en la rama de debajo
+    (la #55, el 19-nov) tiene su fusión fuera de main: lo suyo llegó con otra PR (#57). Entonces vale
+    la versión que contiene el último commit de la propia PR.
+    """
+    return (version_de((pr.get("mergeCommit") or {}).get("oid"))
+            or version_de(pr.get("headRefOid")))
 
 
 def celda(texto: str) -> str:
@@ -77,7 +90,7 @@ def celda(texto: str) -> str:
 
 def main() -> None:
     prs = gh_json("pr", "list", "--state", "all", "--limit", str(LIMITE), "--json",
-                  "number,title,state,headRefName,mergedAt,createdAt,closingIssuesReferences,mergeCommit")
+                  "number,title,state,headRefName,headRefOid,mergedAt,createdAt,closingIssuesReferences,mergeCommit")
     issues = gh_json("issue", "list", "--state", "all", "--limit", str(LIMITE), "--json",
                      "number,title,state,createdAt,closedAt")
     if len(prs) >= LIMITE or len(issues) >= LIMITE:
@@ -88,7 +101,7 @@ def main() -> None:
     por_version: dict[str | None, list[dict]] = {}
     cerrado_por: dict[int, int] = {}
     for p in prs:
-        version = version_de((p.get("mergeCommit") or {}).get("oid")) if p["state"] == "MERGED" else None
+        version = version_de_pr(p) if p["state"] == "MERGED" else None
         por_version.setdefault(version, []).append(p)
         if p["state"] == "MERGED":   # una PR abierta todavía no ha cerrado nada
             for issue in p["closingIssuesReferences"]:

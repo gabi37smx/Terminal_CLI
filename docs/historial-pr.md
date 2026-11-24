@@ -5,7 +5,7 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**53 PR fusionadas**, 7 issues y 3 versiones publicadas.
+**55 PR fusionadas**, 7 issues y 4 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
@@ -81,9 +81,9 @@ Los arreglos del ensayo de instalación en un Ubuntu recién instalado, siguiend
 | [#47](https://github.com/gabi37smx/Terminal_CLI/pull/47) | 15-nov | `feature/ayuda-corta-y-larga` | Ayuda corta y guía con ejemplos, y avisos del instalador en LTSC | [#46](https://github.com/gabi37smx/Terminal_CLI/issues/46) |
 | [#48](https://github.com/gabi37smx/Terminal_CLI/pull/48) | 17-nov | `release-1.1` | Release 1.1.0: versión, CHANGELOG, README y nota del primer commit |  |
 
-## Sin publicar (#49 a #60)
+## 1.2.0 · 24-nov-2026 (#49 a #62)
 
-Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.
+Lo que salió probando en clase con el modelo del centro y en la instalación cruzada como alumno de ASIR (#53): el almacén «solo en este equipo», la IA sin elegir y sin red explicada, el revisor en el hook y la guía para quien corrige (`docs/entrega.md`).
 
 | PR | Fusionada | Rama | Qué cambia | Cierra |
 |---|---|---|---|---|
@@ -98,6 +98,8 @@ Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las 
 | [#58](https://github.com/gabi37smx/Terminal_CLI/pull/58) | 19-nov | `docs/clase-19nov` | Clase 19-nov: pruebas con el modelo del centro y arreglo de nombrar-descargas |  |
 | [#59](https://github.com/gabi37smx/Terminal_CLI/pull/59) | 19-nov | `docs/historial-pr-58` | historial-pr.md: la PR 58 |  |
 | [#60](https://github.com/gabi37smx/Terminal_CLI/pull/60) | 19-nov | `docs/readme-empieza-aqui` | README: «Empieza aquí» para quien lo prueba por primera vez |  |
+| [#61](https://github.com/gabi37smx/Terminal_CLI/pull/61) | 19-nov | `docs/historial-pr-60` | historial-pr.md: las PR 59 y 60 |  |
+| [#62](https://github.com/gabi37smx/Terminal_CLI/pull/62) | 24-nov | `release-1.2` | Release 1.2.0: revisión final frente a la Sesión 4 |  |
 
 ## Issues
 
