@@ -34,9 +34,12 @@ QUE_TRAE = {
               "README (issues #17 a #22).",
     "v1.1.0": "`configurar` y `crear-almacen` para cualquier ciclo, la IA gratis con OpenCode, `ordenar` "
               "por unidades, lo que salió probando en clase y con otra persona, y el cambio de nombre a `mochila`.",
+    "v1.2.0": "Lo que salió probando en clase con el modelo del centro y en la instalación cruzada como alumno "
+              "de ASIR (#53): el almacén «solo en este equipo», la IA sin elegir y sin red explicada, el "
+              "revisor en el hook y la guía para quien corrige (`docs/entrega.md`).",
     None: "Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.",
 }
-TITULO_VERSION = {"v1.0.0": "1.0.0", "v1.0.1": "1.0.1", "v1.1.0": "1.1.0", None: "Sin publicar"}
+TITULO_VERSION = {"v1.0.0": "1.0.0", "v1.0.1": "1.0.1", "v1.1.0": "1.1.0", "v1.2.0": "1.2.0", None: "Sin publicar"}
 
 
 def ejecutar(*orden: str) -> str:
@@ -118,7 +121,7 @@ def main() -> None:
         "edita a mano.",
     ]
 
-    orden = [v for v in ("v1.0.0", "v1.0.1", "v1.1.0") if v in por_version]
+    orden = [v for v in ("v1.0.0", "v1.0.1", "v1.1.0", "v1.2.0") if v in por_version]
     orden += [v for v in por_version if v not in orden and v is not None]
     if None in por_version:
         orden.append(None)

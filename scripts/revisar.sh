@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Revisa con el agente «revisor» de OpenCode lo que tienes preparado para el commit (git add).
 #
-#   bash scripts/revisar.sh        # 0 = VEREDICTO: OK · 1 = VEREDICTO: CAMBIAR (o sin veredicto)
+#   bash scripts/revisar.sh        # 0 = VEREDICTO: OK · 1 = VEREDICTO: CAMBIAR, sin veredicto
+#                                  #     o nada preparado (git add)
 #                                  # 2 = no se pudo revisar (sin opencode, tiempo agotado...)
 #
 # El revisor (.opencode/agents/revisor.md) no puede editar ni navegar, y en bash solo tiene
@@ -18,8 +19,9 @@ LIMITE=180   # segundos: si el servidor no contesta, el script no se queda colga
 cd "$(git rev-parse --show-toplevel)"
 
 if git diff --staged --quiet; then
-    echo "No hay nada preparado para el commit. Primero: git add <ficheros>"
-    exit 0
+    # Con 1, como pide la Sesión 4: el 0 solo vale para «VEREDICTO: OK» (sin diff no hay nada aprobado)
+    echo "No hay nada preparado para el commit. Primero: git add <ficheros>" >&2
+    exit 1
 fi
 
 if ! command -v opencode >/dev/null 2>&1; then
