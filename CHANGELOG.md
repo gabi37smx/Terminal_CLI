@@ -11,7 +11,8 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 ## [1.2.1] - 2026-11-25
 
 La IA del centro probada desde mi portátil con Windows, en clase, y el arreglo que salió de esa prueba.
-Cierra lo pendiente antes de la entrega.
+Queda pendiente que un compañero de ASIR lo instale con su propia cuenta de GitHub (lo que salga
+irá en una 1.2.2).
 
 ### Arreglado
 
