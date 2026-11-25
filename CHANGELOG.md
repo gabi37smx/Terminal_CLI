@@ -8,6 +8,11 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+## [1.2.1] - 2026-11-25
+
+La IA del centro probada desde mi portátil con Windows, en clase, y el arreglo que salió de esa prueba.
+Cierra lo pendiente antes de la entrega.
+
 ### Arreglado
 
 - **En Windows, el tiempo máximo de OpenCode (300 s) no se cumplía.** Probado el 25-nov en la red
@@ -329,7 +334,8 @@ Primera versión estable: lo de las semanas 1 a 4 del proyecto de 1º DAM.
   - El documento va entre `<documento>` para frenar la inyección de prompt.
 - `comprobar-ia` nunca enseña la clave (solo dice «clave: definida»), y OpenCode no puede leer `*.env`.
 
-[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.0...HEAD
+[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.0...v1.0.1

@@ -3,7 +3,7 @@
 Cuaderno de bitácora de `mochila` (antes `dam`): qué pedí, qué comprobé yo y qué corregí.
 
 **Herramientas.** En clase uso OpenCode con los modelos del centro; en casa, además, Claude (chat) y, desde el 3-nov, Claude Code. Cada entrada dice cuál usé.
-Lo marcado con **[COMPLETAR]** es lo que solo yo sé (lo que hice en clase con OpenCode o el resultado de una prueba): se rellena con datos reales, no se inventa.
+Lo marcado con **[COMPLETAR]** era lo que solo yo sé (lo que hice en clase con OpenCode o el resultado de una prueba): se rellenó con datos reales, no se inventa. Desde el 25-nov no queda ninguno: lo que depende de otra persona dice **Pendiente**.
 
 ---
 
@@ -365,7 +365,7 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - El TAB funciona: `dam ej` + tecla Tab → `dam ejecutar`. La primera vez escribí `<TAB>` tal cual, sin entender que había que pulsar la tecla, y bash dio un error de sintaxis por el `<`. No era un fallo de `dam`.
 - `uv run pytest -q` → **418 passed, 1 skipped** en Ubuntu 24.04.
 - Release `v1.0.1` publicada con los arreglos de los issues #17-#22, todos cerrados.
-**Instalación cruzada con otra persona:** la primera, el 15-nov, con mi cuñado (estudia DAW), en su portátil con Windows 11 LTSC y en una máquina virtual con Windows (entrada del 15-nov). Lo que salió lo arreglé yo (#40 y el cambio a `mochila`); él no abrió issues con su cuenta. La segunda, el 18 y 19-nov, la hice yo en una máquina virtual con Windows 11 recién instalado, siguiendo solo el README como si fuera alumno de 1º de ASIR: salieron 7 cosas (issue #53), arregladas en #54-#57 y comprobadas repitiendo la prueba con `main`. Con un compañero de clase, con su cuenta de GitHub y sus issues: [COMPLETAR]
+**Instalación cruzada con otra persona:** la primera, el 15-nov, con mi cuñado (estudia DAW), en su portátil con Windows 11 LTSC y en una máquina virtual con Windows (entrada del 15-nov). Lo que salió lo arreglé yo (#40 y el cambio a `mochila`); él no abrió issues con su cuenta. La segunda, el 18 y 19-nov, la hice yo en una máquina virtual con Windows 11 recién instalado, siguiendo solo el README como si fuera alumno de 1º de ASIR: salieron 7 cosas (issue #53), arregladas en #54-#57 y comprobadas repitiendo la prueba con `main`. **Pendiente (25-nov):** con un compañero de clase, con su cuenta de GitHub y sus issues. Se lo pedí a un compañero de 1º de ASIR y aún no ha podido; hasta entonces, la prueba como alumno de ASIR es la de la máquina virtual, que hice yo. Cuando él la haga, sus issues irán en una 1.2.2.
 **Qué aprendí:**
 - **El README se prueba en un ordenador limpio y siguiéndolo al pie de la letra.** En mi PC funcionaba porque ya tenía `git`, `curl` y `uv`. En el portátil recién instalado salieron cinco fallos en una tarde, y ninguno era del código: eran del README y de los mensajes.
 - **Un issue por fallo y `Closes #N` en el commit.** Así cada arreglo queda unido a su problema y la release dice qué arregla.
@@ -615,7 +615,7 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 
 **Cómo se probó:** 30 pruebas nuevas con un «GitHub de mentira» (repos *bare* en una carpeta temporal, como los de GitHub) y sin abrir el navegador: alumno nuevo de ASIR, otro equipo que solo lo baja, repo que no existe, usuario mal escrito, carpeta que no es git... En total, **559 pruebas OK**. Al meter el comando, la ayuda general se pasaba de una pantalla porque el nombre largo ensanchaba la columna: por eso es `crear-almacen` y no `preparar-almacen`.
 
-**Probado de verdad (13-nov):** abrí la dirección que da `dam crear-almacen` y la página de GitHub sale con el nombre puesto y **Private** marcado. **Probado entero (18-nov)**, por mí, en la máquina virtual de la prueba de ASIR (issue #53): `mochila crear-almacen` creó `ASIR-almacen` privado en mi cuenta, lo clonó y creó las carpetas. **Falta:** [COMPLETAR] que lo haga otra persona con su propia cuenta.
+**Probado de verdad (13-nov):** abrí la dirección que da `dam crear-almacen` y la página de GitHub sale con el nombre puesto y **Private** marcado. **Probado entero (18-nov)**, por mí, en la máquina virtual de la prueba de ASIR (issue #53): `mochila crear-almacen` creó `ASIR-almacen` privado en mi cuenta, lo clonó y creó las carpetas. **Pendiente (25-nov):** que lo haga otra persona con su propia cuenta (el mismo compañero de ASIR de la instalación cruzada, entrada del 19-nov).
 
 **Qué aprendí:**
 - **Hacer las preguntas de un usuario nuevo descubre huecos.** Las pruebas pasaban, pero nadie había pensado qué le pasa a alguien que no tiene el almacén. Lo vi al imaginar a mi cuñado instalándolo.
