@@ -2,12 +2,12 @@
 
 Guía para quien corrige: cada punto de la rúbrica y de las listas de la
 [Sesión 4](https://aulaenlanube.com/programacion-ia/cli/sesion-04/), con el fichero o la orden que lo
-demuestra. Revisada el 24-nov-2026, con la versión **1.2.0** (puesta al día el 25-nov).
+demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**, y al día el 25-nov con la **1.2.1**.
 
 - **Repo:** https://github.com/gabi37smx/Terminal_CLI (rama `main`)
 - **Comando:** `mochila` (el paquete Python es `tareas`, y `tareas` también funciona como comando:
   es el mismo programa; por qué cambió de nombre en [ADR-0006](adr/0006-nombre-mochila.md)).
-- **Etiquetas y releases:** `v1.0.0` (la que pide la Sesión 4), `v1.0.1`, `v1.1.0` y `v1.2.0`.
+- **Etiquetas y releases:** `v1.0.0` (la que pide la Sesión 4), `v1.0.1`, `v1.1.0`, `v1.2.0` y `v1.2.1`.
   Qué trae cada una: [CHANGELOG.md](../CHANGELOG.md).
 - **Todas las PR e issues, por versión:** [historial-pr.md](historial-pr.md).
 - **Qué le pedí a la IA y qué le corregí:** [prompts.md](prompts.md).
@@ -17,7 +17,7 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0** (puesta al día el
 
 | Mínimo | Dónde se ve |
 |---|---|
-| Se instala siguiendo el README y `--help` funciona | [README · En una orden](../README.md#en-una-orden-si-ya-tienes-uv): `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.2.0` y `mochila --help`. Con el instalador: `bash instalar.sh` o `instalar.cmd`. Probado en un Ubuntu recién instalado (issues #17-#22) y en una VM con Windows 11 limpia (#53). |
+| Se instala siguiendo el README y `--help` funciona | [README · En una orden](../README.md#en-una-orden-si-ya-tienes-uv): `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.2.1` y `mochila --help`. Con el instalador: `bash instalar.sh` o `instalar.cmd`. Probado en un Ubuntu recién instalado (issues #17-#22) y en una VM con Windows 11 limpia (#53). |
 | Al menos 3 acciones propias en `acciones.json` | [acciones.json](../acciones.json) tiene **9**; `mochila validar` → 9 válidas; `mochila acciones` las lista. |
 | Ningún secreto en el repo ni en su historial | `.env` en [.gitignore](../.gitignore) desde el primer commit con código; solo se sube [.env.example](../.env.example) con los nombres. `mochila scan-secrets --historial` sale limpio. Hook antes de cada commit (`mochila instalar-hook`). |
 | Historial git real (mínimo 10 commits) | Más de 190 commits y más de 60 PR, cada una en su rama: `git log --oneline` y [historial-pr.md](historial-pr.md). |
@@ -97,7 +97,7 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0** (puesta al día el
 
 ### Instalación, documentación y proceso (10)
 
-- Instalación en una orden (`uv tool install git+…@v1.2.0`), primeros pasos, IA opcional y
+- Instalación en una orden (`uv tool install git+…@v1.2.1`), primeros pasos, IA opcional y
   desinstalación: [README](../README.md).
 - `pyproject.toml` y `src/tareas/__init__.py` con la misma versión (una prueba lo comprueba);
   `mochila version` la enseña.
@@ -105,13 +105,14 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0** (puesta al día el
   está tal cual en [changelog-borrador.md](changelog-borrador.md), y en [prompts.md](prompts.md) (19-nov)
   apunto en qué se equivocó.
 - Rama `release-1.0` con su PR (#16), etiqueta `v1.0.0` y su release; después `release-1.1` (#48) y
-  `release-1.2`.
+  `release-1.2` y `release-1.2.1`.
 - Revisor con `opencode run`: [scripts/revisar.sh](../scripts/revisar.sh) (agente de solo lectura
   `.opencode/agents/revisor.md`, permisos exactos en [opencode.json](../opencode.json), máximo 180 s,
   sale con 0 solo si dice `VEREDICTO: OK`). Resultados reales en [prompts.md](prompts.md) (17 y 19-nov).
 - Instalación en otros equipos e issues: #17-#22 (Ubuntu recién instalado), #46 (un compañero de DAW en
-  Windows 11 LTSC) y #53 (VM con Windows 11 limpio, como alumno de 1º de ASIR). Cada fallo con su
-  issue, arreglado con «Closes #N» y publicado en una versión.
+  Windows 11 LTSC) y #53 (VM con Windows 11 limpio, siguiendo solo el README como alumno de 1º de ASIR; la hice yo).
+  Cada fallo con su issue, arreglado con «Closes #N» y publicado en una versión. Pendiente: que un
+  compañero de ASIR lo pruebe con su propia cuenta y abra él sus issues (aún no ha podido).
 - ADR: [0001](adr/0001-configuracion-externa.md) a [0006](adr/0006-nombre-mochila.md).
 
 ## Las preguntas de la defensa: dónde está la respuesta

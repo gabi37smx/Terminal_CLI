@@ -1,6 +1,6 @@
 # Punto actual del proyecto
 
-**Fecha:** 2026-11-25 · **Versión publicada:** 1.2.0 (`v1.2.0`) · **Entrega:** viernes 27-nov-2026
+**Fecha:** 2026-11-25 · **Versión publicada:** 1.2.1 (`v1.2.1`) · **Entrega:** viernes 27-nov-2026
 (grupo presencial, con defensa de 5 minutos).
 **Proyecto:** comando `mochila` (también `tareas`), paquete `tareas`, carpeta `Terminal_CLI`.
 **Repo:** https://github.com/gabi37smx/Terminal_CLI · **Para quien corrige:** [docs/entrega.md](docs/entrega.md)
@@ -94,15 +94,16 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
 - [x] Instalación desde cero en una VM con Windows 11 limpio, siguiendo solo el README como alumno de 1º de ASIR (18 y 19-nov, issue #53, arreglos en #54-#57).
 - [x] En clase con el modelo del centro (19-nov): las 3 acciones con IA de verdad, romperlo a propósito (`echo $?` → 4), context7, el borrador del CHANGELOG con `opencode run --agent plan` y `scripts/revisar.sh` real (PR #58).
 - [x] **Release 1.2.0** (24-nov, rama `release-1.2`): revisión final frente a la Sesión 4, `docs/entrega.md`, `revisar.sh` sale con 1 si no hay nada preparado y el workflow explicado línea a línea.
-- [x] **IA del centro desde mi portátil (25-nov, en clase)**: `mochila comprobar-ia` responde «Hola» en 0,2 s con `Qwen38-DualSpark-medium`, y `opencode run` también, desde cualquier carpeta (la clave en una variable de entorno, nunca en un fichero). Arreglado de paso: en Windows el límite de 300 s de OpenCode no se cumplía (PR #64, en `[Sin publicar]` del CHANGELOG).
+- [x] **IA del centro desde mi portátil (25-nov, en clase)**: `mochila comprobar-ia` responde «Hola» en 0,2 s con `Qwen38-DualSpark-medium`, y `opencode run` también, desde cualquier carpeta (la clave en una variable de entorno, nunca en un fichero). Arreglado de paso: en Windows el límite de 300 s de OpenCode no se cumplía (PR #64, publicado en la **1.2.1**, rama `release-1.2.1`).
 
 ## Qué falta
 
-- [ ] **Instalación cruzada con un compañero de clase con su propia cuenta de GitHub**, que abra sus
-  issues con `gh issue create` o desde la web. Las pruebas en otros equipos ya hechas (#17-#22, #46 y
-  #53) las abrí yo con mi cuenta. Cuando la haga: contestar cada issue, arreglarlo con una prueba que lo
-  demuestre y «Closes #N», publicar una 1.2.1 y rellenar el último **[COMPLETAR]** de `docs/prompts.md`
-  (entrada «Sesión 4: borrador del CHANGELOG, release e instalación cruzada»).
+- [x] **Instalación en otros equipos:** Ubuntu recién instalado (#17-#22), mi cuñado de DAW en su
+  portátil (15-nov, #46) y una VM con Windows 11 limpio siguiendo solo el README como alumno de 1º de
+  ASIR (18 y 19-nov, #53, la hice yo). Cada fallo con su issue y «Closes #N»; todo publicado (1.2.1).
+- [ ] **Pendiente de un compañero de ASIR:** que lo instale con su propia cuenta de GitHub y abra él sus
+  issues. Se lo pedí y aún no ha podido. Cuando lo haga: contestar cada issue, arreglarlo con una prueba
+  y «Closes #N», publicar una 1.2.2 y apuntarlo en `docs/prompts.md` (entrada «Sesión 4…»).
 - [ ] Ensayar la defensa: instalar desde cero, una acción con IA y otra sin red, y las 6 preguntas
   (dónde está cada respuesta: final de [docs/entrega.md](docs/entrega.md)).
 
