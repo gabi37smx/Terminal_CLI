@@ -5,7 +5,7 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**55 PR fusionadas**, 7 issues y 4 versiones publicadas.
+**57 PR fusionadas**, 7 issues y 4 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
@@ -100,6 +100,15 @@ Lo que salió probando en clase con el modelo del centro y en la instalación cr
 | [#60](https://github.com/gabi37smx/Terminal_CLI/pull/60) | 19-nov | `docs/readme-empieza-aqui` | README: «Empieza aquí» para quien lo prueba por primera vez |  |
 | [#61](https://github.com/gabi37smx/Terminal_CLI/pull/61) | 19-nov | `docs/historial-pr-60` | historial-pr.md: las PR 59 y 60 |  |
 | [#62](https://github.com/gabi37smx/Terminal_CLI/pull/62) | 24-nov | `release-1.2` | Release 1.2.0: revisión final frente a la Sesión 4 |  |
+
+## Sin publicar (#63 a #64)
+
+Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.
+
+| PR | Fusionada | Rama | Qué cambia | Cierra |
+|---|---|---|---|---|
+| [#63](https://github.com/gabi37smx/Terminal_CLI/pull/63) | 24-nov | `docs/historial-pr-62` | historial-pr.md: la PR 62 y la v1.2.0 |  |
+| [#64](https://github.com/gabi37smx/Terminal_CLI/pull/64) | 25-nov | `arreglo/opencode-tiempo-windows` | OpenCode: el tiempo máximo se cumple también en Windows |  |
 
 ## Issues
 
