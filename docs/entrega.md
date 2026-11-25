@@ -2,7 +2,7 @@
 
 Guía para quien corrige: cada punto de la rúbrica y de las listas de la
 [Sesión 4](https://aulaenlanube.com/programacion-ia/cli/sesion-04/), con el fichero o la orden que lo
-demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**.
+demuestra. Revisada el 24-nov-2026, con la versión **1.2.0** (puesta al día el 25-nov).
 
 - **Repo:** https://github.com/gabi37smx/Terminal_CLI (rama `main`)
 - **Comando:** `mochila` (el paquete Python es `tareas`, y `tareas` también funciona como comando:
@@ -53,7 +53,8 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**.
 - Sin clave o sin red: `IANoDisponible`, **código de salida 4**, un mensaje que dice qué hacer y
   «Las acciones sin IA siguen funcionando». `mochila comprobar-ia` lo prueba. Probado en clase
   rompiéndolo a propósito (sin clave, URL mala, clave mala y sin certificado → `echo $?` da 4): entrada
-  del 19-nov en [prompts.md](prompts.md).
+  del 19-nov en [prompts.md](prompts.md). Vuelto a probar el 25-nov desde mi portátil con Windows:
+  «Hola» en 0,2 s, y con una clave falsa, «responde 401: la clave no es válida» (entrada del 25-nov).
 
 ### Robustez: excepciones y entradas erróneas (15)
 
@@ -66,7 +67,7 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**.
 
 ### Pruebas y calidad (15)
 
-- `uv run pytest` → **672 pruebas que pasan** (y 1 que se salta según el sistema: hay pruebas solo de Windows o que necesitan permisos). Las de la Sesión 4 están en
+- `uv run pytest` → **675 pruebas que pasan** (y 1 que se salta según el sistema: hay pruebas solo de Windows o que necesitan permisos). Las de la Sesión 4 están en
   [conftest.py](../tests/conftest.py), [test_config.py](../tests/test_config.py),
   [test_acciones.py](../tests/test_acciones.py), [test_ia.py](../tests/test_ia.py) y
   [test_cli.py](../tests/test_cli.py) (códigos 0 a 4 con `CliRunner`: `test_codigo_0_…` a `test_codigo_4_…`).

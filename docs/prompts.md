@@ -785,3 +785,28 @@ Lo arreglé todo. No toqué lo que no importa en este proyecto: las ramas con co
 **Lo que no se puede arreglar desde casa:** la instalación cruzada con un compañero de clase **con su propia cuenta** y sus issues. Los issues de las pruebas en otros equipos (#17-#22, #46 y #53) los abrí yo. Es el último `[COMPLETAR]` de este fichero (entrada del 19-nov) y lo primero de «Qué falta» en `punto_actual.md`.
 
 **Qué aprendí:** que una cosa esté hecha no basta si los documentos dicen lo contrario. Quien corrige (persona o IA) lee el README y `punto_actual.md` antes que el código, y si esos ficheros se quedan atrás, el trabajo hecho parece pendiente.
+
+## 2026-11-25 · La IA del centro desde mi portátil, y el límite de OpenCode que no se cumplía en Windows (Claude Code, en clase)
+**Herramienta:** Claude Code, con mi portátil (Windows 11) conectado a la red del centro mientras yo daba clase.
+**Prompts:** «revisa el terminal cli si se conecta bien a la IA del centro, haz tú las pruebas que puedas»; después, «arregla lo de los 5 minutos y haz la PR», y al final le pasé mi `opencode.json` del centro: «ponlo para que funcione en cualquier carpeta y dame el comando para pegar la clave».
+
+**Qué pasaba:** en el portátil, `mochila comprobar-ia` se quedaba esperando sin contestar. No iba al centro: `~/.config/mochila/ia.json` tenía el modelo gratis de OpenCode, y en la red del instituto ese modelo no contesta (`opencode run` también se quedaba colgado). Además, el portátil no tenía puestos los datos del centro.
+
+**Pruebas que hizo sin mi clave** (con un `ia.json` temporal, `MOCHILA_IA_CONFIG`, para no tocar el mío):
+- `ia.simarro` responde (10.100.22.107).
+- Sin clave → «Faltan CENTRO_IA_URL o CENTRO_IA_KEY…»; sin certificado → «No me fío del servidor…»; URL que no existe → «No llego al servidor de IA: ¿estás en la red del centro?». Las tres con `exit=4`.
+- Con el certificado del centro (lo sacó del propio servidor: «IES Simarro Internal CA») y una clave falsa → «El servidor de IA responde 401: la clave no es válida». Es decir, red, certificado y API funcionan; solo faltaba mi clave.
+
+**El fallo de los 5 minutos (PR #64):** con el modelo gratis colgado, `comprobar-ia` pasó de **7 minutos**, aunque el límite es de 300 s. En Windows, `opencode` es `opencode.CMD`: lanza `cmd.exe` y este el `opencode.exe` de verdad. Al acabarse el tiempo, `subprocess.run` solo mataba `cmd.exe`, y Python se quedaba esperando la salida que `opencode.exe` seguía teniendo abierta. Ahora `ia.ejecutar` mata el proceso con sus hijos (`taskkill /T` en Windows, el grupo de procesos en Linux y macOS). Lo comprobó con un proceso que deja un hijo vivo: con el código viejo, 20,2 s con un límite de 2 s; con el nuevo, 2,4 s. Con el `opencode` real colgado, corta a su hora y no queda ningún `opencode.exe`. 675 pruebas, CI en verde en los tres sistemas.
+
+**El revisor, con el modelo del centro:** dijo `VEREDICTO: CAMBIAR` con 4 puntos. Los comprobé uno a uno: tres eran falsos (decía que una prueba fallaría por un fixture que no se aplica solo, que a un `falso` le faltaba `**kw` cuando lo tiene, y que antes «cortaba enseguida» cuando antes se colgaba). El cuarto tenía parte de razón: si el padre acaba antes que su hijo, `taskkill /T` ya no lo encuentra. Añadí una prueba de ese caso (el límite se cumple igual, como mucho 5 s más tarde) y la nota en el código.
+
+**Cómo quedó en mi portátil:** `~/.config/opencode/opencode.json` con mi proveedor `simarro` y sus 6 modelos, pero con `"apiKey": "{env:CENTRO_IA_KEY}"`: la clave no está escrita en ningún fichero. La guardé yo como variable de mi usuario con `Read-Host -AsSecureString`, que no la enseña, junto con `NODE_EXTRA_CA_CERTS` (el certificado para OpenCode). Resultado, desde la carpeta del repo:
+
+```
+mochila configurar-ia --proveedor centro   → ✔ las acciones con IA usarán el servidor del centro
+mochila comprobar-ia                       → ✔ El modelo responde «Hola» en 0.2 s (27+2 tokens · 0.2 s)
+opencode run "Hola"                        → build · Qwen38-DualSpark-medium: «¡Hola! ¿En qué te ayudo con la CLI mochila?»
+```
+
+**Qué aprendí:** que «antes funcionaba» no quiere decir que el programa se haya roto: aquí había cambiado la configuración (`ia.json` con otro proveedor) y faltaban las variables. Mirar primero qué proveedor usa (`comprobar-ia` lo dice en la primera línea) habría ahorrado tiempo. Y que el revisor también se equivoca: su `CAMBIAR` hay que comprobarlo punto por punto, no obedecerlo ni ignorarlo sin mirar.

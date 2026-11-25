@@ -192,6 +192,16 @@ def test_ejecutar_corta_aunque_un_hijo_siga_con_la_salida_abierta(tmp_path):
             pytest.fail("el nieto sigue vivo")
 
 
+def test_ejecutar_corta_aunque_el_padre_acabe_y_el_hijo_se_quede_la_salida():
+    """Lo que pidió el revisor (25-nov): el padre acaba enseguida y deja a su hijo con la salida
+    abierta. taskkill /T ya no lo encuentra, pero el límite se cumple (como mucho 5 s más)."""
+    padre = "import subprocess, sys\nsubprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n"
+    inicio = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        ia.ejecutar([sys.executable, "-c", padre], segundos=2)
+    assert time.monotonic() - inicio < 15
+
+
 def test_leer_eventos_salta_lo_que_no_es_json():
     salida = "aviso suelto\n" + eventos("hola ").decode() + "\n[1, 2]\n" + eventos("mundo", 5, 1).decode()
     assert leer_eventos(salida) == ("hola mundo", 15, 3, "")

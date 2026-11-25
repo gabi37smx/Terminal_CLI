@@ -1,11 +1,11 @@
 # Punto actual del proyecto
 
-**Fecha:** 2026-11-24 · **Versión publicada:** 1.2.0 (`v1.2.0`) · **Entrega:** viernes 27-nov-2026
+**Fecha:** 2026-11-25 · **Versión publicada:** 1.2.0 (`v1.2.0`) · **Entrega:** viernes 27-nov-2026
 (grupo presencial, con defensa de 5 minutos).
 **Proyecto:** comando `mochila` (también `tareas`), paquete `tareas`, carpeta `Terminal_CLI`.
 **Repo:** https://github.com/gabi37smx/Terminal_CLI · **Para quien corrige:** [docs/entrega.md](docs/entrega.md)
 (cada punto de la rúbrica con el fichero o la orden que lo demuestra).
-**Pruebas:** `uv run pytest -q` → **672 passed, 1 skipped** (24-nov), y en verde en GitHub Actions
+**Pruebas:** `uv run pytest -q` → **675 passed, 1 skipped** (25-nov), y en verde en GitHub Actions
 con Ubuntu, Windows y macOS.
 **Historial:** más de 190 commits y 60 PR; todas, por versión y con sus issues, en
 [docs/historial-pr.md](docs/historial-pr.md). Qué trae cada versión: [CHANGELOG.md](CHANGELOG.md).
@@ -85,7 +85,7 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
 - [x] `pruebas.yml` en Ubuntu, Windows y macOS; `scripts/revisar.sh`; `CHANGELOG.md`; instalación en una orden en el README.
 - [x] **Release 1.0.0** (PR #16 de la rama `release-1.0`, etiqueta `v1.0.0`) y, con el ensayo en un Ubuntu recién instalado (issues #17-#22), la **1.0.1**.
 
-### Del 13 al 24-nov (resumen; el detalle está en `docs/prompts.md`)
+### Del 13 al 25-nov (resumen; el detalle está en `docs/prompts.md`)
 - [x] `mochila crear-almacen` (cada ciclo con su almacén, [ADR-0005](docs/adr/0005-almacen-por-ciclo.md)) y `mochila configurar-ia` con los modelos gratis de OpenCode ([ADR-0004](docs/adr/0004-ia-gratis-opencode.md)).
 - [x] Mi PC de clase con el almacén real y la IA del centro (13-nov); repaso de los errores amables: 26 errores provocados, ninguna traza.
 - [x] Instalación cruzada con un compañero de DAW en Windows 11 LTSC (15-nov, issue #46) → la ayuda nueva y el cambio de nombre a `mochila`.
@@ -94,6 +94,7 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
 - [x] Instalación desde cero en una VM con Windows 11 limpio, siguiendo solo el README como alumno de 1º de ASIR (18 y 19-nov, issue #53, arreglos en #54-#57).
 - [x] En clase con el modelo del centro (19-nov): las 3 acciones con IA de verdad, romperlo a propósito (`echo $?` → 4), context7, el borrador del CHANGELOG con `opencode run --agent plan` y `scripts/revisar.sh` real (PR #58).
 - [x] **Release 1.2.0** (24-nov, rama `release-1.2`): revisión final frente a la Sesión 4, `docs/entrega.md`, `revisar.sh` sale con 1 si no hay nada preparado y el workflow explicado línea a línea.
+- [x] **IA del centro desde mi portátil (25-nov, en clase)**: `mochila comprobar-ia` responde «Hola» en 0,2 s con `Qwen38-DualSpark-medium`, y `opencode run` también, desde cualquier carpeta (la clave en una variable de entorno, nunca en un fichero). Arreglado de paso: en Windows el límite de 300 s de OpenCode no se cumplía (PR #64, en `[Sin publicar]` del CHANGELOG).
 
 ## Qué falta
 

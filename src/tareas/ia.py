@@ -213,6 +213,10 @@ def ejecutar(orden: list[str], *, input: bytes | None = None, cwd: Path | None =
     Por qué (25-nov, en la red del centro): en Windows «opencode» es opencode.CMD, que lanza cmd.exe y
     este el opencode.exe de verdad. subprocess.run solo mataba cmd.exe; opencode.exe seguía vivo con la
     salida abierta y Python se quedaba esperándola para siempre (pasó de 7 min con un límite de 300 s).
+
+    Ojo (lo señaló el revisor): taskkill /T solo encuentra a los hijos si su padre sigue vivo. Si el
+    padre ya acabó y un hijo se quedó con la salida, ese hijo no se puede matar desde aquí, pero el
+    límite se cumple igual: como mucho 5 s más tarde, sale TimeoutExpired.
     """
     # En Linux y macOS, un grupo de procesos propio para poder matarlo entero
     grupo = {} if os.name == "nt" else {"start_new_session": True}
