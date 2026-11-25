@@ -16,6 +16,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import ssl
 import subprocess
 import sys
@@ -204,6 +205,48 @@ _SIN_CONEXION = ("cannot connect", "unable to connect", "fetch failed", "enotfou
                  "econnreset", "getaddrinfo", "network error")
 
 
+def ejecutar(orden: list[str], *, input: bytes | None = None, cwd: Path | None = None,
+             segundos: float) -> subprocess.CompletedProcess:
+    """Como subprocess.run(orden, capture_output=True, timeout=segundos), pero si se acaba el tiempo
+    mata también los procesos hijos.
+
+    Por qué (25-nov, en la red del centro): en Windows «opencode» es opencode.CMD, que lanza cmd.exe y
+    este el opencode.exe de verdad. subprocess.run solo mataba cmd.exe; opencode.exe seguía vivo con la
+    salida abierta y Python se quedaba esperándola para siempre (pasó de 7 min con un límite de 300 s).
+
+    Ojo (lo señaló el revisor): taskkill /T solo encuentra a los hijos si su padre sigue vivo. Si el
+    padre ya acabó y un hijo se quedó con la salida, ese hijo no se puede matar desde aquí, pero el
+    límite se cumple igual: como mucho 5 s más tarde, sale TimeoutExpired.
+    """
+    # En Linux y macOS, un grupo de procesos propio para poder matarlo entero
+    grupo = {} if os.name == "nt" else {"start_new_session": True}
+    proceso = subprocess.Popen(orden, stdin=subprocess.DEVNULL if input is None else subprocess.PIPE,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, **grupo)
+    try:
+        salida, error = proceso.communicate(input, timeout=segundos)
+    except subprocess.TimeoutExpired:
+        _matar_con_hijos(proceso)
+        try:
+            proceso.communicate(timeout=5)  # recoge lo que quede; si algo sigue vivo, no esperamos más
+        except subprocess.TimeoutExpired:
+            pass
+        raise
+    return subprocess.CompletedProcess(orden, proceso.returncode, salida, error)
+
+
+def _matar_con_hijos(proceso: subprocess.Popen) -> None:
+    """Mata el proceso y todo lo que haya lanzado (taskkill /T en Windows, el grupo en Linux y macOS)."""
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proceso.pid)],
+                           capture_output=True, stdin=subprocess.DEVNULL, timeout=15)
+        else:
+            os.killpg(proceso.pid, signal.SIGKILL)
+    except (OSError, subprocess.TimeoutExpired):
+        pass  # ya había terminado, o no se ha podido: abajo se mata al menos el proceso principal
+    proceso.kill()
+
+
 def _error_opencode(error: str) -> str:
     """El error de OpenCode para un alumno: sin red, en español; lo demás, tal cual (issue #53, punto 6)."""
     if any(p in error.lower() for p in _SIN_CONEXION):
@@ -282,8 +325,7 @@ class ProveedorOpenCode(ProveedorIA):
                 "Responde al texto que sigue.",  # el texto va por la entrada estándar: sin límite de largo
             ]
             try:
-                r = subprocess.run(orden, input=usuario.encode("utf-8"), capture_output=True,
-                                   cwd=carpeta, timeout=self.segundos)
+                r = ejecutar(orden, input=usuario.encode("utf-8"), cwd=carpeta, segundos=self.segundos)
             except subprocess.TimeoutExpired:
                 raise IANoDisponible(f"El modelo de OpenCode no ha respondido en {self.segundos} s") from None
             except OSError as e:

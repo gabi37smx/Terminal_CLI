@@ -1,13 +1,16 @@
 """Modelos gratis con OpenCode (ProveedorOpenCode y mochila configurar-ia) sin lanzar opencode de verdad.
 
-Un «opencode de mentira» sustituye a subprocess.run: apunta qué se le pidió y responde como lo haría
+Un «opencode de mentira» sustituye a ia.ejecutar: apunta qué se le pidió y responde como lo haría
 «opencode run --format json» (un evento JSON por línea). Ninguna prueba usa la red.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -63,7 +66,7 @@ def opencode(monkeypatch):
 
     def instalar(**kw) -> OpencodeFalso:
         falso = OpencodeFalso(**kw)
-        monkeypatch.setattr(subprocess, "run", falso)
+        monkeypatch.setattr(ia, "ejecutar", falso)
         return falso
 
     instalar()
@@ -156,6 +159,49 @@ def test_en_wsl_no_vale_el_opencode_de_windows(monkeypatch):
         ProveedorOpenCode().completar("s", "u")
 
 
+# ---------- ejecutar: el tiempo máximo se cumple de verdad (procesos reales, sin opencode) ----------
+def test_ejecutar_pasa_la_entrada_y_devuelve_la_salida():
+    r = ia.ejecutar([sys.executable, "-c", "import sys; sys.stdout.write(sys.stdin.read().upper())"],
+                    input=b"hola", segundos=30)
+    assert (r.returncode, r.stdout) == (0, b"HOLA")
+
+
+def test_ejecutar_corta_aunque_un_hijo_siga_con_la_salida_abierta(tmp_path):
+    """El caso de opencode.CMD en Windows (25-nov): el proceso lanza otro que hereda su salida.
+    Con subprocess.run, en Windows esto esperaba al nieto (60 s) aunque el límite fuera de 1 s."""
+    pid_nieto = tmp_path / "nieto.pid"
+    padre = (
+        "import subprocess, sys, time\n"
+        "nieto = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\n"
+        f"open({str(pid_nieto)!r}, 'w').write(str(nieto.pid))\n"
+        "time.sleep(60)\n"
+    )
+    inicio = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        ia.ejecutar([sys.executable, "-c", padre], segundos=2)
+    assert time.monotonic() - inicio < 20
+    if os.name != "nt":  # en Linux y macOS, el nieto también ha muerto (era de su grupo)
+        pid = int(pid_nieto.read_text())
+        for _ in range(50):
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.1)
+        else:
+            pytest.fail("el nieto sigue vivo")
+
+
+def test_ejecutar_corta_aunque_el_padre_acabe_y_el_hijo_se_quede_la_salida():
+    """Lo que pidió el revisor (25-nov): el padre acaba enseguida y deja a su hijo con la salida
+    abierta. taskkill /T ya no lo encuentra, pero el límite se cumple (como mucho 5 s más)."""
+    padre = "import subprocess, sys\nsubprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n"
+    inicio = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        ia.ejecutar([sys.executable, "-c", padre], segundos=2)
+    assert time.monotonic() - inicio < 15
+
+
 def test_leer_eventos_salta_lo_que_no_es_json():
     salida = "aviso suelto\n" + eventos("hola ").decode() + "\n[1, 2]\n" + eventos("mundo", 5, 1).decode()
     assert leer_eventos(salida) == ("hola mundo", 15, 3, "")
@@ -235,13 +281,13 @@ def test_modelos_gratis_sin_internet_usa_la_lista_guardada(monkeypatch):
             return subprocess.CompletedProcess(orden, 1, b"", b"Failed to fetch models.dev")
         return subprocess.CompletedProcess(orden, 0, b"opencode/beam-free\n", b"")
 
-    monkeypatch.setattr(subprocess, "run", falso)
+    monkeypatch.setattr(ia, "ejecutar", falso)
     assert configurar_ia_mod.modelos_gratis("/usr/bin/opencode") == ["opencode/beam-free"]
     assert len(llamadas) == 2
 
 
 def test_modelos_gratis_ninguno(monkeypatch):
-    monkeypatch.setattr(subprocess, "run", lambda orden, **kw: subprocess.CompletedProcess(orden, 0, b"", b""))
+    monkeypatch.setattr(ia, "ejecutar", lambda orden, **kw: subprocess.CompletedProcess(orden, 0, b"", b""))
     with pytest.raises(ConfigError, match="ningún modelo gratis"):
         configurar_ia_mod.modelos_gratis("/usr/bin/opencode")
 
