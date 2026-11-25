@@ -8,6 +8,16 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+### Arreglado
+
+- **En Windows, el tiempo máximo de OpenCode (300 s) no se cumplía.** Probado el 25-nov en la red
+  del centro: el modelo gratis no contestaba y `mochila comprobar-ia` siguió esperando más de 7
+  minutos. El motivo: `opencode` es `opencode.CMD`, que lanza `cmd.exe` y este el `opencode.exe` de
+  verdad; al acabarse el tiempo solo moría `cmd.exe`, y Python se quedaba esperando la salida del
+  otro. Ahora `ia.ejecutar` mata el proceso con todos sus hijos (`taskkill /T` en Windows, el grupo
+  de procesos en Linux y macOS) y sale el aviso «no ha respondido en 300 s» con código 4. Lo usan
+  las acciones con IA, `comprobar-ia` y la lista de modelos de `configurar-ia`.
+
 ## [1.2.0] - 2026-11-24
 
 Lo que salió de probar en clase con el modelo del centro (19-nov) y de la instalación cruzada como

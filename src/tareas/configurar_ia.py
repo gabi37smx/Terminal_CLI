@@ -15,6 +15,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from . import ia
 from .errores import ConfigError
 from .ia import RECOMENDADOS
 
@@ -65,7 +66,7 @@ def modelos_gratis(ejecutable: str, segundos: int = 60) -> list[str]:
     """
     for orden in ([ejecutable, "models", "opencode", "--refresh"], [ejecutable, "models", "opencode"]):
         try:
-            r = subprocess.run(orden, capture_output=True, timeout=segundos, stdin=subprocess.DEVNULL)
+            r = ia.ejecutar(orden, segundos=segundos)  # si se cuelga, mata también los hijos (Windows)
         except subprocess.TimeoutExpired:
             continue
         except OSError as e:
@@ -81,7 +82,7 @@ def modelos_gratis(ejecutable: str, segundos: int = 60) -> list[str]:
 def version(ejecutable: str) -> str:
     """La versión de opencode («1.18.35») o «?» si no la dice."""
     try:
-        r = subprocess.run([ejecutable, "--version"], capture_output=True, timeout=30, stdin=subprocess.DEVNULL)
+        r = ia.ejecutar([ejecutable, "--version"], segundos=30)
     except (subprocess.TimeoutExpired, OSError):
         return "?"
     return r.stdout.decode("utf-8", "replace").strip() or "?"
