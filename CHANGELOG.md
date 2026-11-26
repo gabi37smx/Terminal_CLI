@@ -8,6 +8,10 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+## [1.3.1] - 2026-11-26
+
+Lo que salió al intentar romperlo antes que el profe: el `destino` de `mover-zips` se salía de la carpeta.
+
 ### Arreglado
 
 - **Un `destino` relativo va dentro de la carpeta en la que se trabaja**, no donde esté la terminal.
@@ -20,7 +24,17 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 - **`mover` y `copiar` saltan lo que ya está en su destino.** Si le pasas como CARPETA la propia
   carpeta de destino (`mochila ejecutar mover-zips …/comprimidos`), antes renombraba cada `.zip` a
   «x (1).zip» o lo duplicaba; ahora dice «ya está en la carpeta de destino» y no lo toca.
+- **El revisor de OpenCode ya no se queda sin tiempo intentando lanzar `pytest`.** Lo tiene
+  denegado (solo `git diff/log/status` y leer), pero lo intentaba 3 o 4 veces en cada revisión y a
+  veces llegaba a los 180 s sin veredicto. `.opencode/agents/revisor.md` y la petición de
+  `scripts/revisar.sh` se lo dicen; probado con el modelo del centro: ningún intento y `OK` en 40 s.
+  Si aun así se agota el tiempo, el mensaje ya no dice «¿estás fuera de la red del centro?» (salía
+  también dentro de ella).
 - 5 pruebas nuevas en `tests/test_acciones.py`.
+- **GitHub Actions con tiempo máximo** (15 min por sistema). En la PR de esta versión, el Windows de
+  GitHub se quedó colgado 26 min en un `git commit` de `test_historial_tampoco_lee_pdfs`, cuando lo
+  normal son 2 min (la misma prueba pasó en la otra tanda, con el mismo commit). Sin límite habría
+  esperado 6 horas. Los `git` de esa prueba ya no leen del teclado y tienen 60 s.
 
 ## [1.3.0] - 2026-11-26
 
@@ -387,7 +401,8 @@ Primera versión estable: lo de las semanas 1 a 4 del proyecto de 1º DAM.
   - El documento va entre `<documento>` para frenar la inyección de prompt.
 - `comprobar-ia` nunca enseña la clave (solo dice «clave: definida»), y OpenCode no puede leer `*.env`.
 
-[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.3.0...HEAD
+[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.0...v1.2.1

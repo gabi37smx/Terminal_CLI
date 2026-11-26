@@ -60,11 +60,11 @@ unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_PREFIX GIT_OBJECT_DIRECTORY GIT_A
 
 estado=0
 salida=$(printf '%s\n' "$diff_preparado" | ${CON_LIMITE[@]+"${CON_LIMITE[@]}"} opencode run --agent revisor ${CON_MODELO[@]+"${CON_MODELO[@]}"} \
-    "Revisa este diff (lo que voy a subir en el próximo commit). Céntrate en lo que cambia: abre otro fichero solo si lo necesitas para confirmar un error, porque tienes ${LIMITE} segundos. Acaba con la línea VEREDICTO: OK o VEREDICTO: CAMBIAR.") \
+    "Revisa este diff (lo que voy a subir en el próximo commit). Céntrate en lo que cambia: abre otro fichero solo si lo necesitas para confirmar un error, porque tienes ${LIMITE} segundos. No ejecutes pytest ni otras órdenes: están denegadas. Acaba con la línea VEREDICTO: OK o VEREDICTO: CAMBIAR.") \
     || estado=$?
 
 if [ "$estado" -eq 124 ]; then
-    echo "El revisor no ha contestado en ${LIMITE} s (¿estás fuera de la red del centro?)." >&2
+    echo "El revisor no ha contestado en ${LIMITE} s: el modelo ha tardado demasiado o no llega a su servidor. Vuelve a probar con: bash scripts/revisar.sh" >&2
     exit 2
 elif [ "$estado" -ne 0 ]; then
     echo "opencode ha fallado (código $estado): no se ha podido revisar." >&2
