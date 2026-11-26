@@ -27,7 +27,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 RENOMBRAR = {"nombre": "renombrar-capturas", "descripcion": "d", "tipo": "renombrar",
              "plantilla": "captura_{n:03}{ext}", "filtro": {"patron": "^Captura"}}
 MOVER = {"nombre": "guardar-capturas", "descripcion": "d", "tipo": "mover",
-         "destino": "prueba/capturas", "filtro": {"patron": "^captura_"}}  # relativo a la carpeta de la prueba
+         "destino": "capturas", "filtro": {"patron": "^captura_"}}  # relativo: dentro de la carpeta en la que trabaja
 BORRAR = {"nombre": "limpiar", "descripcion": "d", "tipo": "borrar",
           "filtro": {"extensiones": [".tmp"], "mas_antiguo_que_dias": 30}}
 SECUENCIA = {"nombre": "repasar", "descripcion": "Todo seguido", "tipo": "secuencia",
