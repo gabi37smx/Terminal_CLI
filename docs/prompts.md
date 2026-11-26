@@ -884,6 +884,8 @@ Se equivocaba en otros tres: decir que no a un paso no da traza, solo «Aborted!
 
 **Un fallo que se me coló:** después de ese commit, la prueba que obliga a que cada ejemplo de `ejecutar` diga la carpeta (de la instalación cruzada del 15-nov) falló: mi ejemplo nuevo no la llevaba. El commit se hizo igual porque la orden encadenaba `pytest | tail` y el código de salida era el de `tail`. Lo arreglé en un commit aparte antes de subir nada, y desde entonces se mira el código de salida de pytest. Las pruebas viejas sirven justo para esto.
 
+**Y otro en GitHub Actions:** en los tres sistemas falló `test_la_lista_de_acciones_enseña_los_pasos`, que en mi portátil pasaba. En GitHub la consola tiene 80 columnas, la tabla de `mochila acciones` partía la descripción y metía bordes `│` entre «limpiar →» y «renombrar-capturas». Era la prueba, no el programa: ahora quita los bordes antes de comparar, y la probé en local con `COLUMNS=80`. Sin la matriz de tres sistemas no lo habría visto hasta la defensa.
+
 **Resultado:** 713 pruebas (28 nuevas en `test_secuencia.py`), `mochila doctor .` 11 de 11 y `scan-secrets` limpio. Publicado en la **1.3.0** (versión menor: añade algo sin romper nada; un `acciones.json` sin secuencias funciona igual).
 
 **Qué aprendí:** que «combinar» acciones no es solo ejecutarlas una detrás de otra: hay que decidir qué pasa si una falla a mitad, qué enseña la simulación cuando los pasos dependen unos de otros y cómo evitar bucles. Y que poner la combinación en el JSON, en vez de en la orden, la deja guardada con su nombre y validada como lo demás.

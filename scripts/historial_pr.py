@@ -42,9 +42,11 @@ QUE_TRAE = {
     "v1.2.2": "La instalación cruzada de un amigo con su cuenta de GitHub (25 y 26-nov) y sus issues "
               "(#69 a #71): preguntas s/n que vuelven a preguntar, la estimación de tokens y el PowerShell "
               "de Administrador.",
+    "v1.3.0": "Acciones combinables: el tipo «secuencia» (ADR-0007), que ejecuta varias acciones seguidas, "
+              "y la spec de la Sesión 1 en docs/spec.md.",
     None: "Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.",
 }
-TITULO_VERSION = {"v1.0.0": "1.0.0", "v1.0.1": "1.0.1", "v1.1.0": "1.1.0", "v1.2.0": "1.2.0", "v1.2.1": "1.2.1", "v1.2.2": "1.2.2", None: "Sin publicar"}
+TITULO_VERSION = {"v1.0.0": "1.0.0", "v1.0.1": "1.0.1", "v1.1.0": "1.1.0", "v1.2.0": "1.2.0", "v1.2.1": "1.2.1", "v1.2.2": "1.2.2", "v1.3.0": "1.3.0", None: "Sin publicar"}
 
 
 def ejecutar(*orden: str) -> str:
@@ -139,7 +141,7 @@ def main() -> None:
         "edita a mano.",
     ]
 
-    orden = [v for v in ("v1.0.0", "v1.0.1", "v1.1.0", "v1.2.0", "v1.2.1", "v1.2.2") if v in por_version]
+    orden = [v for v in ("v1.0.0", "v1.0.1", "v1.1.0", "v1.2.0", "v1.2.1", "v1.2.2", "v1.3.0") if v in por_version]
     orden += [v for v in por_version if v not in orden and v is not None]
     if None in por_version:
         orden.append(None)
