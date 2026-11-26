@@ -24,6 +24,12 @@ Lo que salió al intentar romperlo antes que el profe: el `destino` de `mover-zi
 - **`mover` y `copiar` saltan lo que ya está en su destino.** Si le pasas como CARPETA la propia
   carpeta de destino (`mochila ejecutar mover-zips …/comprimidos`), antes renombraba cada `.zip` a
   «x (1).zip» o lo duplicaba; ahora dice «ya está en la carpeta de destino» y no lo toca.
+- **El revisor de OpenCode ya no se queda sin tiempo intentando lanzar `pytest`.** Lo tiene
+  denegado (solo `git diff/log/status` y leer), pero lo intentaba 3 o 4 veces en cada revisión y a
+  veces llegaba a los 180 s sin veredicto. `.opencode/agents/revisor.md` y la petición de
+  `scripts/revisar.sh` se lo dicen; probado con el modelo del centro: ningún intento y `OK` en 40 s.
+  Si aun así se agota el tiempo, el mensaje ya no dice «¿estás fuera de la red del centro?» (salía
+  también dentro de ella).
 - 5 pruebas nuevas en `tests/test_acciones.py`.
 
 ## [1.3.0] - 2026-11-26
