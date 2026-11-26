@@ -8,6 +8,9 @@ description: Reglas del fichero acciones.json de la CLI mochila (campos, tipos, 
 - Tipos: mover y copiar (requieren destino), renombrar (requiere plantilla), borrar (requiere filtro; siempre pide confirmación salvo --si),
   ordenar (requiere carpetas: {"asignatura": ["palabras clave"]}; opcional por_extension: {".sql": "asignatura"}),
   convertir (JPEG/PNG a WebP; opcional calidad 1-100). Con IA: resumir, renombrar-ia y clasificar (ver abajo).
+- secuencia (ADR-0007): solo nombre, descripcion, tipo, pasos y origen. pasos = lista de nombres de otras acciones
+  (al menos 2, sin repetir, sin sí misma ni otra secuencia: lo comprueba _validar_pasos al final). El motor ejecuta
+  cada paso con su acción (Motor.pasos); en cli.py cada paso pregunta como siempre y si uno falla para.
 - filtro opcional: extensiones (lista con punto), patron (regex válida), mas_antiguo_que_dias, mayor_que_mb. Si hay varios, se cumplen todos.
 - plantilla: huecos {fecha:%Y-%m-%d}, {n:03}, {ext}, {nombre}; sin caracteres prohibidos en Windows.
 ## Reglas al programar

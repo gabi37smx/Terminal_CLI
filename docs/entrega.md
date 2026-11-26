@@ -18,7 +18,7 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**, al día el 25-nov
 | Mínimo | Dónde se ve |
 |---|---|
 | Se instala siguiendo el README y `--help` funciona | [README · En una orden](../README.md#en-una-orden-si-ya-tienes-uv): `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.2.2` y `mochila --help`. Con el instalador: `bash instalar.sh` o `instalar.cmd`. Probado en un Ubuntu recién instalado (issues #17-#22) y en una VM con Windows 11 limpia (#53). |
-| Al menos 3 acciones propias en `acciones.json` | [acciones.json](../acciones.json) tiene **9**; `mochila validar` → 9 válidas; `mochila acciones` las lista. |
+| Al menos 3 acciones propias en `acciones.json` | [acciones.json](../acciones.json) tiene **10** (una de ellas, `repasar-carpeta`, combina cuatro); `mochila validar` → 10 válidas; `mochila acciones` las lista. |
 | Ningún secreto en el repo ni en su historial | `.env` en [.gitignore](../.gitignore) desde el primer commit con código; solo se sube [.env.example](../.env.example) con los nombres. `mochila scan-secrets --historial` sale limpio. Hook antes de cada commit (`mochila instalar-hook`). |
 | Historial git real (mínimo 10 commits) | Más de 190 commits y más de 60 PR, cada una en su rama: `git log --oneline` y [historial-pr.md](historial-pr.md). |
 
@@ -26,9 +26,14 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**, al día el 25-nov
 
 ### Acciones predefinidas funcionando (20)
 
-- 9 acciones de 9 tipos: `ordenar` (ordenar), `limpiar-temporales` (borrar), `convertir-webp`
+- 10 acciones de 10 tipos: `ordenar` (ordenar), `limpiar-temporales` (borrar), `convertir-webp`
   (convertir), `renombrar-capturas` (renombrar), `copiar-entregas` (copiar), `mover-zips` (mover), y con IA
   `resumir-tema` (resumir), `nombrar-descargas` (renombrar-ia) y `clasificar-asignatura` (clasificar).
+- **Combinables** (1.3.0): `repasar-carpeta` es de tipo `secuencia` y ejecuta seguidas
+  `limpiar-temporales → renombrar-capturas → convertir-webp → mover-zips`. Cada paso ve lo que dejó el
+  anterior, pregunta como siempre y, si uno falla, los demás no se ejecutan. Una combinación nueva es
+  editar el JSON: [ADR-0007](adr/0007-acciones-combinables.md) y
+  [tests/test_secuencia.py](../tests/test_secuencia.py). Pruébala con `mochila ejecutar repasar-carpeta --simular`.
 - Todas tienen `--simular`; las que mueven o borran preguntan antes (`--si` para no preguntar). Nunca
   sobrescriben: si el destino existe, crean `nombre (1).ext`.
 - Una prueba comprueba que **lo que dice `--simular` es lo que pasa de verdad** en los seis tipos sin IA:
@@ -115,7 +120,7 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**, al día el 25-nov
   de verdad (25 y 26-nov): un amigo, en su portátil con Windows 10 y **con su cuenta de GitHub**, abrió
   él sus issues (#69, #70 y #71), arreglados y publicados en la 1.2.2. Qué probó y con qué
   resultado: [prompts.md](prompts.md) (entrada del 25 y 26-nov).
-- ADR: [0001](adr/0001-configuracion-externa.md) a [0006](adr/0006-nombre-mochila.md).
+- ADR: [0001](adr/0001-configuracion-externa.md) a [0007](adr/0007-acciones-combinables.md). La spec: [spec.md](spec.md).
 
 ## Las preguntas de la defensa: dónde está la respuesta
 

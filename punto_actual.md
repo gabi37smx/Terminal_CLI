@@ -5,7 +5,7 @@
 **Proyecto:** comando `mochila` (también `tareas`), paquete `tareas`, carpeta `Terminal_CLI`.
 **Repo:** https://github.com/gabi37smx/Terminal_CLI · **Para quien corrige:** [docs/entrega.md](docs/entrega.md)
 (cada punto de la rúbrica con el fichero o la orden que lo demuestra).
-**Pruebas:** `uv run pytest -q` → **685 passed, 1 skipped** (26-nov), y en verde en GitHub Actions
+**Pruebas:** `uv run pytest -q` → **713 passed, 1 skipped** (26-nov), y en verde en GitHub Actions
 con Ubuntu, Windows y macOS.
 **Historial:** más de 190 commits y 60 PR; todas, por versión y con sus issues, en
 [docs/historial-pr.md](docs/historial-pr.md). Qué trae cada versión: [CHANGELOG.md](CHANGELOG.md).
@@ -101,6 +101,9 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
 - [x] **Instalación en otros equipos:** Ubuntu recién instalado (#17-#22), mi cuñado de DAW en su
   portátil (15-nov, #46) y una VM con Windows 11 limpio siguiendo solo el README como alumno de 1º de
   ASIR (18 y 19-nov, #53, la hice yo). Cada fallo con su issue y «Closes #N»; todo publicado (1.2.1).
+- [x] **Acciones combinables (26-nov, 1.3.0):** tipo `secuencia` (ADR-0007) y `repasar-carpeta` en el
+  ejemplo; cada paso ve lo que dejó el anterior y, si uno falla, para. `docs/spec.md` con la spec de la
+  Sesión 1. 28 pruebas nuevas (`tests/test_secuencia.py`).
 - [x] **Instalación cruzada de otra persona con su cuenta (25 y 26-nov):** un amigo, en su portátil con
   Windows 10 y su cuenta de GitHub, lo instaló, creó su almacén y probó acciones con y sin IA y los
   códigos de salida. Abrió él sus issues (#69, #70 y #71): arreglados con prueba y «Closes #N»

@@ -846,3 +846,44 @@ opencode run "Hola"                        → build · Qwen38-DualSpark-medium:
 **Ideas suyas que apunté y no hice** (no son fallos): los iconos ✔/✘ salen como cuadraditos en la consola clásica de Windows; el rojo oscuro de los errores se lee mal sobre el azul de PowerShell; `resumir-tema` tarda 12 s sin indicador de progreso; y `ordenar` manda a `sistemas` ficheros con «windows» o «hardware» en el nombre aunque no sean de clase (por eso hay que simular antes).
 
 **Qué aprendí:** que la persona que prueba no tiene que leer el código ni saber de issues para dar buenos fallos: basta con que cuente exactamente qué escribió y qué salió. Las dos cosas que más le costaron (la autorización de GitHub y el PowerShell de Administrador) no eran fallos del programa, sino de las instrucciones, y se arreglan avisando a tiempo.
+
+## 2026-11-26 · Acciones combinables: el tipo `secuencia` (Claude Code)
+**Herramienta:** Claude Code.
+**Prompts:** «revisa aquí si está todo en el proyecto para obtener el excelente» (con la web del curso); me contestó que solo faltaba lo de «combinables» del criterio de acciones y `docs/spec.md`, y le dije «como tenemos algo de tiempo vamos a por el excelente, siempre revisando que no rompa nada».
+
+**Qué faltaba:** el nivel excelente de «Acciones predefinidas» pide acciones «combinables», y `mochila ejecutar` solo aceptaba una cada vez. Cuando repaso una carpeta lanzo siempre lo mismo y en el mismo orden (temporales, capturas, WebP, zips), y si convierto antes de renombrar, el `.webp` se queda con el nombre feo.
+
+**Qué propuso y qué se hizo:** un tipo de acción nuevo, `secuencia`, que solo lleva la lista de `pasos` (ADR-0007, con las alternativas que descartamos: varias acciones en la orden, un campo `despues` o un script). Así la combinación se escribe en el JSON, como dice el ADR-0001. Lo importante para que no haya efectos sorpresa:
+- Cada paso vuelve a elegir los ficheros, así que ve lo que dejó el anterior.
+- Cada paso enseña su tabla y pregunta como si lo lanzara solo. Si uno falla o le digo que no, para y dice qué pasos no ha hecho.
+- Si un paso necesita IA y no hay modelo, sale con 4 antes del primero: mejor no empezar que quedarse a medias.
+- `config.py` rechaza pasos que no existen, repetidos, la propia secuencia u otra secuencia (así no puede haber bucles).
+
+**Antes de tocar nada** pasó todas las pruebas (685) y las volvió a pasar después de cada cambio. Separó la parte de `ejecutar` que hace una acción (`_ejecutar_una`) para reutilizarla en cada paso sin cambiar lo que ya hacía.
+
+**Un fallo suyo que se vio en las pruebas:** en cuatro pruebas nuevas el destino `capturas` era relativo y se resolvía desde la carpeta de la prueba, no desde la carpeta que se ordenaba. Era un error de la prueba, no del programa; lo cambió a `prueba/capturas`. Y al editar con un script se le colaron tres saltos de línea dentro de cadenas de Python; lo vio al comprobar que el módulo importaba.
+
+**Probado de verdad**, en una carpeta personal de mentira (con una captura PNG de verdad, un `.tmp` de hace 40 días y un `.zip`):
+
+```
+mochila ejecutar repasar-carpeta --simular   → 4 tablas, sin tocar nada; avisa de que cada paso mira la carpeta como está
+mochila ejecutar repasar-carpeta --si        → viejo.tmp borrado; Captura de pantalla 1.png → captura_2026-11-26_001.png
+                                               → captura_2026-11-26_001.webp; apuntes.zip → comprimidos/
+                                               ✔ Secuencia «repasar-carpeta» terminada: 4 pasos.
+```
+
+Simulando, el paso 3 decía «Captura de pantalla 1.webp»; de verdad salió «captura_2026-11-26_001.webp». Es justo lo que avisa la primera línea de la simulación.
+
+**El revisor:** la primera vez dijo `CAMBIAR`. Comprobé cada punto. Tenía razón en cuatro, y los arreglé con su prueba:
+- Si fallaba el último paso no se decía nada.
+- Con un fichero suelto como CARPETA la secuencia podía pararse a mitad (ahora se rechaza antes de empezar).
+- Un paso sin `origen` se descubría a mitad (ahora también se mira antes).
+- Faltaba el ejemplo en la ayuda.
+
+Se equivocaba en otros tres: decir que no a un paso no da traza, solo «Aborted!» (lo añadí a la prueba); los pasos no pueden pisar ficheros entre ellos, porque cada uno mira el disco antes de escribir; y lo de `al_almacen` ya era así antes y no tiene que ver con la secuencia. La segunda vez no contestó en 180 s y el hook dejó pasar el commit, como está previsto.
+
+**Un fallo que se me coló:** después de ese commit, la prueba que obliga a que cada ejemplo de `ejecutar` diga la carpeta (de la instalación cruzada del 15-nov) falló: mi ejemplo nuevo no la llevaba. El commit se hizo igual porque la orden encadenaba `pytest | tail` y el código de salida era el de `tail`. Lo arreglé en un commit aparte antes de subir nada, y desde entonces se mira el código de salida de pytest. Las pruebas viejas sirven justo para esto.
+
+**Resultado:** 713 pruebas (28 nuevas en `test_secuencia.py`), `mochila doctor .` 11 de 11 y `scan-secrets` limpio. Publicado en la **1.3.0** (versión menor: añade algo sin romper nada; un `acciones.json` sin secuencias funciona igual).
+
+**Qué aprendí:** que «combinar» acciones no es solo ejecutarlas una detrás de otra: hay que decidir qué pasa si una falla a mitad, qué enseña la simulación cuando los pasos dependen unos de otros y cómo evitar bucles. Y que poner la combinación en el JSON, en vez de en la orden, la deja guardada con su nombre y validada como lo demás.

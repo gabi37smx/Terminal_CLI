@@ -111,7 +111,7 @@ mochila --help          # o «tareas --help»: es el mismo programa
 ```
 
 Así instalas solo el comando: `mochila` buscará tus acciones en `./acciones.json` o en
-`~/.config/mochila/acciones.json`, y sin clonar no tienes ninguno. Baja el de ejemplo (mis 9 acciones)
+`~/.config/mochila/acciones.json`, y sin clonar no tienes ninguno. Baja el de ejemplo (mis 10 acciones)
 y cámbialo a tu gusto siguiendo el [esquema](#esquema-de-accionesjson):
 
 ```bash
@@ -279,7 +279,7 @@ Hay tres ayudas, de más corta a más larga:
 | `perfil` | no (raíz) | Lo escribe `mochila configurar`: `{"ciclo": "dam", "cursos": [1]}`. Sirve para proponerte lo mismo la próxima vez. |
 | `nombre` | sí | Único; minúsculas, números y guiones. Es lo que escribes en `mochila ejecutar NOMBRE`. |
 | `descripcion` | sí | Lo que muestra `mochila acciones`. |
-| `tipo` | sí | Sin IA: `mover`, `copiar`, `renombrar`, `borrar`, `ordenar` o `convertir`. Con IA: `resumir`, `renombrar-ia` o `clasificar`. |
+| `tipo` | sí | Sin IA: `mover`, `copiar`, `renombrar`, `borrar`, `ordenar` o `convertir`. Con IA: `resumir`, `renombrar-ia` o `clasificar`. Y `secuencia`: varias acciones seguidas (ver `pasos`). |
 | `origen` | no | Carpeta por defecto si no pasas CARPETA. `~` se expande en los tres sistemas. |
 | `destino` | mover / copiar / clasificar | Dónde van los ficheros (se crea si no existe). En `resumir` es opcional: dónde se escribe cada `.resumen.md` (si no, junto al fichero). |
 | `plantilla` | renombrar | Nombre nuevo: `{fecha:%Y-%m-%d}`, `{n:03}`, `{ext}`, `{nombre}`. |
@@ -295,13 +295,17 @@ Hay tres ayudas, de más corta a más larga:
 | `confirmar` | no | `true` = pide confirmación antes de actuar (salvo `--si`). En las acciones con IA que cambian tus ficheros, ponlo siempre. |
 | `instrucciones` | no (con IA) | Lo que le pides al modelo, en tu idioma. Es configuración: se cambia sin tocar Python. |
 | `max_caracteres` | no (con IA) | Tope de texto que se manda al modelo: 500-50000, por defecto 12000. |
+| `pasos` | secuencia | Lista de acciones (sus `nombre`) que se ejecutan en orden sobre la misma carpeta: `["limpiar-temporales", "convertir-webp"]`. Al menos 2, sin repetir, sin la propia secuencia ni otra secuencia. Cada paso ve lo que dejó el anterior y pregunta como si lo lanzaras solo; si uno falla, los demás no se ejecutan. Una secuencia solo lleva `nombre`, `descripcion`, `tipo`, `pasos` y `origen` ([ADR-0007](docs/adr/0007-acciones-combinables.md)). |
 | `categorias` | clasificar | Las únicas respuestas válidas. Si el modelo dice otra cosa, el fichero va a `sin-clasificar`. Pon siempre una salida tipo `otros`. |
 
-**Mis 9 acciones.** Sin IA (funcionan sin red): `ordenar` (reparte apuntes por asignatura y por unidad, mirando nombre, extensión y, si hace falta,
+**Mis 10 acciones.** Sin IA (funcionan sin red): `ordenar` (reparte apuntes por asignatura y por unidad, mirando nombre, extensión y, si hace falta,
 el contenido de los PDF y de los `.odt`, `.docx`, `.pptx`... con su cabecera y pie), `limpiar-temporales` (borra `.tmp/.bak/.part` de más de 30 días, con
 confirmación), `convertir-webp` (JPEG/PNG a WebP sin tocar el original), `renombrar-capturas`
 (capturas con fecha y número), `copiar-entregas` (copia entregas y prácticas a una carpeta de
 seguridad) y `mover-zips` (mueve los `.zip` a la subcarpeta `comprimidos`).
+Combinadas: `repasar-carpeta` (tipo `secuencia`) hace seguidas `limpiar-temporales`, `renombrar-capturas`,
+`convertir-webp` y `mover-zips`; así el `.webp` sale con el nombre ya arreglado. Pruébala primero con
+`mochila ejecutar repasar-carpeta --simular`.
 Con IA: `resumir-tema` (resume cada tema en un `.resumen.md` **al lado del apunte**, en castellano
 aunque esté en valenciano; lee el tema entero y el resumen es más largo cuanto más largo es: una
 viñeta por cada 2 páginas, entre 6 y 40, en apartados), `nombrar-descargas` (pone nombre por su contenido a los `escaneo_0042.pdf` o
