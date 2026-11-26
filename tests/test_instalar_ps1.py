@@ -88,3 +88,26 @@ def test_quita_del_perfil_la_linea_del_tab_de_cuando_se_llamaba_dam(tmp_path):
     assert "autocompletado de dam" not in texto
     assert "Set-Alias ll Get-ChildItem" in texto  # lo tuyo no se toca
     assert "autocompletado de mochila" in texto
+
+
+def ejecutar_paso_0(tmp_path: Path, carpeta_repo: str) -> str:
+    """El aviso del paso 0 (Administrador y System32) con el repositorio en carpeta_repo."""
+    texto = (RAIZ / "instalar.ps1").read_text(encoding="utf-8")
+    bloque = re.search(r"# 0\..*?(?=\n# 1\.)", texto, re.S).group(0).replace("$PSScriptRoot", f"'{carpeta_repo}'")
+    script = tmp_path / "paso_0.ps1"
+    script.write_text("function Aviso($t) { Write-Host \"AVISO $t\" }\n" + bloque, encoding="utf-8-sig")
+    r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script)],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+    assert r.returncode == 0, r.stderr
+    return r.stdout
+
+
+def test_avisa_si_el_repo_quedo_en_system32(tmp_path):
+    # La instalación cruzada del 26-nov: PowerShell de Administrador → el clone acabó en System32
+    import os
+    salida = ejecutar_paso_0(tmp_path, os.path.join(os.environ["SystemRoot"], "System32", "Terminal_CLI"))
+    assert "carpeta de Windows" in salida and "PowerShell normal" in salida
+
+
+def test_no_avisa_de_system32_si_el_repo_esta_en_tu_carpeta(tmp_path):
+    assert "carpeta de Windows" not in ejecutar_paso_0(tmp_path, str(tmp_path / "Terminal_CLI"))

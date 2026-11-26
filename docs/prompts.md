@@ -365,7 +365,7 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 - El TAB funciona: `dam ej` + tecla Tab → `dam ejecutar`. La primera vez escribí `<TAB>` tal cual, sin entender que había que pulsar la tecla, y bash dio un error de sintaxis por el `<`. No era un fallo de `dam`.
 - `uv run pytest -q` → **418 passed, 1 skipped** en Ubuntu 24.04.
 - Release `v1.0.1` publicada con los arreglos de los issues #17-#22, todos cerrados.
-**Instalación cruzada con otra persona:** la primera, el 15-nov, con mi cuñado (estudia DAW), en su portátil con Windows 11 LTSC y en una máquina virtual con Windows (entrada del 15-nov). Lo que salió lo arreglé yo (#40 y el cambio a `mochila`); él no abrió issues con su cuenta. La segunda, el 18 y 19-nov, la hice yo en una máquina virtual con Windows 11 recién instalado, siguiendo solo el README como si fuera alumno de 1º de ASIR: salieron 7 cosas (issue #53), arregladas en #54-#57 y comprobadas repitiendo la prueba con `main`. **Pendiente (25-nov):** con un compañero de clase, con su cuenta de GitHub y sus issues. Se lo pedí a un compañero de 1º de ASIR y aún no ha podido; hasta entonces, la prueba como alumno de ASIR es la de la máquina virtual, que hice yo. Cuando él la haga, sus issues irán en una 1.2.2.
+**Instalación cruzada con otra persona:** la primera, el 15-nov, con mi cuñado (estudia DAW), en su portátil con Windows 11 LTSC y en una máquina virtual con Windows (entrada del 15-nov). Lo que salió lo arreglé yo (#40 y el cambio a `mochila`); él no abrió issues con su cuenta. La segunda, el 18 y 19-nov, la hice yo en una máquina virtual con Windows 11 recién instalado, siguiendo solo el README como si fuera alumno de 1º de ASIR: salieron 7 cosas (issue #53), arregladas en #54-#57 y comprobadas repitiendo la prueba con `main`. **Hecho (25 y 26-nov):** la tercera, la de otra persona de verdad: un amigo, en su portátil con Windows 10, con su cuenta de GitHub, y con sus issues (#69, #70 y #71), arreglados y publicados en la 1.2.2. Todo en la entrada del 25 y 26-nov, al final de este fichero. El compañero de ASIR al que se lo pedí no llegó a hacerlo.
 **Qué aprendí:**
 - **El README se prueba en un ordenador limpio y siguiéndolo al pie de la letra.** En mi PC funcionaba porque ya tenía `git`, `curl` y `uv`. En el portátil recién instalado salieron cinco fallos en una tarde, y ninguno era del código: eran del README y de los mensajes.
 - **Un issue por fallo y `Closes #N` en el commit.** Así cada arreglo queda unido a su problema y la release dice qué arregla.
@@ -615,7 +615,7 @@ También vi que `uv tool install` no usa mi `uv.lock`: en el portátil se instal
 
 **Cómo se probó:** 30 pruebas nuevas con un «GitHub de mentira» (repos *bare* en una carpeta temporal, como los de GitHub) y sin abrir el navegador: alumno nuevo de ASIR, otro equipo que solo lo baja, repo que no existe, usuario mal escrito, carpeta que no es git... En total, **559 pruebas OK**. Al meter el comando, la ayuda general se pasaba de una pantalla porque el nombre largo ensanchaba la columna: por eso es `crear-almacen` y no `preparar-almacen`.
 
-**Probado de verdad (13-nov):** abrí la dirección que da `dam crear-almacen` y la página de GitHub sale con el nombre puesto y **Private** marcado. **Probado entero (18-nov)**, por mí, en la máquina virtual de la prueba de ASIR (issue #53): `mochila crear-almacen` creó `ASIR-almacen` privado en mi cuenta, lo clonó y creó las carpetas. **Pendiente (25-nov):** que lo haga otra persona con su propia cuenta (el mismo compañero de ASIR de la instalación cruzada, entrada del 19-nov).
+**Probado de verdad (13-nov):** abrí la dirección que da `dam crear-almacen` y la página de GitHub sale con el nombre puesto y **Private** marcado. **Probado entero (18-nov)**, por mí, en la máquina virtual de la prueba de ASIR (issue #53): `mochila crear-almacen` creó `ASIR-almacen` privado en mi cuenta, lo clonó y creó las carpetas. **Hecho por otra persona (25-nov):** mi amigo de la instalación cruzada lo hizo con su propia cuenta: contestó «n», creó el repo vacío en GitHub, y al repetir le clonó su `DAM-almacen`, creó las 8 carpetas y lo subió (entrada del 25 y 26-nov).
 
 **Qué aprendí:**
 - **Hacer las preguntas de un usuario nuevo descubre huecos.** Las pruebas pasaban, pero nadie había pensado qué le pasa a alguien que no tiene el almacén. Lo vi al imaginar a mi cuñado instalándolo.
@@ -782,7 +782,7 @@ Lo arreglé todo. No toqué lo que no importa en este proyecto: las ramas con co
 - El issue #46 estaba cerrado (por la #47) pero sin contestar: contestado.
 - Al regenerar `docs/historial-pr.md` tras la release, la #55 salía como «Sin publicar»: es la que se fusionó en la rama de debajo el 19-nov, y su commit de fusión no está en `main` (lo suyo llegó con la #57). `scripts/historial_pr.py` ahora, en ese caso, mira el último commit de la propia PR (PR #63).
 
-**Lo que no se puede arreglar desde casa:** la instalación cruzada con un compañero de clase **con su propia cuenta** y sus issues. Los issues de las pruebas en otros equipos (#17-#22, #46 y #53) los abrí yo. Es el último `[COMPLETAR]` de este fichero (entrada del 19-nov) y lo primero de «Qué falta» en `punto_actual.md`.
+**Lo que no se puede arreglar desde casa:** la instalación cruzada con un compañero de clase **con su propia cuenta** y sus issues. Los issues de las pruebas en otros equipos (#17-#22, #46 y #53) los abrí yo. Es el último `[COMPLETAR]` de este fichero (entrada del 19-nov) y lo primero de «Qué falta» en `punto_actual.md`. *(Hecho el 25 y 26-nov: entrada del final.)*
 
 **Qué aprendí:** que una cosa esté hecha no basta si los documentos dicen lo contrario. Quien corrige (persona o IA) lee el README y `punto_actual.md` antes que el código, y si esos ficheros se quedan atrás, el trabajo hecho parece pendiente.
 
@@ -810,3 +810,37 @@ opencode run "Hola"                        → build · Qwen38-DualSpark-medium:
 ```
 
 **Qué aprendí:** que «antes funcionaba» no quiere decir que el programa se haya roto: aquí había cambiado la configuración (`ia.json` con otro proveedor) y faltaban las variables. Mirar primero qué proveedor usa (`comprobar-ia` lo dice en la primera línea) habría ahorrado tiempo. Y que el revisor también se equivoca: su `CAMBIAR` hay que comprobarlo punto por punto, no obedecerlo ni ignorarlo sin mirar.
+
+## 2026-11-25 y 26 · Instalación cruzada de un amigo, con su cuenta y sus issues (Claude Code)
+**Herramienta:** Claude Code. Mi amigo lo instaló y lo probó él solo en su portátil; yo le pasé las instrucciones y él me mandó fotos y dos transcripciones de PowerShell (`Start-Transcript`). Claude Code las leyó y lo apuntó todo en un registro de incidencias fuera del repo (lleva datos de su equipo y de su carpeta Descargas).
+**Prompts:** «revisa el proyecto terminal que se entrega mañana a ver si está todo ok, mi amigo ha estado haciendo pruebas y está todo documentado en el escritorio»; después, «redáctame los issues para él» (le preparé los enlaces con el texto ya puesto y él los abrió con su cuenta: #69, #70 y #71) y «ciérralos y deja lo de la versión y todo comprobado».
+
+**Su equipo:** Windows 10 (build 19045), PowerShell 5.1, **su propia cuenta de GitHub**, `mochila 1.2.1`. Al configurar eligió 1º de DAM, y `mochila crear-almacen` le creó **su** `DAM-almacen` privado, lo clonó y subió las 8 carpetas de asignatura.
+
+**Qué funcionó, con la salida real de sus transcripciones:**
+
+| Prueba | Resultado | Código de salida |
+|---|---|---|
+| `mochila --version` / `validar` | `1.2.1` / 9 acciones válidas | — |
+| `limpiar-temporales`, `convertir-webp`, `renombrar-capturas`, `copiar-entregas`, `mover-zips` | hechas de verdad y comprobadas con `dir` | — |
+| `ordenar` (simulado, sobre sus Descargas) | 2 simulados, 3 saltados, 0 errores | 0 |
+| `nombrar-descargas` (IA gratis de OpenCode) | renombrado a `entornos-desarrollo-git-control-versiones.txt` (1191+11 tokens, 6,5 s) | — |
+| `resumir-tema` (IA) | `.resumen.md` creado (1281+342 tokens, 12,6 s) | — |
+| `comprobar-ia` con internet / sin internet / Ctrl+C | «Hola» en 5,9 s / «No hay conexión con OpenCode…» / sin traza | 0 / **4** / 130 |
+| Acción que no existe · ruta que no existe · opción inventada · `acciones.json` sin `version` | mensaje claro, sin traza | 1 · 1 · 2 · 3 |
+| `doctor` y `scan-secrets` en su clon | 11 de 11 · «Sin claves a la vista en 84 ficheros» | — |
+
+**Lo que no consta:** `clasificar-asignatura` solo lo hizo simulado, y `inventario`, `status` y `sync` no los ejecutó. `ordenar` de verdad sobre sus Descargas no lo hizo a propósito.
+
+**Lo que no era de `mochila`:** la autorización de Git Credential Manager acabó una vez en «127.0.0.1 ha rechazado la conexión» (a la segunda fue bien); un bloque de PowerShell copiado de un chat al que le faltaba el `"@` final; y no encontraba la carpeta del repo porque había clonado desde un PowerShell de Administrador, que empieza en `C:\Windows\System32`. `mochila` funcionaba igual desde ahí.
+
+**Sus issues y cómo los cerré (1.2.2):**
+- #69: en `configurar` escribió `7` en un `[s/N]` y una errata (`sw`) en un `[S/n]`; las dos se tomaron como «no» sin avisar. Ahora `preguntar` dice «No te he entendido» y vuelve a preguntar (pruebas con sus respuestas exactas en `test_configurar.py` y cinco casos más en `test_cli.py`).
+- #70: `--simular` decía «~57 tokens» y la ejecución real gastó 1191+11. La estimación solo cuenta el texto del documento; OpenCode suma sus instrucciones (su «Hola» ya gastó 885). Ahora lo dice el propio mensaje y el README.
+- #71: el PowerShell de Administrador. El README pide uno normal y `cd $HOME` antes de clonar, e `instalar.ps1` avisa (con dos pruebas que ejecutan ese trozo del script en PowerShell).
+
+**El revisor:** la primera vez dijo `VEREDICTO: CAMBIAR`. Lo comprobé punto por punto: lo del «bucle infinito» y lo de «antes, con la entrada vacía, era un no» eran falsos (con la entrada vacía ya se cancelaba antes, y las pruebas pasaban). Tenía razón en una cosa: si por una tubería llega una respuesta rara y luego se acaba la entrada, ahora se cancela en vez de tomarse como «no». Es lo seguro, pero lo dejé escrito en el código y con dos pruebas más. La segunda vez dijo `VEREDICTO: OK`.
+
+**Ideas suyas que apunté y no hice** (no son fallos): los iconos ✔/✘ salen como cuadraditos en la consola clásica de Windows; el rojo oscuro de los errores se lee mal sobre el azul de PowerShell; `resumir-tema` tarda 12 s sin indicador de progreso; y `ordenar` manda a `sistemas` ficheros con «windows» o «hardware» en el nombre aunque no sean de clase (por eso hay que simular antes).
+
+**Qué aprendí:** que la persona que prueba no tiene que leer el código ni saber de issues para dar buenos fallos: basta con que cuente exactamente qué escribió y qué salió. Las dos cosas que más le costaron (la autorización de GitHub y el PowerShell de Administrador) no eran fallos del programa, sino de las instrucciones, y se arreglan avisando a tiempo.

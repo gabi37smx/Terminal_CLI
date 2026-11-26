@@ -334,7 +334,9 @@ class AccionIA(Accion):
     @staticmethod
     def presupuesto(texto: str) -> str:
         n = len(texto)
-        return f"enviaría {n} caracteres (~{n // 4} tokens)"
+        # Solo cuenta el texto del documento: el modelo suma sus instrucciones (con OpenCode, un «Hola»
+        # ya gasta unos 900 tokens). Antes no se decía y la cifra real sorprendía (26-nov).
+        return f"enviaría {n} caracteres (~{n // 4} tokens de texto, más las instrucciones del modelo)"
 
     def preguntar(self, sistema: str, texto: str, max_tokens: int = 800, extra: str = "") -> Respuesta:
         if self.proveedor is None:

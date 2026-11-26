@@ -8,6 +8,23 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+Lo que salió de la instalación cruzada de un amigo (25 y 26-nov): otra persona, en su portátil con
+Windows 10, con su cuenta de GitHub, y con sus issues (#69, #70 y #71).
+
+### Arreglado
+
+- **Las preguntas s/n ya no toman como «no» lo que no entienden** (#69). En `mochila configurar`
+  escribió `7` en un `[s/N]` (quería quitar la asignatura 7) y siguió como si nada; una errata (`sw`)
+  en un `[S/n]` canceló el guardado. Ahora dice «No te he entendido» y vuelve a preguntar; Enter
+  sigue siendo lo de la mayúscula, y `n`/`no` es «no».
+- **`--simular` avisa de que su estimación de tokens es solo la del texto** (#70). Anunciaba
+  «~57 tokens» y la ejecución real gastó 1191+11: el modelo suma sus instrucciones (con OpenCode, un
+  simple «Hola» ya gasta unos 900). Ahora dice «~N tokens de texto, más las instrucciones del
+  modelo», y el README lo explica.
+- **PowerShell de Administrador** (#71). Esa ventana empieza en `C:\Windows\System32` y el
+  `git clone` acabó ahí. El README pide un PowerShell normal y `cd $HOME` antes de clonar, e
+  `instalar.ps1` avisa si se ejecuta como Administrador o desde la carpeta de Windows.
+
 ## [1.2.1] - 2026-11-25
 
 La IA del centro probada desde mi portátil con Windows, en clase, y el arreglo que salió de esa prueba.

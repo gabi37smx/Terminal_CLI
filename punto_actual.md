@@ -5,7 +5,7 @@
 **Proyecto:** comando `mochila` (también `tareas`), paquete `tareas`, carpeta `Terminal_CLI`.
 **Repo:** https://github.com/gabi37smx/Terminal_CLI · **Para quien corrige:** [docs/entrega.md](docs/entrega.md)
 (cada punto de la rúbrica con el fichero o la orden que lo demuestra).
-**Pruebas:** `uv run pytest -q` → **675 passed, 1 skipped** (25-nov), y en verde en GitHub Actions
+**Pruebas:** `uv run pytest -q` → **685 passed, 1 skipped** (26-nov), y en verde en GitHub Actions
 con Ubuntu, Windows y macOS.
 **Historial:** más de 190 commits y 60 PR; todas, por versión y con sus issues, en
 [docs/historial-pr.md](docs/historial-pr.md). Qué trae cada versión: [CHANGELOG.md](CHANGELOG.md).
@@ -101,9 +101,10 @@ Idea mía: que, como `adduser` en Linux, al instalar pregunte qué estudias, par
 - [x] **Instalación en otros equipos:** Ubuntu recién instalado (#17-#22), mi cuñado de DAW en su
   portátil (15-nov, #46) y una VM con Windows 11 limpio siguiendo solo el README como alumno de 1º de
   ASIR (18 y 19-nov, #53, la hice yo). Cada fallo con su issue y «Closes #N»; todo publicado (1.2.1).
-- [ ] **Pendiente de un compañero de ASIR:** que lo instale con su propia cuenta de GitHub y abra él sus
-  issues. Se lo pedí y aún no ha podido. Cuando lo haga: contestar cada issue, arreglarlo con una prueba
-  y «Closes #N», publicar una 1.2.2 y apuntarlo en `docs/prompts.md` (entrada «Sesión 4…»).
+- [x] **Instalación cruzada de otra persona con su cuenta (25 y 26-nov):** un amigo, en su portátil con
+  Windows 10 y su cuenta de GitHub, lo instaló, creó su almacén y probó acciones con y sin IA y los
+  códigos de salida. Abrió él sus issues (#69, #70 y #71): arreglados con prueba y «Closes #N»
+  y publicados en la **1.2.2**. Detalle en `docs/prompts.md` (entrada del 25 y 26-nov).
 - [ ] Ensayar la defensa: instalar desde cero, una acción con IA y otra sin red, y las 6 preguntas
   (dónde está cada respuesta: final de [docs/entrega.md](docs/entrega.md)).
 
