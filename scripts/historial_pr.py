@@ -44,9 +44,11 @@ QUE_TRAE = {
               "de Administrador.",
     "v1.3.0": "Acciones combinables: el tipo «secuencia» (ADR-0007), que ejecuta varias acciones seguidas, "
               "y la spec de la Sesión 1 en docs/spec.md.",
+    "v1.3.1": "Un destino relativo (como el «comprimidos» de mover-zips) va dentro de la carpeta en la que se trabaja, "
+              "y mover/copiar saltan lo que ya está en su destino.",
     None: "Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.",
 }
-TITULO_VERSION = {"v1.0.0": "1.0.0", "v1.0.1": "1.0.1", "v1.1.0": "1.1.0", "v1.2.0": "1.2.0", "v1.2.1": "1.2.1", "v1.2.2": "1.2.2", "v1.3.0": "1.3.0", None: "Sin publicar"}
+TITULO_VERSION = {"v1.0.0": "1.0.0", "v1.0.1": "1.0.1", "v1.1.0": "1.1.0", "v1.2.0": "1.2.0", "v1.2.1": "1.2.1", "v1.2.2": "1.2.2", "v1.3.0": "1.3.0", "v1.3.1": "1.3.1", None: "Sin publicar"}
 
 
 def ejecutar(*orden: str) -> str:
@@ -141,7 +143,7 @@ def main() -> None:
         "edita a mano.",
     ]
 
-    orden = [v for v in ("v1.0.0", "v1.0.1", "v1.1.0", "v1.2.0", "v1.2.1", "v1.2.2", "v1.3.0") if v in por_version]
+    orden = [v for v in ("v1.0.0", "v1.0.1", "v1.1.0", "v1.2.0", "v1.2.1", "v1.2.2", "v1.3.0", "v1.3.1") if v in por_version]
     orden += [v for v in por_version if v not in orden and v is not None]
     if None in por_version:
         orden.append(None)

@@ -16,7 +16,7 @@ La spec de 10 líneas que escribí en la Sesión 1 (paso 6), **tal cual**. La mi
 9. **Códigos de salida:** 0 bien · 1 fallo al ejecutar · 2 uso incorrecto · 3 configuración inválida.
 10. **Instalación:** `uv tool install --editable .` (lo completo en la semana 4).
 
-## En qué ha quedado (26-nov, versión 1.3.0)
+## En qué ha quedado (26-nov, versión 1.3.1)
 
 1. Cumplido: `ordenar` reparte por asignatura y unidad, `limpiar-temporales` borra los viejos y `convertir-webp` pasa a WebP sin tocar el original.
 2. Más de lo previsto: sirve para SMX, DAM, DAW y ASIR (`mochila configurar`, [ADR-0003](adr/0003-configurar-por-ciclo.md)), y lo han instalado otras personas en sus equipos (`docs/prompts.md`).
@@ -26,4 +26,4 @@ La spec de 10 líneas que escribí en la Sesión 1 (paso 6), **tal cual**. La mi
 7. Cumplido: lo que borra o mueve pregunta antes (salvo `--si`), `--simular` no toca nada y nunca se sobrescribe un fichero.
 8. Cumplido: pruebas en verde en Ubuntu, Windows y macOS en cada push (GitHub Actions).
 9. Cumplido, y uno más: 4 = sin IA (sin clave, sin red o el servidor no responde), y las acciones sin IA siguen funcionando.
-10. Una sola orden: `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.3.0`, o el instalador (`bash instalar.sh` / `instalar.cmd`).
+10. Una sola orden: `uv tool install git+https://github.com/gabi37smx/Terminal_CLI@v1.3.1`, o el instalador (`bash instalar.sh` / `instalar.cmd`).
