@@ -8,6 +8,20 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+### Arreglado
+
+- **Un `destino` relativo va dentro de la carpeta en la que se trabaja**, no donde esté la terminal.
+  `mover-zips` decía «a la subcarpeta `comprimidos`», pero su `destino` era una ruta fija
+  (`~/pruebas-tareas/prueba-final/comprimidos`): con `mochila ejecutar mover-zips ~/Descargas`, o como
+  último paso de `repasar-carpeta`, los `.zip` salían de esa carpeta. Ahora su `destino` es
+  `comprimidos` y acaba en `~/Descargas/comprimidos`. Un `destino` con `~` o con la ruta completa
+  sigue siendo una carpeta fija, como antes (`copiar-entregas`, `clasificar-asignatura`). Vale
+  para `mover`, `copiar`, `convertir`, `resumir` y `clasificar`.
+- **`mover` y `copiar` saltan lo que ya está en su destino.** Si le pasas como CARPETA la propia
+  carpeta de destino (`mochila ejecutar mover-zips …/comprimidos`), antes renombraba cada `.zip` a
+  «x (1).zip» o lo duplicaba; ahora dice «ya está en la carpeta de destino» y no lo toca.
+- 5 pruebas nuevas en `tests/test_acciones.py`.
+
 ## [1.3.0] - 2026-11-26
 
 Acciones combinables (lo que pide el nivel excelente de la rúbrica) y la spec en su propio fichero.

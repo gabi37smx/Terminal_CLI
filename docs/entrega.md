@@ -36,6 +36,10 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**, al día el 25-nov
   [tests/test_secuencia.py](../tests/test_secuencia.py). Pruébala con `mochila ejecutar repasar-carpeta --simular`.
 - Todas tienen `--simular`; las que mueven o borran preguntan antes (`--si` para no preguntar). Nunca
   sobrescriben: si el destino existe, crean `nombre (1).ext`.
+- **Sin efectos sorpresa con el destino** (1.3.1): un `destino` relativo, como el `comprimidos` de
+  `mover-zips`, se queda dentro de la carpeta que le pasas; uno con `~` es fijo y la tabla de `--simular`
+  lo enseña. Pruebas: `test_destino_relativo_va_dentro_de_la_carpeta_y_no_donde_esta_la_terminal` en
+  [tests/test_acciones.py](../tests/test_acciones.py).
 - Una prueba comprueba que **lo que dice `--simular` es lo que pasa de verdad** en los seis tipos sin IA:
   [tests/test_simular_igual_que_real.py](../tests/test_simular_igual_que_real.py).
 - Probadas de verdad (no solo simuladas): entradas del 11-nov y del 19-nov en [prompts.md](prompts.md).

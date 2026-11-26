@@ -5,6 +5,7 @@ description: Reglas del fichero acciones.json de la CLI mochila (campos, tipos, 
 # Esquema de acciones.json
 - Raíz: {"version": 1, "acciones": [...], "almacen": {"ruta": "~/DAM-almacen", "asignaturas": "asignaturas"}}. «almacen» es opcional.
 - Cada acción: nombre (único, minúsculas-con-guiones), descripcion, tipo, y opcionales origen, destino, filtro, confirmar.
+- destino: con ~ o ruta completa es una carpeta fija; relativo ("comprimidos") es una subcarpeta de la carpeta en la que trabaja la acción (carpeta_relativa en acciones.py), nunca de la terminal.
 - Tipos: mover y copiar (requieren destino), renombrar (requiere plantilla), borrar (requiere filtro; siempre pide confirmación salvo --si),
   ordenar (requiere carpetas: {"asignatura": ["palabras clave"]}; opcional por_extension: {".sql": "asignatura"}),
   convertir (JPEG/PNG a WebP; opcional calidad 1-100). Con IA: resumir, renombrar-ia y clasificar (ver abajo).
