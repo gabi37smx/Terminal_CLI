@@ -20,7 +20,8 @@ def entorno(nombre: str) -> str:
     return (os.environ.get(f"MOCHILA_{nombre}") or os.environ.get(f"DAM_{nombre}") or "").strip()
 
 
-TIPOS = {"mover", "copiar", "renombrar", "borrar", "ordenar", "convertir", "resumir", "renombrar-ia", "clasificar"}
+TIPOS = {"mover", "copiar", "renombrar", "borrar", "ordenar", "convertir", "resumir", "renombrar-ia", "clasificar",
+         "secuencia"}
 TIPOS_IA = {"resumir", "renombrar-ia", "clasificar"}  # las que preguntan a un modelo (ver ia.py)
 CAMPOS_IA = ("instrucciones", "max_caracteres", "categorias")
 OBLIGATORIOS = ("nombre", "descripcion", "tipo")
@@ -30,7 +31,10 @@ POR_TIPO = {  # campos obligatorios según el tipo
     "renombrar": ("plantilla",),
     "ordenar": ("carpetas",),
     "clasificar": ("categorias", "destino"),
+    "secuencia": ("pasos",),
 }
+# Una secuencia solo encadena otras acciones: lo demás (filtro, destino...) lo pone cada paso (ADR-0007)
+CAMPOS_SECUENCIA = {"nombre", "descripcion", "tipo", "pasos", "origen"}
 FILTROS = {"extensiones", "patron", "mas_antiguo_que_dias", "mayor_que_mb"}
 NOMBRE_VALIDO = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 PROHIBIDOS_EN_NOMBRES = '<>:"/\\|?*'  # Windows no admite estos caracteres en nombres
@@ -191,6 +195,11 @@ def _validar_accion(a: object, i: int, vistos: set[str]) -> None:
     for extra in POR_TIPO.get(tipo, ()):
         if not a.get(extra):
             raise AccionNoValida(nombre, extra, f"es obligatorio en acciones de tipo {tipo}")
+    if tipo == "secuencia":
+        _validar_secuencia(nombre, a)
+        return
+    if "pasos" in a:
+        raise AccionNoValida(nombre, "pasos", "solo vale en acciones de tipo secuencia")
     if "origen" in a and not _texto(a["origen"]):
         raise AccionNoValida(nombre, "origen", "debe ser un texto (una ruta)")
     if "destino" in a and not _texto(a["destino"]):
@@ -230,6 +239,40 @@ def _validar_accion(a: object, i: int, vistos: set[str]) -> None:
         c = a["calidad"]
         if isinstance(c, bool) or not isinstance(c, int) or not 1 <= c <= 100:
             raise AccionNoValida(nombre, "calidad", "debe ser un entero entre 1 y 100")
+
+
+def _validar_secuencia(nombre: str, a: dict) -> None:
+    """Lo que se puede comprobar dentro de la propia acción; que cada paso exista se mira al final."""
+    for campo in a:
+        if campo not in CAMPOS_SECUENCIA:
+            raise AccionNoValida(nombre, campo, "no vale en una secuencia: ponlo en la acción de cada paso "
+                                                f"(una secuencia solo lleva {', '.join(sorted(CAMPOS_SECUENCIA))})")
+    pasos = a["pasos"]
+    if not (isinstance(pasos, list) and all(_texto(p) for p in pasos)):
+        raise AccionNoValida(nombre, "pasos", 'debe ser una lista de nombres de acciones: ["limpiar-temporales", ...]')
+    if len(pasos) < 2:
+        raise AccionNoValida(nombre, "pasos", "una secuencia necesita al menos 2 pasos (para uno, usa esa acción)")
+    if nombre in pasos:
+        raise AccionNoValida(nombre, "pasos", "una secuencia no puede llamarse a sí misma")
+    repetidos = sorted({p for p in pasos if pasos.count(p) > 1})
+    if repetidos:
+        raise AccionNoValida(nombre, "pasos", f"«{repetidos[0]}» está repetido")
+    if "origen" in a and not _texto(a["origen"]):
+        raise AccionNoValida(nombre, "origen", "debe ser un texto (una ruta)")
+
+
+def _validar_pasos(acciones: list[dict]) -> None:
+    """Cada paso de una secuencia es otra acción del fichero, y no otra secuencia (así no hay bucles)."""
+    por_nombre = {a["nombre"]: a for a in acciones}
+    for a in acciones:
+        if a["tipo"] != "secuencia":
+            continue
+        for paso in a["pasos"]:
+            if paso not in por_nombre:
+                raise AccionNoValida(a["nombre"], "pasos", f"«{paso}» no es ninguna acción de este fichero")
+            if por_nombre[paso]["tipo"] == "secuencia":
+                raise AccionNoValida(a["nombre"], "pasos", f"«{paso}» es otra secuencia: los pasos tienen que ser "
+                                                           "acciones normales")
 
 
 def validar_ia(nombre: str, a: dict) -> None:
@@ -288,6 +331,7 @@ def validar_datos(datos: dict, nombre: str = NOMBRE_FICHERO) -> dict:
     vistos: set[str] = set()
     for i, accion in enumerate(acciones, start=1):
         _validar_accion(accion, i, vistos)
+    _validar_pasos(acciones)
     _validar_almacen(datos.get("almacen"))
     _validar_perfil(datos.get("perfil"))
     return datos

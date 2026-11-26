@@ -222,6 +222,18 @@
       "confirmar": true
     },
     {
+      "nombre": "repasar-carpeta",
+      "descripcion": "Todo seguido: borra temporales viejos, renombra las capturas, las pasa a WebP y guarda los .zip en comprimidos",
+      "tipo": "secuencia",
+      "origen": "~/pruebas-tareas/prueba-final",
+      "pasos": [
+        "limpiar-temporales",
+        "renombrar-capturas",
+        "convertir-webp",
+        "mover-zips"
+      ]
+    },
+    {
       "nombre": "resumir-tema",
       "descripcion": "Resume cada tema de apuntes (PDF, TXT o MD, en castellano o valenciano) en un .md para repasar, al lado del apunte y más largo cuanto más largo es el tema",
       "tipo": "resumir",
