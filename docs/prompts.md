@@ -841,6 +841,8 @@ opencode run "Hola"                        → build · Qwen38-DualSpark-medium:
 
 **El revisor:** la primera vez dijo `VEREDICTO: CAMBIAR`. Lo comprobé punto por punto: lo del «bucle infinito» y lo de «antes, con la entrada vacía, era un no» eran falsos (con la entrada vacía ya se cancelaba antes, y las pruebas pasaban). Tenía razón en una cosa: si por una tubería llega una respuesta rara y luego se acaba la entrada, ahora se cancela en vez de tomarse como «no». Es lo seguro, pero lo dejé escrito en el código y con dos pruebas más. La segunda vez dijo `VEREDICTO: OK`.
 
+**El revisor y la release 1.2.2:** al commit de la versión (solo el número y documentos) dijo `CAMBIAR` tres veces. Decía que la prueba de la versión fallaría (pasaban 685) y que faltaban la etiqueta `v1.2.2` y el historial, que se crean después de fusionar, como en la 1.2.1. Esta vez lo salté con `MOCHILA_SIN_REVISOR=1`, con mi permiso. Aprendí que el revisor no sabe en qué orden se hace una release: revisa el diff como si fuera lo último.
+
 **Ideas suyas que apunté y no hice** (no son fallos): los iconos ✔/✘ salen como cuadraditos en la consola clásica de Windows; el rojo oscuro de los errores se lee mal sobre el azul de PowerShell; `resumir-tema` tarda 12 s sin indicador de progreso; y `ordenar` manda a `sistemas` ficheros con «windows» o «hardware» en el nombre aunque no sean de clase (por eso hay que simular antes).
 
 **Qué aprendí:** que la persona que prueba no tiene que leer el código ni saber de issues para dar buenos fallos: basta con que cuente exactamente qué escribió y qué salió. Las dos cosas que más le costaron (la autorización de GitHub y el PowerShell de Administrador) no eran fallos del programa, sino de las instrucciones, y se arreglan avisando a tiempo.

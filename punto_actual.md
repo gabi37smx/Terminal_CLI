@@ -1,6 +1,6 @@
 # Punto actual del proyecto
 
-**Fecha:** 2026-11-25 · **Versión publicada:** 1.2.1 (`v1.2.1`) · **Entrega:** viernes 27-nov-2026
+**Fecha:** 2026-11-26 · **Versión publicada:** 1.2.2 (`v1.2.2`) · **Entrega:** viernes 27-nov-2026
 (grupo presencial, con defensa de 5 minutos).
 **Proyecto:** comando `mochila` (también `tareas`), paquete `tareas`, carpeta `Terminal_CLI`.
 **Repo:** https://github.com/gabi37smx/Terminal_CLI · **Para quien corrige:** [docs/entrega.md](docs/entrega.md)

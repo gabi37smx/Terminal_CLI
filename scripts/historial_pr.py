@@ -39,9 +39,12 @@ QUE_TRAE = {
               "revisor en el hook y la guía para quien corrige (`docs/entrega.md`).",
     "v1.2.1": "La IA del centro probada desde mi portátil con Windows (25-nov) y el límite de 300 s de "
               "OpenCode, que en Windows no se cumplía.",
+    "v1.2.2": "La instalación cruzada de un amigo con su cuenta de GitHub (25 y 26-nov) y sus issues "
+              "(#69 a #71): preguntas s/n que vuelven a preguntar, la estimación de tokens y el PowerShell "
+              "de Administrador.",
     None: "Lo que saldrá en la próxima versión: las fusionadas ya están en `main`; las abiertas, aún no.",
 }
-TITULO_VERSION = {"v1.0.0": "1.0.0", "v1.0.1": "1.0.1", "v1.1.0": "1.1.0", "v1.2.0": "1.2.0", "v1.2.1": "1.2.1", None: "Sin publicar"}
+TITULO_VERSION = {"v1.0.0": "1.0.0", "v1.0.1": "1.0.1", "v1.1.0": "1.1.0", "v1.2.0": "1.2.0", "v1.2.1": "1.2.1", "v1.2.2": "1.2.2", None: "Sin publicar"}
 
 
 def ejecutar(*orden: str) -> str:
@@ -136,7 +139,7 @@ def main() -> None:
         "edita a mano.",
     ]
 
-    orden = [v for v in ("v1.0.0", "v1.0.1", "v1.1.0", "v1.2.0", "v1.2.1") if v in por_version]
+    orden = [v for v in ("v1.0.0", "v1.0.1", "v1.1.0", "v1.2.0", "v1.2.1", "v1.2.2") if v in por_version]
     orden += [v for v in por_version if v not in orden and v is not None]
     if None in por_version:
         orden.append(None)
