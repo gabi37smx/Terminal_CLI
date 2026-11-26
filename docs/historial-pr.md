@@ -5,7 +5,7 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**66 PR fusionadas**, 10 issues y 7 versiones publicadas.
+**69 PR fusionadas**, 10 issues y 8 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
@@ -132,6 +132,16 @@ Acciones combinables: el tipo «secuencia» (ADR-0007), que ejecuta varias accio
 | [#74](https://github.com/gabi37smx/Terminal_CLI/pull/74) | 26-nov | `docs/historial-pr-73` | historial-pr.md: la PR 73 y la v1.2.2 |  |
 | [#75](https://github.com/gabi37smx/Terminal_CLI/pull/75) | 26-nov | `feature/secuencia` | Acciones combinables: tipo «secuencia» (ADR-0007) y docs/spec.md |  |
 | [#76](https://github.com/gabi37smx/Terminal_CLI/pull/76) | 26-nov | `release-1.3.0` | Versión 1.3.0: acciones combinables (tipo «secuencia», ADR-0007) |  |
+
+## 1.3.1 · 26-nov-2026 (#77 a #79)
+
+Un destino relativo (como el «comprimidos» de mover-zips) va dentro de la carpeta en la que se trabaja, y mover/copiar saltan lo que ya está en su destino.
+
+| PR | Fusionada | Rama | Qué cambia | Cierra |
+|---|---|---|---|---|
+| [#77](https://github.com/gabi37smx/Terminal_CLI/pull/77) | 26-nov | `docs/historial-pr-76` | historial-pr.md: la PR 76 y la v1.3.0 |  |
+| [#78](https://github.com/gabi37smx/Terminal_CLI/pull/78) | 26-nov | `arreglo/destino-relativo` | Un destino relativo va dentro de la carpeta; mover/copiar saltan lo que ya está en su destino |  |
+| [#79](https://github.com/gabi37smx/Terminal_CLI/pull/79) | 26-nov | `release-1.3.1` | Versión 1.3.1 |  |
 
 ## Issues
 
