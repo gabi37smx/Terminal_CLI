@@ -39,6 +39,24 @@ def _clave(ruta: Path) -> str:
     return os.path.normcase(str(ruta))
 
 
+def carpeta_relativa(ruta: str | None, base: Path) -> Path:
+    """La carpeta de un «destino» de acciones.json: `base` si no hay, la ruta tal cual si empieza por ~
+    o es completa, y si no, dentro de `base` (la carpeta en la que trabaja la acción)."""
+    if not ruta:
+        return base
+    carpeta = Path(ruta).expanduser()
+    return carpeta if carpeta.is_absolute() else base / carpeta
+
+
+YA_EN_DESTINO = "ya está en la carpeta de destino: no lo muevo ni lo copio encima de sí mismo"
+
+
+def ya_en(carpeta: Path, fichero: Path) -> bool:
+    """¿El fichero ya está en esa carpeta? Pasa si le das como CARPETA la del propio «destino»: sin esta
+    comprobación, mover lo renombraría a «x (1).zip» y copiar lo duplicaría cada vez."""
+    return _clave(carpeta.resolve()) == _clave(fichero.parent.resolve())
+
+
 def destino_libre(destino: Path, reservados: set[str] | None = None) -> Path:
     """Nunca sobrescribe: si existe (o ya lo ha reservado otro fichero de esta pasada,
     importante en simulación), prueba 'nombre (1).ext', 'nombre (2).ext'..."""
@@ -104,8 +122,10 @@ class Accion(ABC):
     def aplicar(self, fichero: Path, n: int, simular: bool) -> Resultado: ...
 
     def _carpeta_destino(self, fichero: Path) -> Path:
-        destino = self.config.get("destino")
-        return Path(destino).expanduser() if destino else fichero.parent
+        """Sin «destino», al lado del fichero. Con ~ o una ruta completa, esa carpeta fija. Con una ruta
+        relativa («comprimidos»), dentro de la carpeta en la que se trabaja, y no donde esté la terminal:
+        `mochila ejecutar mover-zips ~/Descargas` deja los .zip en ~/Descargas/comprimidos."""
+        return carpeta_relativa(self.config.get("destino"), fichero.parent)
 
 
 class Secuencia(Accion):
@@ -130,6 +150,8 @@ class Mover(Accion):
 
     def aplicar(self, fichero, n, simular):
         carpeta = self._carpeta_destino(fichero)
+        if ya_en(carpeta, fichero):
+            return Resultado(fichero, None, "saltado", YA_EN_DESTINO)
         destino = destino_libre(carpeta / fichero.name, self._reservados)
         if not simular:
             carpeta.mkdir(parents=True, exist_ok=True)
@@ -142,6 +164,8 @@ class Copiar(Accion):
 
     def aplicar(self, fichero, n, simular):
         carpeta = self._carpeta_destino(fichero)
+        if ya_en(carpeta, fichero):
+            return Resultado(fichero, None, "saltado", YA_EN_DESTINO)
         destino = destino_libre(carpeta / fichero.name, self._reservados)
         if not simular:
             carpeta.mkdir(parents=True, exist_ok=True)
@@ -445,7 +469,7 @@ class Clasificar(AccionIA):
         if not texto:
             return Resultado(fichero, None, "saltado", SIN_TEXTO)
         categorias = {c.lower(): c for c in self.config["categorias"]}
-        carpeta_base = Path(self.config["destino"]).expanduser()
+        carpeta_base = carpeta_relativa(self.config["destino"], fichero.parent)
         if simular:  # la categoría solo se sabe al preguntar
             return Resultado(fichero, None, "simulado", self.presupuesto(texto))
         sistema = (

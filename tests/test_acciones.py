@@ -64,6 +64,41 @@ def test_mover_no_sobrescribe_y_es_idempotente(tmp_path):
     assert m.ejecutar("a", orig, simular=False) == []  # la segunda vez no hay nada
 
 
+def test_destino_relativo_va_dentro_de_la_carpeta_y_no_donde_esta_la_terminal(tmp_path, monkeypatch):
+    # «comprimidos» es una subcarpeta de la carpeta que se ordena, aunque la terminal esté en otra parte
+    descargas, otra = tmp_path / "Descargas", tmp_path / "otra"
+    descargas.mkdir(); otra.mkdir()
+    (descargas / "practica.zip").write_text("z")
+    monkeypatch.chdir(otra)
+    m = motor(tmp_path, tipo="mover", destino="comprimidos", filtro={"extensiones": [".zip"]})
+    r = m.ejecutar("a", descargas, simular=False)
+    assert r[0].destino == descargas / "comprimidos" / "practica.zip"
+    assert (descargas / "comprimidos" / "practica.zip").is_file()
+    assert not (otra / "comprimidos").exists()
+
+
+@pytest.mark.parametrize("tipo", ["mover", "copiar"])
+def test_si_la_carpeta_es_el_propio_destino_no_renombra_ni_duplica(tmp_path, tipo):
+    # mochila ejecutar mover-zips ~/pruebas-tareas/prueba-final/comprimidos: los .zip ya están en su sitio
+    comprimidos = tmp_path / "comprimidos"; comprimidos.mkdir()
+    (comprimidos / "a.zip").write_text("z")
+    m = motor(tmp_path, tipo=tipo, destino=str(comprimidos), filtro={"extensiones": [".zip"]})
+    r = m.ejecutar("a", comprimidos, simular=False)
+    assert r[0].estado == "saltado" and "ya está en la carpeta de destino" in r[0].nota
+    assert [p.name for p in comprimidos.iterdir()] == ["a.zip"]  # ni «a (1).zip» ni una copia
+
+
+@pytest.mark.parametrize("destino", ["~/fija", "ABSOLUTA"])
+def test_destino_con_virgulilla_o_completo_sigue_fijo(tmp_path, destino):
+    fija = tmp_path / "home" / "fija"  # conftest pone HOME en tmp_path/home
+    destino = str(fija) if destino == "ABSOLUTA" else destino
+    orig = tmp_path / "o"; orig.mkdir()
+    (orig / "a.zip").write_text("z")
+    m = motor(tmp_path, tipo="mover", destino=destino, filtro={"extensiones": [".zip"]})
+    r = m.ejecutar("a", orig, simular=True)
+    assert r[0].destino == fija / "a.zip"
+
+
 def test_simular_no_toca_nada_ni_crea_carpetas(tmp_path):
     orig = tmp_path / "o"; orig.mkdir()
     (orig / "a.pdf").write_text("x")

@@ -70,7 +70,7 @@ uv run mochila ejecutar resumir-tema                          # de verdad: token
 uv run mochila ejecutar nombrar-descargas                     # pregunta s/N antes de renombrar
 ```
 
-`mover-zips` no comprime: solo mueve los `.zip`. Con otra `CARPETA`, los lleva igualmente a `prueba-final/comprimidos`, y no hay que ejecutarla sobre `comprimidos`, porque renombraría los ficheros. Si quieres guardar antes las entregas, ejecuta `copiar-entregas` primero: después ya no verá los `.zip` que se hayan movido.
+`mover-zips` no comprime: solo mueve los `.zip` a la subcarpeta `comprimidos` de la carpeta que le pasas (con `mochila ejecutar mover-zips ~/Descargas`, a `~/Descargas/comprimidos`). Si un fichero ya está en la carpeta de destino, se salta: no se renombra a «x (1).zip» ni se copia encima de sí mismo. Si quieres guardar antes las entregas, ejecuta `copiar-entregas` primero: después ya no verá los `.zip` que se hayan movido.
 
 ```powershell
 # Ordenar (primero simular)

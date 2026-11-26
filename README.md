@@ -281,7 +281,7 @@ Hay tres ayudas, de más corta a más larga:
 | `descripcion` | sí | Lo que muestra `mochila acciones`. |
 | `tipo` | sí | Sin IA: `mover`, `copiar`, `renombrar`, `borrar`, `ordenar` o `convertir`. Con IA: `resumir`, `renombrar-ia` o `clasificar`. Y `secuencia`: varias acciones seguidas (ver `pasos`). |
 | `origen` | no | Carpeta por defecto si no pasas CARPETA. `~` se expande en los tres sistemas. |
-| `destino` | mover / copiar / clasificar | Dónde van los ficheros (se crea si no existe). En `resumir` es opcional: dónde se escribe cada `.resumen.md` (si no, junto al fichero). |
+| `destino` | mover / copiar / clasificar | Dónde van los ficheros (se crea si no existe). Con `~` o una ruta completa (`~/Copias`), siempre esa carpeta. Con una ruta relativa (`comprimidos`), una subcarpeta de la carpeta en la que trabaja la acción, y no de donde esté la terminal. En `resumir` es opcional: dónde se escribe cada `.resumen.md` (si no, junto al fichero). |
 | `plantilla` | renombrar | Nombre nuevo: `{fecha:%Y-%m-%d}`, `{n:03}`, `{ext}`, `{nombre}`. |
 | `filtro` | no (borrar: sí) | `extensiones`, `patron` (regex), `mas_antiguo_que_dias`, `mayor_que_mb`; se cumplen todos. |
 | `carpetas` | ordenar | `{"asignatura": ["palabra clave", ...]}`. Se comparan palabras completas, sin tildes ni mayúsculas. Los instaladores (`.exe`, `.msi`...) nunca se toman por apuntes. |
@@ -302,7 +302,7 @@ Hay tres ayudas, de más corta a más larga:
 el contenido de los PDF y de los `.odt`, `.docx`, `.pptx`... con su cabecera y pie), `limpiar-temporales` (borra `.tmp/.bak/.part` de más de 30 días, con
 confirmación), `convertir-webp` (JPEG/PNG a WebP sin tocar el original), `renombrar-capturas`
 (capturas con fecha y número), `copiar-entregas` (copia entregas y prácticas a una carpeta de
-seguridad) y `mover-zips` (mueve los `.zip` a la subcarpeta `comprimidos`).
+seguridad) y `mover-zips` (mueve los `.zip` a la subcarpeta `comprimidos` de la carpeta que le pasas).
 Combinadas: `repasar-carpeta` (tipo `secuencia`) hace seguidas `limpiar-temporales`, `renombrar-capturas`,
 `convertir-webp` y `mover-zips`; así el `.webp` sale con el nombre ya arreglado. Pruébala primero con
 `mochila ejecutar repasar-carpeta --simular`.
@@ -315,8 +315,11 @@ lleva a la carpeta de su asignatura).
 Garantías: nunca sobrescribe (añade « (1)»), `--simular` no toca el disco ni crea carpetas y
 la configuración se valida entera antes de mover un solo fichero.
 
-Ojo con `mover` y `copiar`: si pasas una `CARPETA`, los ficheros se cogen de ahí, pero van al `destino`
-fijo de `acciones.json`, aunque esté fuera de esa carpeta. Mira la tabla de `--simular` antes.
+Ojo con `mover` y `copiar`: si pasas una `CARPETA`, los ficheros se cogen de ahí. Si el `destino` de
+`acciones.json` empieza por `~` o es una ruta completa, van **a esa carpeta fija**, aunque esté fuera de la
+que has pasado (`copiar-entregas` copia a `~/pruebas-tareas/entregas` a propósito: es una copia de seguridad).
+Si es relativo, como el `comprimidos` de `mover-zips`, se quedan dentro: `mochila ejecutar mover-zips ~/Descargas`
+los deja en `~/Descargas/comprimidos`. Mira la tabla de `--simular` antes.
 
 ## Tu ciclo y tus asignaturas (mochila configurar)
 
