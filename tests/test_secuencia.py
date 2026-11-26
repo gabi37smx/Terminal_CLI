@@ -182,7 +182,9 @@ def test_la_lista_de_acciones_enseña_los_pasos(escribir_config):
     ruta = escribir_config([BORRAR, RENOMBRAR, MOVER, SECUENCIA])
     r = runner.invoke(app, ["--config", str(ruta), "acciones"])
     assert r.exit_code == 0
-    assert "secuencia" in r.output and "limpiar → renombrar-capturas" in plano(r)
+    # En GitHub la consola tiene 80 columnas: la tabla parte la descripción y mete bordes «│» en medio
+    sin_bordes = " ".join(r.output.replace("│", " ").split())
+    assert "secuencia" in r.output and "(limpiar → renombrar-capturas → guardar-capturas)" in sin_bordes
 
 
 def test_validar_cuenta_la_secuencia(escribir_config):
