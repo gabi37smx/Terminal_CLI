@@ -5,7 +5,7 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**63 PR fusionadas**, 10 issues y 6 versiones publicadas.
+**66 PR fusionadas**, 10 issues y 7 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
@@ -122,6 +122,16 @@ La instalación cruzada de un amigo con su cuenta de GitHub (25 y 26-nov) y sus 
 | [#68](https://github.com/gabi37smx/Terminal_CLI/pull/68) | 25-nov | `docs/changelog-1.2.1` | CHANGELOG 1.2.1: decir lo que queda pendiente |  |
 | [#72](https://github.com/gabi37smx/Terminal_CLI/pull/72) | 26-nov | `arreglo/pruebas-jose` | Instalación cruzada de un amigo: arreglos de #69, #70 y #71 | [#69](https://github.com/gabi37smx/Terminal_CLI/issues/69), [#70](https://github.com/gabi37smx/Terminal_CLI/issues/70), [#71](https://github.com/gabi37smx/Terminal_CLI/issues/71) |
 | [#73](https://github.com/gabi37smx/Terminal_CLI/pull/73) | 26-nov | `release-1.2.2` | Versión 1.2.2: la instalación cruzada de un amigo (#69-#71) |  |
+
+## 1.3.0 · 26-nov-2026 (#74 a #76)
+
+Acciones combinables: el tipo «secuencia» (ADR-0007), que ejecuta varias acciones seguidas, y la spec de la Sesión 1 en docs/spec.md.
+
+| PR | Fusionada | Rama | Qué cambia | Cierra |
+|---|---|---|---|---|
+| [#74](https://github.com/gabi37smx/Terminal_CLI/pull/74) | 26-nov | `docs/historial-pr-73` | historial-pr.md: la PR 73 y la v1.2.2 |  |
+| [#75](https://github.com/gabi37smx/Terminal_CLI/pull/75) | 26-nov | `feature/secuencia` | Acciones combinables: tipo «secuencia» (ADR-0007) y docs/spec.md |  |
+| [#76](https://github.com/gabi37smx/Terminal_CLI/pull/76) | 26-nov | `release-1.3.0` | Versión 1.3.0: acciones combinables (tipo «secuencia», ADR-0007) |  |
 
 ## Issues
 
