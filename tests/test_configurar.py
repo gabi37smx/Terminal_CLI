@@ -345,3 +345,18 @@ def test_con_enter_en_todo_guarda_y_crea_las_carpetas(entorno):
 def test_n_sigue_diciendo_que_no(entorno):
     r = lanzar(entorno, "--ciclo", "daw", "--curso", "1", entrada="\nn\n")
     assert r.exit_code != 0 and not entorno["destino"].exists()  # «n» a guardar: no se guarda nada
+
+
+def test_lo_que_escribio_el_amigo_de_la_instalacion_cruzada_se_vuelve_a_preguntar(entorno):
+    # Issue #69: «7» en «¿Quieres quitar o añadir alguna? [s/N]» y «sw» en guardar [S/n].
+    # Antes las dos se tomaban como «no» sin avisar; ahora lo dice y vuelve a preguntar.
+    r = lanzar(entorno, "--ciclo", "dam", "--curso", "1", entrada="7\n\nsw\nn\n")
+    assert plano(r).count("No te he entendido") == 2
+    assert r.exit_code != 0 and not entorno["destino"].exists()  # al final contestó «n» a guardar
+
+
+def test_si_se_acaba_la_entrada_tras_una_respuesta_rara_no_guarda(entorno):
+    # Con una tubería que se acaba después del «7» no hay bucle: se cancela y no se toca nada.
+    r = lanzar(entorno, "--ciclo", "dam", "--curso", "1", entrada="\n7\n")
+    assert "No te he entendido" in plano(r)
+    assert r.exit_code != 0 and not entorno["destino"].exists()

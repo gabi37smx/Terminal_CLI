@@ -14,6 +14,17 @@ function Aviso($texto) { Write-Host "    [!] $texto" -ForegroundColor Yellow }
 function Parar($texto) { Aviso $texto; exit 1 }
 function Tiene($programa) { [bool](Get-Command $programa -ErrorAction SilentlyContinue) }
 
+# 0. PowerShell de Administrador ---------------------------------------------
+# No hace falta, y esa ventana empieza en C:\Windows\System32: el git clone acaba ahí (26-nov).
+$Principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if ($Principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Aviso "Estás en un PowerShell de Administrador. No hace falta: mejor uno normal (sin «Ejecutar como administrador»)."
+}
+if ($env:SystemRoot -and $PSScriptRoot.StartsWith($env:SystemRoot, [StringComparison]::OrdinalIgnoreCase)) {
+    Aviso "El repositorio está dentro de $env:SystemRoot ($PSScriptRoot): es la carpeta de Windows, no la tuya."
+    Aviso "Funciona igual, pero no lo encontrarás en tu carpeta. Mejor: abre un PowerShell normal, cd `$HOME, clona otra vez y repite."
+}
+
 # 1. git -------------------------------------------------------------------
 Paso "Compruebo git"
 if (-not (Tiene git)) {

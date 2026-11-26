@@ -136,7 +136,7 @@ def test_simular_no_pregunta_al_modelo_ni_crea_carpetas(tmp_path, modelo_falso):
         a = accion(tipo, **extra)
         a.proveedor = falso
         [r] = a.ejecutar([tmp_path / "tema.txt"], simular=True)
-        assert r.estado == "simulado" and "enviaría 400 caracteres (~100 tokens)" in r.nota
+        assert r.estado == "simulado" and "enviaría 400 caracteres (~100 tokens de texto, más las instrucciones del modelo)" in r.nota
     assert falso.llamadas == []
     assert sorted(p.name for p in tmp_path.iterdir()) == ["tema.txt"]
 

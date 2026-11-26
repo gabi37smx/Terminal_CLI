@@ -215,18 +215,32 @@ def controlar_errores(funcion):
     return envoltorio
 
 
+RESPUESTAS_SI = {"s", "si", "sí", "y", "yes"}
+RESPUESTAS_NO = {"n", "no"}
+
+
 def preguntar(pregunta: str, si_por_defecto: bool = False) -> bool:
-    """Pregunta s/n (acepta s, sí, si, y, yes). La mayúscula es lo que hace Enter.
+    """Pregunta s/n (acepta s, sí, si, y, yes / n, no). La mayúscula es lo que hace Enter.
 
     Por defecto, Enter es «no»: lo que mueve, borra, sube o cambia otro programa nunca se hace sin un «s».
     Con si_por_defecto, Enter es «sí»: solo para lo que se puede deshacer y es lo que quieres casi
     siempre (crear carpetas vacías, guardar con copia de lo anterior...).
+    Cualquier otra cosa (un «7», una errata como «sw») no se toma como «no» en silencio: lo dice y
+    vuelve a preguntar (instalación cruzada del 26-nov, issue #69). Si se acaba la entrada (stdin cerrado,
+    una tubería), typer.prompt lanza Abort como antes: se cancela la orden y no se hace nada.
     """
     opciones = "[S/n]" if si_por_defecto else "[s/N]"
-    respuesta = typer.prompt(f"{pregunta} {opciones}", default="", show_default=False).strip().lower()
-    if not respuesta:
-        return si_por_defecto
-    return respuesta in {"s", "si", "sí", "y", "yes"}
+    while True:
+        respuesta = typer.prompt(f"{pregunta} {opciones}", default="", show_default=False).strip().lower()
+        if not respuesta:
+            return si_por_defecto
+        if respuesta in RESPUESTAS_SI:
+            return True
+        if respuesta in RESPUESTAS_NO:
+            return False
+        enter = "sí" if si_por_defecto else "no"
+        consola.print(f"[yellow]No te he entendido («{escape(respuesta)}»).[/yellow] "
+                      f"Escribe s (sí) o n (no), o pulsa Enter para «{enter}».")
 
 
 def confirmar(pregunta: str, si_por_defecto: bool = False) -> None:

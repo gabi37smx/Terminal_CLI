@@ -21,10 +21,14 @@ Sirve para cualquier ciclo de Informática (SMX, DAM, DAW, ASIR) en Linux, Windo
 **1. Lo que necesitas antes:** `git` y, si quieres la IA gratis, **Node.js** (en Ubuntu, `sudo apt install npm`; en Windows, Node.js LTS de nodejs.org). Cómo instalar git
 en cada sistema: [Antes de empezar](#antes-de-empezar-git-curl-y-uv). En Windows, abre
 PowerShell y ejecuta una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+Usa un PowerShell **normal, no de Administrador**: el de Administrador empieza en `C:\Windows\System32`
+y el `git clone` acabaría ahí. Antes de clonar, `cd $HOME`. Si ya lo clonaste desde uno de Administrador,
+el repositorio está en `C:\Windows\System32\Terminal_CLI`: clónalo otra vez en `$HOME` y repite `.\instalar.cmd`.
 
 **2. Clona e instala** (clona: así tienes lo último, también lo que aún no está en una versión publicada):
 
 ```bash
+cd ~                      # en tu carpeta personal (en Windows: cd $HOME)
 git clone https://github.com/gabi37smx/Terminal_CLI.git
 cd Terminal_CLI
 bash instalar.sh          # Linux y macOS
@@ -132,6 +136,7 @@ que cambies las rutas; aun así, prueba siempre primero con `--simular`. Para de
 Solo necesitas git. Clona el repositorio y ejecuta el instalador de tu sistema:
 
 ```bash
+cd ~                      # en tu carpeta personal (en Windows: cd $HOME)
 git clone https://github.com/gabi37smx/Terminal_CLI.git
 cd Terminal_CLI
 bash instalar.sh          # Linux y macOS
@@ -500,7 +505,8 @@ de `CENTRO_IA_CA` o, si no está, de `NODE_EXTRA_CA_CERTS`, el mismo que usa Ope
 | `CENTRO_IA_MODELO` | Opcional: otro modelo del servidor (por defecto, `Qwen38-DualSpark-medium`; los que hay los ves en OpenCode con `/models`). |
 
 **2. Primero, siempre `--simular`.** No llama al modelo ni gasta nada: dice cuánto mandaría
-(«enviaría 338 caracteres (~84 tokens)»). Un PDF escaneado sin texto se salta: no se pregunta por nada.
+(«enviaría 338 caracteres (~84 tokens de texto, más las instrucciones del modelo)»). Ojo: es solo
+el texto del documento; el modelo suma sus instrucciones (con OpenCode, un simple «Hola» ya gasta unos 900 tokens). Un PDF escaneado sin texto se salta: no se pregunta por nada.
 
 ```bash
 mochila ejecutar resumir-tema ~/pruebas-tareas/apuntes-ia --simular

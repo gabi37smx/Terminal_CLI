@@ -175,3 +175,40 @@ def test_otro_oserror_no_se_esconde(monkeypatch):
     app_ = _ayuda_que_falla(monkeypatch, OSError(22, "Invalid argument"), salida_cerrada=False)
     with pytest.raises(OSError):
         app_()
+
+
+# ---------- preguntas s/n: lo que no se entiende se vuelve a preguntar (instalación cruzada, 26-nov) ----------
+@pytest.mark.parametrize("respuestas, por_defecto, esperado, avisos", [
+    (["7", "s"], False, True, 1),        # «7» en un [s/N]: lo dice y vuelve a preguntar
+    (["sw", "n"], True, False, 1),       # errata en un [S/n]: ya no cancela en silencio
+    (["sw", "", ], True, True, 1),       # tras el aviso, Enter sigue siendo lo de la mayúscula
+    (["no"], True, False, 0),
+    (["Sí"], False, True, 0),
+])
+def test_una_respuesta_que_no_es_si_ni_no_se_vuelve_a_preguntar(monkeypatch, respuestas, por_defecto, esperado, avisos):
+    from tareas import cli
+    pendientes = list(respuestas)
+    monkeypatch.setattr(cli.typer, "prompt", lambda *a, **k: pendientes.pop(0))
+    impreso = []
+    monkeypatch.setattr(cli.consola, "print", lambda texto, *a, **k: impreso.append(texto))
+    assert cli.preguntar("¿Lo guardo?", si_por_defecto=por_defecto) is esperado
+    assert pendientes == []
+    assert sum("No te he entendido" in t for t in impreso) == avisos
+
+
+def test_si_se_acaba_la_entrada_tras_una_respuesta_rara_se_cancela(monkeypatch):
+    # Lo señaló el revisor: con «7» y luego sin más entrada (una tubería) no se queda en bucle:
+    # typer.prompt lanza Abort, como antes con la entrada vacía, y la orden se cancela sin hacer nada.
+    import typer as typer_
+    from tareas import cli
+    pendientes = ["7"]
+
+    def prompt(*a, **k):
+        if not pendientes:
+            raise typer_.Abort()
+        return pendientes.pop(0)
+    monkeypatch.setattr(cli.typer, "prompt", prompt)
+    monkeypatch.setattr(cli.consola, "print", lambda *a, **k: None)
+    with pytest.raises(typer_.Abort):
+        cli.preguntar("¿Lo borro?")
+
