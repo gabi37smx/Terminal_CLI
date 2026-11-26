@@ -111,8 +111,10 @@ demuestra. Revisada el 24-nov-2026, con la versión **1.2.0**, y al día el 25-n
   sale con 0 solo si dice `VEREDICTO: OK`). Resultados reales en [prompts.md](prompts.md) (17 y 19-nov).
 - Instalación en otros equipos e issues: #17-#22 (Ubuntu recién instalado), #46 (un compañero de DAW en
   Windows 11 LTSC) y #53 (VM con Windows 11 limpio, siguiendo solo el README como alumno de 1º de ASIR; la hice yo).
-  Cada fallo con su issue, arreglado con «Closes #N» y publicado en una versión. Pendiente: que un
-  compañero de ASIR lo pruebe con su propia cuenta y abra él sus issues (aún no ha podido).
+  Cada fallo con su issue, arreglado con «Closes #N» y publicado en una versión. Y la de otra persona
+  de verdad (25 y 26-nov): un amigo, en su portátil con Windows 10 y **con su cuenta de GitHub**, abrió
+  él sus issues (#69, #70 y #71), arreglados y publicados en la 1.2.2. Qué probó y con qué
+  resultado: [prompts.md](prompts.md) (entrada del 25 y 26-nov).
 - ADR: [0001](adr/0001-configuracion-externa.md) a [0006](adr/0006-nombre-mochila.md).
 
 ## Las preguntas de la defensa: dónde está la respuesta
