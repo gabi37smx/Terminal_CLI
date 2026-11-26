@@ -108,6 +108,23 @@ class Accion(ABC):
         return Path(destino).expanduser() if destino else fichero.parent
 
 
+class Secuencia(Accion):
+    """Varias acciones seguidas sobre la misma carpeta: «limpiar-temporales → renombrar-capturas → ...».
+
+    No toca ningún fichero ella misma: el motor ejecuta cada paso con su propia acción, en orden, y cada
+    paso ve lo que dejó el anterior (ADR-0007): lo renombrado, con su nombre nuevo; lo que un paso mueve
+    a otra carpeta, ya no. config.py ya ha comprobado que cada paso existe.
+    """
+    tipo = "secuencia"
+
+    def __init__(self, config: dict):
+        super().__init__(config)
+        self.pasos: list[str] = list(config["pasos"])
+
+    def aplicar(self, fichero, n, simular):
+        raise AssertionError("una secuencia no se aplica a ficheros: el motor ejecuta sus pasos uno a uno")
+
+
 class Mover(Accion):
     tipo = "mover"
 

@@ -340,6 +340,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("mochila ejecutar limpiar-temporales ~/pruebas-tareas", "Usa otra carpeta en vez del origen de la acción"),
         ("mochila ejecutar convertir-webp ~/Descargas/portada.png", "Solo ese fichero, no toda la carpeta"),
         ("mochila ejecutar convertir-webp . --si", "Sin preguntar (solo si estás seguro)"),
+        ("mochila ejecutar repasar-carpeta . --simular", "Una secuencia: varias acciones seguidas en esta carpeta, sin tocar nada"),
     ],
     "configurar-ia": [
         ("mochila configurar-ia", "Te pregunta: modelos gratis de OpenCode o el servidor del centro"),
@@ -633,6 +634,8 @@ def acciones(ctx: typer.Context) -> None:
 
     Tipos sin IA: mover, copiar, renombrar, borrar, ordenar (por asignatura) y convertir (a WebP).
 
+    Y «secuencia»: varias acciones seguidas (sus pasos salen entre paréntesis).
+
     Tipos con IA (columna IA): resumir, renombrar-ia y clasificar. Necesitan un modelo: los gratis de OpenCode o el servidor del centro (elige con mochila configurar-ia y compruébalo con mochila comprobar-ia); las demás funcionan sin red.
     """
     lista = config.cargar(config.buscar(ctx.obj))
@@ -641,9 +644,13 @@ def acciones(ctx: typer.Context) -> None:
     tabla.add_column("Tipo")
     tabla.add_column("IA", justify="center")
     tabla.add_column("Descripción")
+    tipos = {a["nombre"]: a["tipo"] for a in lista}
     for a in lista:
-        ia = "[magenta]sí[/magenta]" if a["tipo"] in config.TIPOS_IA else "—"
-        tabla.add_row(escape(a["nombre"]), a["tipo"], ia, escape(a["descripcion"]))
+        pasos = a.get("pasos", []) if a["tipo"] == "secuencia" else []
+        con_ia = a["tipo"] in config.TIPOS_IA or any(tipos[p] in config.TIPOS_IA for p in pasos)
+        ia = "[magenta]sí[/magenta]" if con_ia else "—"
+        descripcion = escape(a["descripcion"]) + (f" [dim]({escape(' → '.join(pasos))})[/dim]" if pasos else "")
+        tabla.add_row(escape(a["nombre"]), a["tipo"], ia, descripcion)
     consola.print(tabla)
     consola.print("Para usar una: [bold]mochila ejecutar NOMBRE CARPETA --simular[/bold] (o un solo fichero en vez de "
                   "la carpeta). Ejemplos: [bold]mochila acciones -h[/bold]")
@@ -781,11 +788,48 @@ def ejecutar(
     Una acción ordenar con «al_almacen»: true manda cada fichero a asignaturas/ASIGNATURA de tu almacén (y dentro, a la carpeta de su unidad: «unitat 1», «UD01», «Tema 1»...; si no la hay, la crea) y, al acabar, pregunta si quieres hacer mochila sync (con --si no lo hace: te lo recuerda).
 
     Con «por_tipo»: "~/Datos/POR-TIPO", lo que no es de ninguna asignatura va a POR-TIPO/DOCUMENTOS, IMAGENES, COMPRIMIDOS... si esa carpeta ya existe (si no, se queda donde está). Los ficheros del sistema, temporales y descargas a medias (desktop.ini, .crdownload, .part...) no se mueven nunca.
+
+    Una acción de tipo «secuencia» ejecuta varias acciones seguidas sobre una carpeta (no un fichero suelto): sus «pasos», cada uno con su tabla y su pregunta. Lo que un paso mueve fuera de la carpeta ya no lo ven los siguientes. Si un paso falla, no sigue con los demás.
     """
     motor = Motor(config.cargar(config.buscar(ctx.obj)))
-    previa = motor.acciones.get(nombre)
-    if previa is not None and previa.necesita_ia and not simular:
+    pasos = motor.pasos(nombre)
+    if not simular and any(motor.acciones[p].necesita_ia for p in pasos):
         motor.proveedor = ia.crear_proveedor()  # solo si hace falta: lo demás va sin red
+    if pasos == [nombre]:
+        _ejecutar_una(ctx, motor, nombre, carpeta, simular, si)
+    else:
+        _ejecutar_secuencia(ctx, motor, nombre, pasos, carpeta, simular, si)
+
+
+def _ejecutar_secuencia(ctx: typer.Context, motor: Motor, nombre: str, pasos: list[str], carpeta: Optional[Path],
+                        simular: bool, si: bool) -> None:
+    """Los pasos de una secuencia, en orden. Cada uno enseña su tabla y pregunta como si lo lanzaras tú;
+    si uno falla (o le dices que no), los que faltan no se ejecutan (ADR-0007)."""
+    carpeta = motor.carpeta_de_secuencia(nombre, carpeta)
+    consola.print(f"[bold]Secuencia «{escape(nombre)}»:[/bold] {len(pasos)} pasos: {escape(' → '.join(pasos))}")
+    if simular:
+        consola.print("[yellow]En la simulación cada paso mira la carpeta tal como está ahora;[/yellow] de verdad, "
+                      "cada paso trabaja con lo que deje el anterior (lo renombrado, lo movido...).")
+    for i, paso in enumerate(pasos, start=1):
+        consola.print(f"\n[bold]Paso {i} de {len(pasos)}: {escape(paso)}[/bold]")
+        try:
+            _ejecutar_una(ctx, motor, paso, carpeta, simular, si, en_secuencia=True)
+        except (typer.Exit, typer.Abort, TareasError):
+            faltan = pasos[i:]
+            siguientes = f" No sigo con {', '.join(faltan)}." if faltan else ""
+            hechos = " Lo de los pasos anteriores ya está hecho." if i > 1 else ""
+            consola.print(f"[yellow]El paso «{escape(paso)}» no ha terminado bien.{escape(siguientes)}[/yellow]"
+                          f"{hechos}")
+            raise
+    if simular:
+        consola.print("\nPara hacerlo de verdad, repite la orden sin --simular.")
+    else:
+        consola.print(f"\n[green]✔ Secuencia «{escape(nombre)}» terminada: {len(pasos)} pasos.[/green]")
+
+
+def _ejecutar_una(ctx: typer.Context, motor: Motor, nombre: str, carpeta: Optional[Path], simular: bool, si: bool,
+                  en_secuencia: bool = False) -> None:
+    """Una acción normal: vista previa y pregunta si toca, la tabla, y el sync del almacén si hace falta."""
     accion, ficheros = motor.preparar(nombre, carpeta)
     almacen = None
     if accion.config.get("al_almacen"):
@@ -811,7 +855,7 @@ def ejecutar(
         confirmar(f"¿{'BORRAR' if accion.destructiva else 'Aplicar la acción a'} {n} fichero(s)?")
     resultados = accion.ejecutar(ficheros, simular)
     pintar_tabla(nombre, resultados, simular)
-    if simular:
+    if simular and not en_secuencia:
         consola.print("Para hacerlo de verdad, repite la orden sin --simular.")
     # solo cuenta lo que ha entrado en el almacén (lo de «por_tipo» no se sube)
     hechos = sum(1 for r in resultados if r.estado == "hecho" and r.nota != "por tipo")

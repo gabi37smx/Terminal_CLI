@@ -7,7 +7,7 @@ import re
 import time
 from pathlib import Path
 
-from .acciones import Accion, Resultado
+from .acciones import Accion, Resultado, Secuencia
 from .errores import TareasError
 from .ia import ProveedorIA
 
@@ -68,13 +68,49 @@ class Motor:
             elegidos.append(f)
         return elegidos
 
-    def preparar(self, nombre: str, carpeta: Path | None) -> tuple[Accion, list[Path]]:
-        """Resuelve la acción y los ficheros SIN tocar nada (sirve para pedir confirmación)."""
+    def buscar(self, nombre: str) -> Accion:
+        """La acción con ese nombre o un error que propone la parecida."""
         accion = self.acciones.get(nombre)
         if accion is None:
             parecida = sugerir(nombre, list(self.acciones))
             pista = f" ¿Querías decir «{parecida}»?" if parecida else ""
             raise TareasError(f"No hay ninguna acción «{nombre}».{pista} Mira la lista con: mochila acciones")
+        return accion
+
+    def pasos(self, nombre: str) -> list[str]:
+        """Los nombres de las acciones que hay que ejecutar: los pasos de una secuencia, o ella sola."""
+        accion = self.buscar(nombre)
+        return accion.pasos if isinstance(accion, Secuencia) else [nombre]
+
+    def carpeta_de_secuencia(self, nombre: str, carpeta: Path | None) -> Path | None:
+        """La CARPETA que se pasa a cada paso: la de la orden, o el «origen» de la secuencia, o ninguna
+        (entonces cada paso usa su propio «origen»).
+
+        Lo que se puede saber antes de empezar se comprueba aquí, para no quedarse a medias:
+        - una secuencia trabaja sobre una carpeta, no sobre un fichero suelto (el paso 1 podría
+          renombrarlo y el 2 ya no lo encontraría, o no cumplir el filtro de algún paso);
+        - sin carpeta, cada paso necesita su «origen». Que ese origen exista se mira al llegar al paso:
+          puede crearlo un paso anterior (el destino del 1.º puede ser el origen del 2.º).
+        """
+        accion = self.buscar(nombre)
+        if carpeta is None and "origen" in accion.config:
+            carpeta = Path(accion.config["origen"]).expanduser()
+        if carpeta is not None:
+            carpeta = Path(carpeta).expanduser()
+            if carpeta.is_file():
+                raise TareasError(f"Una secuencia trabaja sobre una carpeta, no sobre un fichero suelto ({carpeta.name}). "
+                                  f"Para un solo fichero, lanza cada acción por separado: mochila ejecutar ACCION FICHERO")
+            return carpeta
+        sin_origen = [p for p in self.pasos(nombre) if "origen" not in self.acciones[p].config]
+        if sin_origen:
+            raise TareasError(f"Dime qué carpeta: mochila ejecutar {nombre} CARPETA. Sin ella, cada paso usa su "
+                              f"«origen», y {', '.join(sin_origen)} no tiene (o pon «origen» en la secuencia).")
+        return None
+
+    def preparar(self, nombre: str, carpeta: Path | None) -> tuple[Accion, list[Path]]:
+        """Resuelve la acción y los ficheros SIN tocar nada (sirve para pedir confirmación)."""
+        accion = self.buscar(nombre)
+        assert not isinstance(accion, Secuencia), "una secuencia se ejecuta paso a paso (ver Motor.pasos)"
         origen = carpeta if carpeta is not None else accion.config.get("origen")
         if origen is None:
             raise TareasError("Indica una CARPETA o define «origen» en la acción")
@@ -100,5 +136,12 @@ class Motor:
         return accion, ficheros
 
     def ejecutar(self, nombre: str, carpeta: Path | None, simular: bool) -> list[Resultado]:
+        """Ejecuta la acción; si es una secuencia, sus pasos en orden (sin preguntar: lo hace cli.py)."""
+        if isinstance(self.buscar(nombre), Secuencia):
+            carpeta = self.carpeta_de_secuencia(nombre, carpeta)
+            resultados: list[Resultado] = []
+            for paso in self.pasos(nombre):
+                resultados += self.ejecutar(paso, carpeta, simular)
+            return resultados
         accion, ficheros = self.preparar(nombre, carpeta)
         return accion.ejecutar(ficheros, simular)

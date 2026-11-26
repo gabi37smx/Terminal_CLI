@@ -8,6 +8,23 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+Acciones combinables (lo que pide el nivel excelente de la rúbrica) y la spec en su propio fichero.
+
+### Añadido
+
+- **Tipo de acción `secuencia`**: ejecuta varias acciones seguidas sobre la misma carpeta
+  (`"pasos": ["limpiar-temporales", "renombrar-capturas", ...]`). Cada paso ve lo que dejó el
+  anterior, enseña su tabla y pregunta como si lo lanzaras solo; si uno falla o le dices que no, los
+  demás no se ejecutan y se dice cuáles. Con `--simular` avisa de que cada paso se calcula con la
+  carpeta tal como está. Si algún paso necesita IA y no hay modelo, sale con 4 antes de empezar.
+  `config.py` comprueba que cada paso existe, que no es otra secuencia ni la propia y que hay al
+  menos dos (código 3). Antes de empezar comprueba también que no le has pasado un fichero suelto y que, sin
+  CARPETA, cada paso tiene su `origen`. Decisión y alternativas en el ADR-0007.
+- `acciones.json` de ejemplo: `repasar-carpeta` (limpiar-temporales → renombrar-capturas →
+  convertir-webp → mover-zips). `mochila acciones` enseña los pasos de cada secuencia.
+- `docs/spec.md`: la spec de 10 líneas de la Sesión 1, tal cual, y en qué ha quedado cada punto.
+- 28 pruebas nuevas en `tests/test_secuencia.py`.
+
 ## [1.2.2] - 2026-11-26
 
 Lo que salió de la instalación cruzada de un amigo (25 y 26-nov): otra persona, en su portátil con
