@@ -340,7 +340,7 @@ EJEMPLOS: dict[str, list[tuple[str, str]]] = {
         ("mochila ejecutar limpiar-temporales ~/pruebas-tareas", "Usa otra carpeta en vez del origen de la acción"),
         ("mochila ejecutar convertir-webp ~/Descargas/portada.png", "Solo ese fichero, no toda la carpeta"),
         ("mochila ejecutar convertir-webp . --si", "Sin preguntar (solo si estás seguro)"),
-        ("mochila ejecutar repasar-carpeta --simular", "Una secuencia: varias acciones seguidas, sin tocar nada"),
+        ("mochila ejecutar repasar-carpeta . --simular", "Una secuencia: varias acciones seguidas en esta carpeta, sin tocar nada"),
     ],
     "configurar-ia": [
         ("mochila configurar-ia", "Te pregunta: modelos gratis de OpenCode o el servidor del centro"),
