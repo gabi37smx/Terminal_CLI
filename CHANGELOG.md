@@ -8,6 +8,8 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+## [1.3.0] - 2026-11-26
+
 Acciones combinables (lo que pide el nivel excelente de la rúbrica) y la spec en su propio fichero.
 
 ### Añadido
@@ -371,7 +373,9 @@ Primera versión estable: lo de las semanas 1 a 4 del proyecto de 1º DAM.
   - El documento va entre `<documento>` para frenar la inyección de prompt.
 - `comprobar-ia` nunca enseña la clave (solo dice «clave: definida»), y OpenCode no puede leer `*.env`.
 
-[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.1...HEAD
+[Sin publicar]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.2...v1.3.0
+[1.2.2]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/gabi37smx/Terminal_CLI/compare/v1.0.1...v1.1.0
