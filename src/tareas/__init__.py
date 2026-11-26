@@ -1,6 +1,6 @@
 """tareas: automatiza tareas repetitivas con ficheros desde la terminal."""
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 # Para los mensajes que mandan al README o al ejemplo (sirven también si se instaló sin clonar)
 URL_REPO = "https://github.com/gabi37smx/Terminal_CLI"

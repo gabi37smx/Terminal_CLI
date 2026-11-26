@@ -8,6 +8,8 @@ romper nada y 2.0.0 rompería algo (por ejemplo, el esquema de `acciones.json`).
 
 ## [Sin publicar]
 
+## [1.2.2] - 2026-11-26
+
 Lo que salió de la instalación cruzada de un amigo (25 y 26-nov): otra persona, en su portátil con
 Windows 10, con su cuenta de GitHub, y con sus issues (#69, #70 y #71).
 
