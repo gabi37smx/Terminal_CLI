@@ -5,14 +5,14 @@ y macOS. Aquí está la lista entera, agrupada por la versión en la que salió.
 quien usa `mochila` está en el [CHANGELOG](../CHANGELOG.md), y el porqué de cada paso, en la
 [bitácora de prompts](prompts.md).
 
-**59 PR fusionadas**, 7 issues y 5 versiones publicadas.
+**63 PR fusionadas**, 10 issues y 6 versiones publicadas.
 
 **Cómo leerlo:**
 - **Rama:** `feature/` añade algo nuevo; `arreglo/` o `fix/` corrige un fallo; `docs/` toca documentación
   o la bitácora; `ci/` las pruebas automáticas; `release-X` prepara una versión.
 - **El nombre del comando:** en la #1 era `gabriel`, después `dam` y, desde la #41, `mochila`. Los títulos
   se quedan con el nombre de entonces.
-- **Los números que faltan** (#17, #18, #19, #20, #22, #46, #53) son issues: GitHub numera issues y
+- **Los números que faltan** (#17, #18, #19, #20, #22, #46, #53, #69, #70, #71) son issues: GitHub numera issues y
   PR con la misma cuenta.
 
 Este fichero se genera con `uv run python scripts/historial_pr.py` (lo saca de GitHub con `gh`): no se
@@ -112,6 +112,17 @@ La IA del centro probada desde mi portátil con Windows (25-nov) y el límite de
 | [#65](https://github.com/gabi37smx/Terminal_CLI/pull/65) | 25-nov | `docs/historial-pr-64` | historial-pr.md: la PR 64 |  |
 | [#66](https://github.com/gabi37smx/Terminal_CLI/pull/66) | 25-nov | `release-1.2.1` | Versión 1.2.1 |  |
 
+## 1.2.2 · 26-nov-2026 (#67 a #73)
+
+La instalación cruzada de un amigo con su cuenta de GitHub (25 y 26-nov) y sus issues (#69 a #71): preguntas s/n que vuelven a preguntar, la estimación de tokens y el PowerShell de Administrador.
+
+| PR | Fusionada | Rama | Qué cambia | Cierra |
+|---|---|---|---|---|
+| [#67](https://github.com/gabi37smx/Terminal_CLI/pull/67) | 25-nov | `docs/historial-pr-66` | historial-pr.md: la PR 66 y la v1.2.1 |  |
+| [#68](https://github.com/gabi37smx/Terminal_CLI/pull/68) | 25-nov | `docs/changelog-1.2.1` | CHANGELOG 1.2.1: decir lo que queda pendiente |  |
+| [#72](https://github.com/gabi37smx/Terminal_CLI/pull/72) | 26-nov | `arreglo/pruebas-jose` | Instalación cruzada de un amigo: arreglos de #69, #70 y #71 | [#69](https://github.com/gabi37smx/Terminal_CLI/issues/69), [#70](https://github.com/gabi37smx/Terminal_CLI/issues/70), [#71](https://github.com/gabi37smx/Terminal_CLI/issues/71) |
+| [#73](https://github.com/gabi37smx/Terminal_CLI/pull/73) | 26-nov | `release-1.2.2` | Versión 1.2.2: la instalación cruzada de un amigo (#69-#71) |  |
+
 ## Issues
 
 Lo que encontré instalando en un ordenador limpio y lo que encontró otra persona al instalarlo.
@@ -126,3 +137,6 @@ Cada uno se cerró desde la PR que lo arreglaba («Closes #N»).
 | [#22](https://github.com/gabi37smx/Terminal_CLI/issues/22) | 11-nov | instalar.sh: no queda claro qué usuario pide para clonar DAM-almacen ni qué poner en Username/Password | [#23](https://github.com/gabi37smx/Terminal_CLI/pull/23) |
 | [#46](https://github.com/gabi37smx/Terminal_CLI/issues/46) | 15-nov | Instalación cruzada (1º DAW, Windows 11 LTSC y VM Windows): TAB, ordenar y la ayuda confunden | [#47](https://github.com/gabi37smx/Terminal_CLI/pull/47) |
 | [#53](https://github.com/gabi37smx/Terminal_CLI/issues/53) | 19-nov | Instalación cruzada (1º ASIR, VM Windows 11 limpia): almacén sin GitHub, IA sin elegir y ordenar fuera de DAM | [#57](https://github.com/gabi37smx/Terminal_CLI/pull/57) |
+| [#69](https://github.com/gabi37smx/Terminal_CLI/issues/69) | 26-nov | configurar: si contesto algo que no es s/n, sigue sin avisar | [#72](https://github.com/gabi37smx/Terminal_CLI/pull/72) |
+| [#70](https://github.com/gabi37smx/Terminal_CLI/issues/70) | 26-nov | --simular dice ~57 tokens y la acción real gasta más de 1000 | [#72](https://github.com/gabi37smx/Terminal_CLI/pull/72) |
+| [#71](https://github.com/gabi37smx/Terminal_CLI/issues/71) | 26-nov | Instalé desde un PowerShell de Administrador y el repo acabó en C:\Windows\System32 | [#72](https://github.com/gabi37smx/Terminal_CLI/pull/72) |
