@@ -48,6 +48,15 @@ def carpeta_relativa(ruta: str | None, base: Path) -> Path:
     return carpeta if carpeta.is_absolute() else base / carpeta
 
 
+YA_EN_DESTINO = "ya está en la carpeta de destino: no lo muevo ni lo copio encima de sí mismo"
+
+
+def ya_en(carpeta: Path, fichero: Path) -> bool:
+    """¿El fichero ya está en esa carpeta? Pasa si le das como CARPETA la del propio «destino»: sin esta
+    comprobación, mover lo renombraría a «x (1).zip» y copiar lo duplicaría cada vez."""
+    return _clave(carpeta.resolve()) == _clave(fichero.parent.resolve())
+
+
 def destino_libre(destino: Path, reservados: set[str] | None = None) -> Path:
     """Nunca sobrescribe: si existe (o ya lo ha reservado otro fichero de esta pasada,
     importante en simulación), prueba 'nombre (1).ext', 'nombre (2).ext'..."""
@@ -141,6 +150,8 @@ class Mover(Accion):
 
     def aplicar(self, fichero, n, simular):
         carpeta = self._carpeta_destino(fichero)
+        if ya_en(carpeta, fichero):
+            return Resultado(fichero, None, "saltado", YA_EN_DESTINO)
         destino = destino_libre(carpeta / fichero.name, self._reservados)
         if not simular:
             carpeta.mkdir(parents=True, exist_ok=True)
@@ -153,6 +164,8 @@ class Copiar(Accion):
 
     def aplicar(self, fichero, n, simular):
         carpeta = self._carpeta_destino(fichero)
+        if ya_en(carpeta, fichero):
+            return Resultado(fichero, None, "saltado", YA_EN_DESTINO)
         destino = destino_libre(carpeta / fichero.name, self._reservados)
         if not simular:
             carpeta.mkdir(parents=True, exist_ok=True)
