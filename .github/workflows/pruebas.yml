@@ -13,6 +13,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]   # los tres sistemas operativos
     runs-on: ${{ matrix.os }}       # cada copia del trabajo corre en uno de ellos
+    timeout-minutes: 15             # lo normal son 1-3 min; si algo se cuelga, que no espere las 6 h que da GitHub
     steps:
       - uses: actions/checkout@v5   # baja el código del repo a la máquina de GitHub
       - uses: astral-sh/setup-uv@v6 # instala uv (el gestor de Python que uso)

@@ -31,6 +31,10 @@ Lo que salió al intentar romperlo antes que el profe: el `destino` de `mover-zi
   Si aun así se agota el tiempo, el mensaje ya no dice «¿estás fuera de la red del centro?» (salía
   también dentro de ella).
 - 5 pruebas nuevas en `tests/test_acciones.py`.
+- **GitHub Actions con tiempo máximo** (15 min por sistema). En la PR de esta versión, el Windows de
+  GitHub se quedó colgado 26 min en un `git commit` de `test_historial_tampoco_lee_pdfs`, cuando lo
+  normal son 2 min (la misma prueba pasó en la otra tanda, con el mismo commit). Sin límite habría
+  esperado 6 horas. Los `git` de esa prueba ya no leen del teclado y tienen 60 s.
 
 ## [1.3.0] - 2026-11-26
 

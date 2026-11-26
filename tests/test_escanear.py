@@ -32,7 +32,9 @@ def identidad(monkeypatch):
 
 
 def git(carpeta: Path, *args):
-    subprocess.run(["git", "-C", str(carpeta), *args], check=True, capture_output=True, encoding="utf-8")
+    # Sin teclado y con límite: el 26-nov un git de esta prueba se quedó colgado en el Windows de GitHub
+    subprocess.run(["git", "-C", str(carpeta), *args], check=True, capture_output=True, encoding="utf-8",
+                   stdin=subprocess.DEVNULL, timeout=60)
 
 
 def escribir(ruta: Path, texto: str):
@@ -42,7 +44,8 @@ def escribir(ruta: Path, texto: str):
 
 @pytest.fixture
 def repo(tmp_path):
-    subprocess.run(["git", "init", "-b", "main", str(tmp_path)], check=True, capture_output=True)
+    subprocess.run(["git", "init", "-b", "main", str(tmp_path)], check=True, capture_output=True,
+                   stdin=subprocess.DEVNULL, timeout=60)
     escribir(tmp_path / ".gitignore", ".env\n")
     escribir(tmp_path / "README.md", "limpio")
     git(tmp_path, "add", "-A"); git(tmp_path, "commit", "-m", "inicial")
